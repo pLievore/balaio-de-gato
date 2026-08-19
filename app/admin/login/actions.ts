@@ -1,5 +1,6 @@
 'use server';
 
+import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 
 import {
@@ -7,19 +8,11 @@ import {
   destroyPanelSession,
   verifyPanelPassword,
 } from '../../../src/lib/panel/session';
-
-const WINDOW_MS = 10 * 60 * 1000;
-const MAX_ATTEMPTS = 10;
-const attempts = new Map<string, number[]>();
-
-function isRateLimited(key: string): boolean {
-  const now = Date.now();
-  const recent = (attempts.get(key) ?? []).filter((t) => now - t < WINDOW_MS);
-  attempts.set(key, recent);
-  if (recent.length >= MAX_ATTEMPTS) return true;
-  recent.push(now);
-  return false;
-}
+import {
+  clearRateLimit,
+  consumeRateLimit,
+  requestIdentifier,
+} from '../../../src/lib/security/rate-limit';
 
 export async function loginAction(
   _previous: { error?: string } | undefined,
@@ -30,14 +23,25 @@ export async function loginAction(
   const next =
     typeof formData.get('next') === 'string' ? (formData.get('next') as string) : '/admin';
 
-  if (isRateLimited('panel-login')) {
-    return { error: 'Too many attempts. Try again in a few minutes.' };
+  // Contagem por origem e no banco. O contador em memória que existia aqui
+  // não valia nada em serverless — cada instância nova começava do zero — e
+  // ainda era global, então uma tentativa errada de fora bloqueava a loja.
+  const identity = requestIdentifier(await headers());
+  const verdict = await consumeRateLimit('panelLogin', identity);
+  if (!verdict.allowed) {
+    const minutos = Math.ceil(verdict.retryAfterSeconds / 60);
+    return {
+      error: `Tentativas demais. Espere ${minutos === 1 ? 'um minuto' : `${minutos} minutos`}.`,
+    };
   }
 
   if (!verifyPanelPassword(password)) {
-    return { error: 'Incorrect password.' };
+    return { error: 'Senha incorreta.' };
   }
 
+  // Acertou: devolve a cota, para que quem digitou errado antes não fique
+  // com o resto da janela pela metade.
+  await clearRateLimit('panelLogin', identity);
   await createPanelSession();
   redirect(next.startsWith('/admin') && !next.startsWith('//') ? next : '/admin');
 }

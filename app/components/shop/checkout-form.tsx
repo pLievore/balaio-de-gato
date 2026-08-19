@@ -51,7 +51,13 @@ export function CheckoutForm() {
   }, [state]);
 
   if (state.status === 'success') {
-    return <OrderConfirmation order={state.order} />;
+    return (
+      <OrderConfirmation
+        order={state.order}
+        accessToken={state.accessToken}
+        emailSent={state.emailSent}
+      />
+    );
   }
 
   if (summary === null) {

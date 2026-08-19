@@ -7,6 +7,7 @@ import {
   recordSessionContext,
   type FunnelStep,
 } from '../../../src/lib/analytics/funnel';
+import { consumeRateLimit, requestIdentifier } from '../../../src/lib/security/rate-limit';
 
 export const runtime = 'nodejs';
 
@@ -53,6 +54,11 @@ function visitorLocation(headers: Headers): string | null {
  */
 export async function POST(request: Request) {
   try {
+    // O beacon é aberto e sem autenticação: sem limite, um laço qualquer
+    // inflaciona os contadores do funil e a conta do banco junto.
+    const verdict = await consumeRateLimit('events', requestIdentifier(request.headers));
+    if (!verdict.allowed) return new NextResponse(null, { status: 204 });
+
     const body = (await request.json()) as {
       step?: unknown;
       ref?: unknown;

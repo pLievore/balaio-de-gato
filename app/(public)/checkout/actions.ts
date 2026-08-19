@@ -9,6 +9,8 @@
  * sai sempre do servidor.
  */
 
+import { headers } from 'next/headers';
+
 import { getCartProducts } from '../../../src/lib/catalog/repository';
 import { buildCartSummary, canSubmitOrder } from '../../../src/lib/cart/summary';
 import type { CartLine } from '../../../src/lib/cart/types';
@@ -17,6 +19,7 @@ import { buildOrderItems, generateOrderCode, type Order } from '../../../src/lib
 import {
   CheckoutChangedError,
   getOrderByCheckoutIdempotencyKey,
+  issueOrderAccessToken,
   orderCodeExists,
   saveOrder,
 } from '../../../src/lib/orders/repository';
@@ -26,12 +29,27 @@ import {
   type FieldErrors,
 } from '../../../src/lib/orders/schema';
 import { getEducationStage } from '../../../src/lib/program/material-escolar';
+import { consumeRateLimit, requestIdentifier } from '../../../src/lib/security/rate-limit';
+import { isEmailConfigured, sendEmail } from '../../../src/lib/email/client';
+import { orderReceivedEmail } from '../../../src/lib/email/templates';
+import { orderTrackingPath } from '../../../src/lib/orders/access-token';
+import { env } from '../../../src/config/env';
 
 export type SubmitOrderState =
   | { status: 'idle' }
   | { status: 'invalid'; fieldErrors: FieldErrors; formError?: string }
   | { status: 'cart-changed'; formError: string; issues: string[] }
-  | { status: 'success'; order: Order };
+  | {
+      status: 'success';
+      order: Order;
+      /**
+       * Chave de acompanhamento, mostrada uma única vez. Sem ela a página do
+       * pedido só revela a situação — nome, telefone e endereço ficam fora.
+       */
+      accessToken: string | null;
+      /** Se a confirmação por e-mail realmente saiu. A tela não promete o que não aconteceu. */
+      emailSent: boolean;
+    };
 
 /** No máximo 60 linhas: acima disso é engano ou abuso, não uma lista escolar. */
 const MAX_LINES = 60;
@@ -73,6 +91,21 @@ export async function submitOrder(
   _previous: SubmitOrderState,
   formData: FormData,
 ): Promise<SubmitOrderState> {
+  // Antes de ler o formulário: cada pedido reserva estoque e grava em cinco
+  // tabelas, então um envio repetido em massa custa caro e trava o catálogo
+  // para quem está comprando de verdade.
+  const verdict = await consumeRateLimit('checkout', requestIdentifier(await headers()));
+  if (!verdict.allowed) {
+    const minutos = Math.ceil(verdict.retryAfterSeconds / 60);
+    return {
+      status: 'cart-changed',
+      formError:
+        `Recebemos pedidos demais deste acesso. Tente de novo em ` +
+        `${minutos === 1 ? 'um minuto' : `${minutos} minutos`}.`,
+      issues: [],
+    };
+  }
+
   const idempotencyEntry = formData.get('checkoutIdempotencyKey');
   const idempotencyKey =
     typeof idempotencyEntry === 'string' ? idempotencyEntry.trim().toLowerCase() : '';
@@ -88,7 +121,16 @@ export async function submitOrder(
   // perdido. Nesse caso, devolvemos o mesmo pedido antes de revalidar o estoque
   // que ele próprio já reservou.
   const existingOrder = await getOrderByCheckoutIdempotencyKey(idempotencyKey);
-  if (existingOrder) return { status: 'success', order: existingOrder };
+  if (existingOrder) {
+    // Repetição da mesma intenção: o pedido e o e-mail já saíram na primeira
+    // vez. Uma chave nova apenas devolve o acesso a quem recarregou a página.
+    return {
+      status: 'success',
+      order: existingOrder,
+      accessToken: await issueOrderAccessToken(existingOrder.code),
+      emailSent: isEmailConfigured(),
+    };
+  }
 
   const lines = parseLines(formData.get('linhas'));
   if (!lines) {
@@ -206,5 +248,29 @@ export async function submitOrder(
     throw error;
   }
 
-  return { status: 'success', order: persistedOrder };
+  const accessToken = await issueOrderAccessToken(persistedOrder.code);
+  const emailSent = await sendConfirmation(persistedOrder, accessToken);
+
+  return { status: 'success', order: persistedOrder, accessToken, emailSent };
+}
+
+/**
+ * Manda a confirmação e diz se ela saiu.
+ *
+ * O pedido já está gravado quando chegamos aqui, então nada nesta função pode
+ * derrubar a resposta: o cliente precisa ver o código na tela mesmo que o
+ * provedor de e-mail esteja fora. O que se perde no envio é recuperado pelo
+ * painel, que tem o pedido inteiro.
+ */
+async function sendConfirmation(order: Order, accessToken: string | null): Promise<boolean> {
+  const trackingUrl = `${env.siteUrl}${orderTrackingPath(order.code, accessToken)}`;
+  const outcome = await sendEmail({
+    to: order.customer.email,
+    ...orderReceivedEmail(order, trackingUrl),
+  });
+
+  if (outcome.status !== 'sent') {
+    console.warn(`[checkout] confirmação de ${order.code} não enviada: ${outcome.reason}`);
+  }
+  return outcome.status === 'sent';
 }

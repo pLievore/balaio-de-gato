@@ -7,6 +7,7 @@ import {
   ORDER_STATUS_LABEL,
   type Order,
 } from '../../../src/lib/orders/order';
+import { orderTrackingPath } from '../../../src/lib/orders/access-token';
 import { formatBRL } from '../../../src/lib/money';
 import { getEducationStage } from '../../../src/lib/program/material-escolar';
 import { buttonStyles } from '../ui/button';
@@ -20,8 +21,19 @@ import { CopyOrderCode } from './copy-order-code';
  * próximos passos vêm logo abaixo, em ordem, para que ninguém fique esperando
  * um pagamento que ainda não foi liberado.
  */
-export function OrderConfirmation({ order }: { order: Order }) {
+export function OrderConfirmation({
+  order,
+  accessToken,
+  emailSent,
+}: {
+  order: Order;
+  /** Chave de acompanhamento; aparece só aqui e no e-mail. */
+  accessToken?: string | null;
+  /** Se a confirmação por e-mail saiu de fato. */
+  emailSent?: boolean;
+}) {
   const stage = getEducationStage(order.customer.etapa);
+  const trackingHref = orderTrackingPath(order.code, accessToken);
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -43,8 +55,19 @@ export function OrderConfirmation({ order }: { order: Order }) {
           <CopyOrderCode code={order.code} />
         </div>
 
+        {/* Antes esta frase era fixa e afirmava um envio que não acontecia. */}
         <p className="mt-4 text-xs leading-5 font-semibold text-[rgb(var(--sage-ink))]">
-          Também enviamos o código para <strong>{order.customer.email}</strong>.
+          {emailSent ? (
+            <>
+              Também enviamos o código e o link de acompanhamento para{' '}
+              <strong>{order.customer.email}</strong>.
+            </>
+          ) : (
+            <>
+              Anote o código antes de sair desta página — não conseguimos enviar a confirmação
+              para <strong>{order.customer.email}</strong>.
+            </>
+          )}
         </p>
       </div>
 
@@ -182,13 +205,20 @@ export function OrderConfirmation({ order }: { order: Order }) {
           Continuar comprando
         </Link>
         <Link
-          href={`/pedido/${order.code}`}
+          href={trackingHref}
           className={buttonStyles({ variant: 'secondary', size: 'lg' })}
         >
           <Copy aria-hidden="true" className="size-4" />
           Ver acompanhamento
         </Link>
       </div>
+
+      {accessToken ? (
+        <p className="mt-5 text-center text-xs leading-5 text-[rgb(var(--muted))]">
+          O link de acompanhamento é pessoal: ele abre os seus dados de entrega. Guarde-o como
+          guardaria uma senha e não o repasse.
+        </p>
+      ) : null}
     </div>
   );
 }

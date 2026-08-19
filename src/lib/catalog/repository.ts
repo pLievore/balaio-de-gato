@@ -1,5 +1,7 @@
 import 'server-only';
 
+import { unstable_cache } from 'next/cache';
+
 /**
  * Acesso ao catálogo.
  *
@@ -501,3 +503,25 @@ export async function getCartProducts(): Promise<CartProduct[]> {
   const catalog = await loadCatalog();
   return catalog.map(toCartProduct);
 }
+
+/** Etiqueta única do catálogo em cache; o painel a invalida ao gravar. */
+export const CATALOG_CACHE_TAG = 'catalog';
+
+/**
+ * A mesma lista, servida de cache.
+ *
+ * O layout público precisa do catálogo enxuto em toda página — inclusive em
+ * `/privacy` e `/terms`, que são texto fixo. Buscar isso do banco a cada
+ * acesso obrigava o site inteiro a renderizar dinamicamente: nada podia ser
+ * pré-renderizado, e cada visita virava uma consulta ao Neon.
+ *
+ * Aqui a lista é compartilhada entre requisições e invalidada por etiqueta
+ * quando o painel grava. O que se perde é até um minuto de defasagem em
+ * preço e estoque exibidos — e isso não decide nada: o checkout relê o
+ * catálogo direto do banco (`getCartProducts`) e refaz as contas antes de
+ * gravar o pedido.
+ */
+export const getCachedCartProducts = unstable_cache(getCartProducts, ['cart-products'], {
+  tags: [CATALOG_CACHE_TAG],
+  revalidate: 60,
+});

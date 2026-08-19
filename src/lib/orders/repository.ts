@@ -18,6 +18,7 @@ import {
   inventoryItems,
   inventoryMovements,
   inventoryReservations,
+  orderAccessTokens,
   orderAddresses,
   orderConsents,
   orderEvents,
@@ -36,6 +37,13 @@ import {
 import { createDuepayOrderReference } from '../payments/duepay';
 import { MATERIAL_ESCOLAR_YEAR } from '../program/material-escolar';
 import { protectJson, protectedLookup, revealJson } from '../security/protected-data';
+import {
+  accessTokenExpiry,
+  generateAccessToken,
+  hashAccessToken,
+  isAccessToken,
+  normalizeAccessToken,
+} from './access-token';
 import { maskCPF, stripCPF } from './cpf';
 import {
   allowedTransitions,
@@ -1026,4 +1034,93 @@ export async function orderCodeExists(code: string): Promise<boolean> {
     .where(eq(orders.publicCode, code.toUpperCase()))
     .limit(1);
   return Boolean(record);
+}
+
+// ---------------------------------------------------------------------------
+// Acesso ao acompanhamento
+// ---------------------------------------------------------------------------
+
+/**
+ * Emite a chave de acompanhamento de um pedido.
+ *
+ * Devolve o texto em claro uma única vez — no banco fica só o resumo. Quem
+ * perder a chave pede outra; ninguém a recupera, nem com acesso ao banco.
+ */
+export async function issueOrderAccessToken(code: string): Promise<string | null> {
+  const [row] = await db
+    .select({ id: orders.id })
+    .from(orders)
+    .where(eq(orders.publicCode, code.toUpperCase()))
+    .limit(1);
+  if (!row) return null;
+
+  const token = generateAccessToken();
+  await db.insert(orderAccessTokens).values({
+    orderId: row.id,
+    tokenHash: hashAccessToken(token),
+    expiresAt: accessTokenExpiry(),
+  });
+  return token;
+}
+
+/**
+ * Confere a chave contra o pedido.
+ *
+ * A busca é pelo resumo, que é único: uma chave só pode abrir o pedido que a
+ * originou, e uma chave de outro pedido não serve aqui.
+ */
+export async function verifyOrderAccessToken(code: string, rawToken: string): Promise<boolean> {
+  const token = normalizeAccessToken(rawToken);
+  if (!isAccessToken(token)) return false;
+
+  const [row] = await db
+    .select({ id: orderAccessTokens.id, publicCode: orders.publicCode })
+    .from(orderAccessTokens)
+    .innerJoin(orders, eq(orders.id, orderAccessTokens.orderId))
+    .where(
+      and(
+        eq(orderAccessTokens.tokenHash, hashAccessToken(token)),
+        isNull(orderAccessTokens.revokedAt),
+        or(isNull(orderAccessTokens.expiresAt), gte(orderAccessTokens.expiresAt, sql`now()`)),
+      ),
+    )
+    .limit(1);
+
+  if (!row || row.publicCode !== code.toUpperCase()) return false;
+
+  // Registrar o uso permite ao atendimento saber se a família chegou a abrir
+  // o link — e é o que denunciaria uma chave vazada sendo reutilizada.
+  await db
+    .update(orderAccessTokens)
+    .set({ lastUsedAt: new Date() })
+    .where(eq(orderAccessTokens.id, row.id));
+
+  return true;
+}
+
+/**
+ * Situação do pedido sem nenhum dado pessoal.
+ *
+ * É o que a página de acompanhamento mostra a quem tem só o código. Não
+ * decifra nome, CPF nem endereço: o que não é lido não vaza.
+ */
+export async function getOrderStatusByCode(
+  code: string,
+): Promise<{ code: string; status: OrderStatus; createdAt: string } | null> {
+  const [row] = await db
+    .select({
+      publicCode: orders.publicCode,
+      status: orders.status,
+      createdAt: orders.createdAt,
+    })
+    .from(orders)
+    .where(eq(orders.publicCode, code.toUpperCase()))
+    .limit(1);
+
+  if (!row) return null;
+  return {
+    code: row.publicCode,
+    status: row.status,
+    createdAt: row.createdAt.toISOString(),
+  };
 }

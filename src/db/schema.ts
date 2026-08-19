@@ -1125,3 +1125,33 @@ export const funnelCounters = pgTable(
     ),
   ],
 );
+
+// ---------------------------------------------------------------------------
+// Rate limiting
+// ---------------------------------------------------------------------------
+
+/**
+ * Fixed-window request counters.
+ *
+ * Lives in the database on purpose: the site runs on serverless functions, so
+ * an in-memory counter only limits whoever happens to land on the same warm
+ * instance. The bucket key is already hashed by the caller — no raw address is
+ * ever written here.
+ */
+export const rateLimitCounters = pgTable(
+  'rate_limit_counters',
+  {
+    scope: varchar('scope', { length: 40 }).notNull(),
+    bucket: char('bucket', { length: 64 }).notNull(),
+    windowStart: timestamp('window_start', { withTimezone: true }).notNull(),
+    hits: integer('hits').default(0).notNull(),
+    updatedAt: updatedAt(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.scope, table.bucket, table.windowStart] }),
+    // Sweeping expired windows is a range scan over this index.
+    index('rate_limit_counters_window_idx').on(table.windowStart),
+    check('rate_limit_counters_hits_chk', sql`${table.hits} >= 0`),
+    check('rate_limit_counters_bucket_chk', sql`${table.bucket} ~ '^[0-9a-f]{64}$'`),
+  ],
+);

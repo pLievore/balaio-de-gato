@@ -5,7 +5,7 @@ import { ArrowUpRight, BookOpenCheck } from 'lucide-react';
 
 import { env } from '../../src/config/env';
 import type { NavigationLink } from '../../src/lib/navigation/types';
-import { getCartProducts } from '../../src/lib/catalog/repository';
+import { getCachedCartProducts } from '../../src/lib/catalog/repository';
 import { MobileNav } from '../components/mobile-nav';
 import { TrackEvent } from '../components/track-event';
 import { CartButton } from '../components/shop/cart-button';
@@ -14,9 +14,9 @@ import { ToastViewport } from '../components/shop/toast';
 import { ButtonLink } from '../components/ui/button';
 import { Container } from '../components/ui/container';
 
-// O layout entrega preço e estoque ao carrinho. Esses dados não podem ficar
-// congelados no HTML gerado durante o build.
-export const dynamic = 'force-dynamic';
+// Sem `force-dynamic`: o catálogo enxuto vem de cache com etiqueta, então
+// páginas de texto continuam estáticas e as fichas de produto voltam a ser
+// pré-renderizadas. O painel invalida a etiqueta quando grava.
 
 const NAVIGATION: NavigationLink[] = [
   { id: 'materiais', label: 'Materiais', href: '/products', external: false, children: [] },
@@ -27,7 +27,7 @@ const NAVIGATION: NavigationLink[] = [
 export default async function PublicLayout({ children }: { children: ReactNode }) {
   // O catálogo enxuto desce uma vez por navegação; o carrinho no cliente cruza
   // com ele para saber preço, estoque e limite atuais.
-  const cartProducts = await getCartProducts();
+  const cartProducts = await getCachedCartProducts();
 
   const organizationSchema = {
     '@context': 'https://schema.org',

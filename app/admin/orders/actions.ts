@@ -9,7 +9,31 @@ import {
   ORDER_TRANSITIONS,
   type OrderStatus,
 } from '../../../src/lib/orders/order';
-import { getOrderByCode, updateOrderStatus } from '../../../src/lib/orders/repository';
+import {
+  getOrderByCode,
+  issueOrderAccessToken,
+  updateOrderStatus,
+} from '../../../src/lib/orders/repository';
+import { orderTrackingPath } from '../../../src/lib/orders/access-token';
+import { isEmailConfigured, sendEmail } from '../../../src/lib/email/client';
+import { orderStatusEmail } from '../../../src/lib/email/templates';
+import { env } from '../../../src/config/env';
+import type { Order } from '../../../src/lib/orders/order';
+
+/**
+ * Mudanças que a família precisa saber por e-mail.
+ *
+ * `preparing` e `manual_review` ficam de fora: são etapas internas, e avisar
+ * a cada movimento do painel treina o cliente a ignorar os avisos que
+ * importam — justamente o que o golpe explora.
+ */
+const AVISA_POR_EMAIL = new Set<OrderStatus>([
+  'payment_link_sent',
+  'paid',
+  'out_for_delivery',
+  'delivered',
+  'cancelled',
+]);
 
 export type AdvanceOrderState =
   | { status: 'idle' }
@@ -64,7 +88,9 @@ export async function advanceOrder(
     revalidatePath(`/admin/orders/${code}`);
     revalidatePath(`/pedido/${code}`);
 
-    return { status: 'success', message: `Pedido ${code} atualizado.` };
+    const aviso = await notifyCustomer(updated, nextStatus);
+
+    return { status: 'success', message: `Pedido ${code} atualizado.${aviso}` };
   } catch (error) {
     // A mensagem do repositório explica o motivo (estoque inconsistente,
     // transição proibida). Repassar é mais útil que um "erro inesperado".
@@ -73,4 +99,30 @@ export async function advanceOrder(
       message: error instanceof Error ? error.message : 'Não foi possível atualizar o pedido.',
     };
   }
+}
+
+/**
+ * Avisa a família e diz, na própria resposta do painel, se o aviso saiu.
+ *
+ * A mudança de situação já está gravada quando chegamos aqui: um erro de
+ * e-mail não pode desfazê-la. Mas quem opera precisa saber que o aviso não
+ * saiu, para telefonar — daí o texto voltar junto com a confirmação em vez
+ * de virar só uma linha de log que ninguém lê.
+ */
+async function notifyCustomer(order: Order, status: OrderStatus): Promise<string> {
+  if (!AVISA_POR_EMAIL.has(status)) return '';
+  if (!isEmailConfigured()) return ' E-mail não configurado: avise o cliente por telefone.';
+
+  // Chave nova a cada aviso: o link do e-mail anterior continua valendo, e
+  // este chega já pronto para abrir o pedido inteiro.
+  const token = await issueOrderAccessToken(order.code);
+  const trackingUrl = `${env.siteUrl}${orderTrackingPath(order.code, token)}`;
+
+  const outcome = await sendEmail({
+    to: order.customer.email,
+    ...orderStatusEmail(order, trackingUrl),
+  });
+
+  if (outcome.status === 'sent') return ' Cliente avisado por e-mail.';
+  return ` O aviso por e-mail falhou (${outcome.reason}); avise por telefone.`;
 }
