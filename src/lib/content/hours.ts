@@ -17,14 +17,7 @@ export const SHOWROOM_HOURS: ShowroomHours[] = [
 /** Same hours in schema.org shape, for the storefront's structured data. */
 export const SHOWROOM_HOURS_SCHEMA = [
   {
-    dayOfWeek: [
-      'Monday',
-      'Tuesday',
-      'Wednesday',
-      'Thursday',
-      'Friday',
-      'Saturday',
-    ],
+    dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
     opens: '10:00',
     closes: '20:00',
   },
@@ -51,7 +44,7 @@ const SLOT_STEP_MINUTES = 30;
 
 export const APPOINTMENT_SLOT_MINUTES: number[] = Array.from(
   { length: (LAST_SLOT_MINUTES - FIRST_SLOT_MINUTES) / SLOT_STEP_MINUTES + 1 },
-  (_, index) => FIRST_SLOT_MINUTES + index * SLOT_STEP_MINUTES
+  (_, index) => FIRST_SLOT_MINUTES + index * SLOT_STEP_MINUTES,
 );
 
 /** "10:30 AM" from minutes since midnight. */

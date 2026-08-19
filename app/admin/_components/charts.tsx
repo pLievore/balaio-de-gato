@@ -45,8 +45,7 @@ export function AreaTrend({
   const gradientId = `area-${tone}`;
   const stroke = tone === 'dark' ? '#c9dbb2' : '#6f8352';
   const grid = tone === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
-  const labelClass =
-    tone === 'dark' ? 'text-white/50' : 'text-[rgb(var(--muted))]';
+  const labelClass = tone === 'dark' ? 'text-white/50' : 'text-[rgb(var(--muted))]';
   const labelEvery = Math.ceil(data.length / 6);
 
   return (
@@ -114,7 +113,7 @@ export function AreaTrend({
           ) : null}
         </svg>
         <span
-          className={`pointer-events-none absolute right-0 top-0 text-[10px] font-semibold tabular-nums ${labelClass}`}
+          className={`pointer-events-none absolute top-0 right-0 text-[10px] font-semibold tabular-nums ${labelClass}`}
         >
           {maxLabel}
         </span>
@@ -148,7 +147,7 @@ export function Sparkline({
         `${index === 0 ? 'M' : 'L'}${((index / n) * 100).toFixed(2)},${(
           30 -
           (value / max) * 26
-        ).toFixed(2)}`
+        ).toFixed(2)}`,
     )
     .join(' ');
 
@@ -160,11 +159,7 @@ export function Sparkline({
       style={{ height }}
       aria-hidden="true"
     >
-      <path
-        d={`${line} L100,32 L0,32 Z`}
-        fill={color}
-        opacity="0.12"
-      />
+      <path d={`${line} L100,32 L0,32 Z`} fill={color} opacity="0.12" />
       <path
         d={line}
         fill="none"
@@ -210,10 +205,7 @@ export function RevenueBarChart({
               initial={{ height: 0, y: height - 16 }}
               animate={{
                 height: Math.max(barHeight, day.revenue > 0 ? 2 : 0.75),
-                y:
-                  height -
-                  16 -
-                  Math.max(barHeight, day.revenue > 0 ? 2 : 0.75),
+                y: height - 16 - Math.max(barHeight, day.revenue > 0 ? 2 : 0.75),
               }}
               transition={{ delay: index * 0.012, duration: 0.4, ease: 'easeOut' }}
               x={index * barWidth + barWidth * 0.15}
@@ -248,7 +240,7 @@ export function Donut({
 }) {
   const total = Math.max(
     1,
-    segments.reduce((sum, segment) => sum + segment.value, 0)
+    segments.reduce((sum, segment) => sum + segment.value, 0),
   );
   const radius = 60;
   const circumference = 2 * Math.PI * radius;
@@ -265,9 +257,7 @@ export function Donut({
   }
 
   if (segments.length === 0) {
-    return (
-      <p className="text-sm text-[rgb(var(--muted))]">No data in this period.</p>
-    );
+    return <p className="text-sm text-[rgb(var(--muted))]">No data in this period.</p>;
   }
 
   return (
@@ -292,10 +282,8 @@ export function Donut({
         </svg>
         {centerLabel ? (
           <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-            <p className="text-xl font-bold leading-none tabular-nums">
-              {centerLabel.value}
-            </p>
-            <p className="mt-1 text-[10px] font-semibold uppercase tracking-wide text-[rgb(var(--muted))]">
+            <p className="text-xl leading-none font-bold tabular-nums">{centerLabel.value}</p>
+            <p className="mt-1 text-[10px] font-semibold tracking-wide text-[rgb(var(--muted))] uppercase">
               {centerLabel.label}
             </p>
           </div>
@@ -304,18 +292,13 @@ export function Donut({
       <ul className="min-w-0 space-y-1.5 text-sm">
         {segments.map((segment) => (
           <li key={segment.label} className="flex items-center gap-2">
-            <span
-              className="size-2.5 shrink-0 rounded-sm"
-              style={{ background: segment.color }}
-            />
-            <span className="min-w-0 truncate capitalize text-[rgb(var(--muted))]">
+            <span className="size-2.5 shrink-0 rounded-sm" style={{ background: segment.color }} />
+            <span className="min-w-0 truncate text-[rgb(var(--muted))] capitalize">
               {segment.label}
             </span>
             <span className="font-semibold tabular-nums">{segment.value}</span>
             {segment.hint ? (
-              <span className="text-xs text-[rgb(var(--muted))]">
-                {segment.hint}
-              </span>
+              <span className="text-xs text-[rgb(var(--muted))]">{segment.hint}</span>
             ) : null}
           </li>
         ))}
@@ -350,20 +333,11 @@ export function HBar({
             {row.imageUrl !== undefined ? (
               <span className="relative size-9 shrink-0 overflow-hidden rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--surface-muted))]">
                 {row.imageUrl ? (
-                  <Image
-                    src={row.imageUrl}
-                    alt=""
-                    fill
-                    sizes="36px"
-                    className="object-cover"
-                  />
+                  <Image src={row.imageUrl} alt="" fill sizes="36px" className="object-cover" />
                 ) : null}
               </span>
             ) : null}
-            <span
-              className="w-28 shrink-0 truncate text-xs sm:w-40 sm:text-sm"
-              title={row.label}
-            >
+            <span className="w-28 shrink-0 truncate text-xs sm:w-40 sm:text-sm" title={row.label}>
               {row.label}
             </span>
             <div className="relative h-6 min-w-10 flex-1 overflow-hidden rounded bg-[rgb(var(--surface-muted))]">

@@ -83,7 +83,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
             referenceId,
             squarePaymentId,
             eventId: event.event_id,
-          })
+          }),
         );
         return NextResponse.json({ ok: true }, { status: 200 });
       }
@@ -99,7 +99,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
           status: result.status,
           orderId: orderRow.id,
           eventId: event.event_id,
-        })
+        }),
       );
 
       // Send confirmation email only on the first transition to paid.
@@ -122,7 +122,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
                 event: 'square_webhook_email_failed',
                 reason: emailResult.reason,
                 orderId: orderRow.id,
-              })
+              }),
             );
           }
         }
@@ -134,7 +134,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
           error: err instanceof Error ? err.message : String(err),
           squareOrderId,
           squarePaymentId,
-        })
+        }),
       );
     }
   }

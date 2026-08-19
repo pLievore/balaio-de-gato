@@ -14,9 +14,7 @@ function safeEqual(a: string, b: string): boolean {
 
 export async function GET(request: NextRequest) {
   const origin = request.nextUrl.origin;
-  const failure = NextResponse.redirect(
-    new URL('/login?error=auth', origin)
-  );
+  const failure = NextResponse.redirect(new URL('/login?error=auth', origin));
 
   const code = request.nextUrl.searchParams.get('code');
   const state = request.nextUrl.searchParams.get('state');

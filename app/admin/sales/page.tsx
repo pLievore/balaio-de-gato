@@ -2,10 +2,7 @@ import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
 
-import {
-  getSalesSummary,
-  type SalesPeriodDays,
-} from '../../../src/lib/panel/analytics';
+import { getSalesSummary, type SalesPeriodDays } from '../../../src/lib/panel/analytics';
 import {
   CHART_PALETTE,
   financialStatusLabel,
@@ -30,8 +27,7 @@ export default async function SalesPage({
   searchParams: Promise<{ period?: string }>;
 }) {
   const { period } = await searchParams;
-  const days = (PERIODS.find((p) => String(p.days) === period)?.days ??
-    30) as SalesPeriodDays;
+  const days = (PERIODS.find((p) => String(p.days) === period)?.days ?? 30) as SalesPeriodDays;
   const summary = await getSalesSummary(days);
 
   return (
@@ -68,11 +64,7 @@ export default async function SalesPage({
         value={formatMoney(summary.totalRevenue, summary.currencyCode)}
         side={
           <>
-            <DeltaChip
-              value={summary.revenueDelta}
-              suffix={`vs previous ${days}d`}
-              dark
-            />
+            <DeltaChip value={summary.revenueDelta} suffix={`vs previous ${days}d`} dark />
             <p className="text-xs text-white/50">
               {summary.orderCount} orders · {summary.unitsSold} units
             </p>
@@ -80,9 +72,7 @@ export default async function SalesPage({
         }
       >
         {summary.totalRevenue === 0 ? (
-          <p className="text-sm text-white/60">
-            No sales recorded in this period.
-          </p>
+          <p className="text-sm text-white/60">No sales recorded in this period.</p>
         ) : (
           <AreaTrend
             data={summary.daily.map((d) => ({
@@ -92,7 +82,7 @@ export default async function SalesPage({
             }))}
             maxLabel={formatMoney(
               Math.max(...summary.daily.map((d) => d.revenue)),
-              summary.currencyCode
+              summary.currencyCode,
             )}
             tone="dark"
             height={150}
@@ -104,9 +94,7 @@ export default async function SalesPage({
         <KpiCard
           title="Orders"
           value={String(summary.orderCount)}
-          sub={
-            summary.ordersDelta === null ? undefined : `vs previous ${days}d`
-          }
+          sub={summary.ordersDelta === null ? undefined : `vs previous ${days}d`}
           spark={summary.daily.map((d) => d.orders)}
           href="/admin/orders"
         />
@@ -121,18 +109,13 @@ export default async function SalesPage({
           value={
             summary.totalRevenue === 0
               ? '—'
-              : formatMoney(
-                  Math.max(...summary.daily.map((d) => d.revenue)),
-                  summary.currencyCode
-                )
+              : formatMoney(Math.max(...summary.daily.map((d) => d.revenue)), summary.currencyCode)
           }
           sub={
             summary.totalRevenue === 0
               ? undefined
               : formatShortDay(
-                  summary.daily.reduce((best, d) =>
-                    d.revenue > best.revenue ? d : best
-                  ).date
+                  summary.daily.reduce((best, d) => (d.revenue > best.revenue ? d : best)).date,
                 )
           }
         />
@@ -144,9 +127,7 @@ export default async function SalesPage({
             segments={summary.byStatus.map((entry, index) => ({
               label: financialStatusLabel(entry.status),
               value: entry.count,
-              color:
-                STATUS_COLORS[entry.status] ??
-                CHART_PALETTE[index % CHART_PALETTE.length],
+              color: STATUS_COLORS[entry.status] ?? CHART_PALETTE[index % CHART_PALETTE.length],
               hint: formatMoney(entry.revenue, summary.currencyCode),
             }))}
             centerLabel={{ value: String(summary.orderCount), label: 'orders' }}
@@ -155,16 +136,11 @@ export default async function SalesPage({
         </Panel>
         <Panel title="Best sellers" className="xl:col-span-2">
           {summary.bestSellers.length === 0 ? (
-            <p className="text-sm text-[rgb(var(--muted))]">
-              Nothing sold in this period.
-            </p>
+            <p className="text-sm text-[rgb(var(--muted))]">Nothing sold in this period.</p>
           ) : (
             <ol className="space-y-3">
               {summary.bestSellers.map((item, index) => (
-                <li
-                  key={item.productId ?? item.title}
-                  className="flex items-center gap-3"
-                >
+                <li key={item.productId ?? item.title} className="flex items-center gap-3">
                   <span className="w-5 text-right text-xs font-bold text-[rgb(var(--muted))]">
                     {index + 1}
                   </span>
@@ -196,9 +172,7 @@ export default async function SalesPage({
 
         <Panel title="Recent orders" className="xl:col-span-3">
           {summary.recentOrders.length === 0 ? (
-            <p className="text-sm text-[rgb(var(--muted))]">
-              No orders in this period.
-            </p>
+            <p className="text-sm text-[rgb(var(--muted))]">No orders in this period.</p>
           ) : (
             <ul className="divide-y divide-[rgb(var(--border))]">
               {summary.recentOrders.map((order) => (
@@ -220,7 +194,7 @@ export default async function SalesPage({
                   </div>
                   <div className="flex items-center gap-3">
                     {order.financialStatus ? (
-                      <span className="rounded-full bg-[rgb(var(--surface-muted))] px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-[rgb(var(--muted))]">
+                      <span className="rounded-full bg-[rgb(var(--surface-muted))] px-2.5 py-1 text-[11px] font-semibold tracking-wide text-[rgb(var(--muted))] uppercase">
                         {financialStatusLabel(order.financialStatus)}
                       </span>
                     ) : null}
@@ -236,8 +210,8 @@ export default async function SalesPage({
       </div>
 
       <p className="text-xs text-[rgb(var(--muted))]">
-        Cancelled orders are excluded. Order data covers the trailing 60 days
-        available to the panel&apos;s API access
+        Cancelled orders are excluded. Order data covers the trailing 60 days available to the
+        panel&apos;s API access
         {days * 2 > 60
           ? '; period-over-period comparison is unavailable for the 60-day view for the same reason.'
           : '.'}

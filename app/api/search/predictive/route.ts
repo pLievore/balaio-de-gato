@@ -41,10 +41,7 @@ export async function GET(request: Request) {
           title: product.title,
           availableForSale: product.availableForSale,
           price,
-          compareAtPrice: validCompareAtPrice(
-            price,
-            product.compareAtPriceRange.minVariantPrice
-          ),
+          compareAtPrice: validCompareAtPrice(price, product.compareAtPriceRange.minVariantPrice),
           image: product.featuredImage
             ? {
                 url: product.featuredImage.url,
@@ -65,7 +62,7 @@ export async function GET(request: Request) {
 
 function json(
   body: SearchSuggestions,
-  cacheControl = 'public, max-age=30, s-maxage=60, stale-while-revalidate=300'
+  cacheControl = 'public, max-age=30, s-maxage=60, stale-while-revalidate=300',
 ) {
   return NextResponse.json(body, {
     headers: { 'Cache-Control': cacheControl },

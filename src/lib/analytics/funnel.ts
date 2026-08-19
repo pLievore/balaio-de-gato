@@ -9,12 +9,7 @@ import 'server-only';
  * tracking cookie and no consent banner.
  */
 
-export const FUNNEL_STEPS = [
-  'session',
-  'product_view',
-  'add_to_cart',
-  'checkout_start',
-] as const;
+export const FUNNEL_STEPS = ['session', 'product_view', 'add_to_cart', 'checkout_start'] as const;
 
 export type FunnelStep = (typeof FUNNEL_STEPS)[number];
 
@@ -50,10 +45,7 @@ export const TRAFFIC_SOURCE_LABEL: Record<TrafficSource, string> = {
  * Buckets a referrer/UTM pair into a fixed set of sources. Only the bucket
  * name is ever stored — the raw referrer is discarded.
  */
-export function classifyTrafficSource(
-  referrer: string,
-  utmSource: string
-): TrafficSource {
+export function classifyTrafficSource(referrer: string, utmSource: string): TrafficSource {
   let host = '';
   try {
     host = new URL(referrer).hostname.toLowerCase();
@@ -64,11 +56,7 @@ export function classifyTrafficSource(
   const haystack = `${utm} ${host}`;
 
   if (haystack.includes('instagram') || utm === 'ig') return 'instagram';
-  if (
-    haystack.includes('facebook') ||
-    /(^|\.)fb\.com$/.test(host) ||
-    utm === 'fb'
-  ) {
+  if (haystack.includes('facebook') || /(^|\.)fb\.com$/.test(host) || utm === 'fb') {
     return 'facebook';
   }
   if (haystack.includes('tiktok')) return 'tiktok';
@@ -88,10 +76,8 @@ type RedisConfig = { url: string; token: string };
 function redisConfig(): RedisConfig | null {
   // Vercel's Upstash integration exposes KV_*; a direct Upstash project uses
   // UPSTASH_*. Accept either so provisioning either way just works.
-  const url =
-    process.env.KV_REST_API_URL ?? process.env.UPSTASH_REDIS_REST_URL ?? '';
-  const token =
-    process.env.KV_REST_API_TOKEN ?? process.env.UPSTASH_REDIS_REST_TOKEN ?? '';
+  const url = process.env.KV_REST_API_URL ?? process.env.UPSTASH_REDIS_REST_URL ?? '';
+  const token = process.env.KV_REST_API_TOKEN ?? process.env.UPSTASH_REDIS_REST_TOKEN ?? '';
   if (!url || !token) return null;
   return { url, token };
 }
@@ -145,10 +131,7 @@ async function redisPipeline<T>(commands: string[][]): Promise<T[] | null> {
 }
 
 /** YYYY-MM-DD in the store's timezone, matching the sales dashboards. */
-export function funnelDateKey(
-  instant: Date = new Date(),
-  timeZone = 'America/Denver'
-): string {
+export function funnelDateKey(instant: Date = new Date(), timeZone = 'America/Denver'): string {
   return new Intl.DateTimeFormat('en-CA', {
     timeZone,
     year: 'numeric',
@@ -188,10 +171,107 @@ export async function recordSessionContext(context: {
     const geoKey = `funnel:geo:${date}`;
     commands.push(
       ['HINCRBY', geoKey, context.location, '1'],
-      ['EXPIRE', geoKey, String(COUNTER_TTL_SECONDS)]
+      ['EXPIRE', geoKey, String(COUNTER_TTL_SECONDS)],
     );
   }
   await redisPipeline(commands);
+}
+
+/**
+ * Steps that can be attributed to a specific product. `session` cannot — it
+ * happens before the visitor has looked at anything.
+ */
+export const PRODUCT_FUNNEL_STEPS = ['product_view', 'add_to_cart', 'checkout_start'] as const;
+
+export type ProductFunnelStep = (typeof PRODUCT_FUNNEL_STEPS)[number];
+
+export function isProductFunnelStep(step: string): step is ProductFunnelStep {
+  return (PRODUCT_FUNNEL_STEPS as readonly string[]).includes(step);
+}
+
+/** Shopify handles are lowercase, digits and dashes. Anything else is junk. */
+const HANDLE_PATTERN = /^[a-z0-9][a-z0-9-]{0,79}$/;
+
+/** One beacon never carries more handles than a cart plausibly holds. */
+const MAX_HANDLES_PER_EVENT = 20;
+
+/**
+ * Keeps the counters honest: only well-formed handles are stored, so a
+ * crafted beacon cannot fill Redis with arbitrary field names.
+ */
+export function sanitizeHandles(input: unknown): string[] {
+  const list = Array.isArray(input) ? input : [input];
+  const handles = new Set<string>();
+
+  for (const entry of list) {
+    if (typeof entry !== 'string') continue;
+    const handle = entry.trim().toLowerCase();
+    if (HANDLE_PATTERN.test(handle)) handles.add(handle);
+    if (handles.size >= MAX_HANDLES_PER_EVENT) break;
+  }
+
+  return [...handles];
+}
+
+/**
+ * Per-product step counters, as daily hashes keyed by handle. Same posture as
+ * the rest of the funnel: counts only, nothing tied to a visitor.
+ */
+export async function recordProductStep(step: ProductFunnelStep, handles: string[]): Promise<void> {
+  if (handles.length === 0) return;
+
+  const key = `funnel:prod:${step}:${funnelDateKey()}`;
+  const commands: string[][] = handles.map((handle) => ['HINCRBY', key, handle, '1']);
+  commands.push(['EXPIRE', key, String(COUNTER_TTL_SECONDS)]);
+  await redisPipeline(commands);
+}
+
+export type ProductFunnelRow = {
+  handle: string;
+  counts: Record<ProductFunnelStep, number>;
+};
+
+/**
+ * Per-product funnel for the last N days, busiest first. Answers the question
+ * the operator actually asks: which sofas get looked at, which get added, and
+ * which lose people on the way to checkout.
+ */
+export async function getProductFunnel(days: number, limit = 50): Promise<ProductFunnelRow[]> {
+  const dates = Array.from({ length: days }, (_, index) =>
+    funnelDateKey(new Date(Date.now() - (days - 1 - index) * 86400000)),
+  );
+
+  const commands = PRODUCT_FUNNEL_STEPS.flatMap((step) =>
+    dates.map((date) => ['HGETALL', `funnel:prod:${step}:${date}`]),
+  );
+  const results = await redisPipeline<string[] | null>(commands);
+  if (!results) return [];
+
+  const rows = new Map<string, ProductFunnelRow>();
+
+  results.forEach((flat, index) => {
+    if (!Array.isArray(flat)) return;
+    const step = PRODUCT_FUNNEL_STEPS[Math.floor(index / dates.length)];
+
+    for (let cursor = 0; cursor + 1 < flat.length; cursor += 2) {
+      const handle = flat[cursor];
+      const count = Number(flat[cursor + 1]);
+      if (!handle || !Number.isFinite(count)) continue;
+
+      const row =
+        rows.get(handle) ??
+        ({
+          handle,
+          counts: { product_view: 0, add_to_cart: 0, checkout_start: 0 },
+        } satisfies ProductFunnelRow);
+      row.counts[step] += count;
+      rows.set(handle, row);
+    }
+  });
+
+  return [...rows.values()]
+    .sort((a, b) => b.counts.product_view - a.counts.product_view)
+    .slice(0, limit);
 }
 
 export type BreakdownEntry = { label: string; count: number };
@@ -203,13 +283,13 @@ export type BreakdownEntry = { label: string; count: number };
 export async function getFunnelBreakdown(
   days: number,
   kind: 'src' | 'geo',
-  limit = 8
+  limit = 8,
 ): Promise<BreakdownEntry[]> {
   const dates = Array.from({ length: days }, (_, index) =>
-    funnelDateKey(new Date(Date.now() - (days - 1 - index) * 86400000))
+    funnelDateKey(new Date(Date.now() - (days - 1 - index) * 86400000)),
   );
   const results = await redisPipeline<string[] | null>(
-    dates.map((date) => ['HGETALL', `funnel:${kind}:${date}`])
+    dates.map((date) => ['HGETALL', `funnel:${kind}:${date}`]),
   );
   if (!results) return [];
 
@@ -238,12 +318,10 @@ export type FunnelDailyRow = {
 /** Daily counters for the last N days, oldest first. */
 export async function getFunnelCounts(days: number): Promise<FunnelDailyRow[]> {
   const dates = Array.from({ length: days }, (_, index) =>
-    funnelDateKey(new Date(Date.now() - (days - 1 - index) * 86400000))
+    funnelDateKey(new Date(Date.now() - (days - 1 - index) * 86400000)),
   );
 
-  const keys = dates.flatMap((date) =>
-    FUNNEL_STEPS.map((step) => counterKey(step, date))
-  );
+  const keys = dates.flatMap((date) => FUNNEL_STEPS.map((step) => counterKey(step, date)));
   if (keys.length === 0) return [];
 
   const values = await redisCommand<Array<string | null>>(['MGET', ...keys]);

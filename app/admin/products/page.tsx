@@ -25,16 +25,13 @@ function applyFilters(products: PanelProduct[], filters: Filters): PanelProduct[
   }
   if (filters.stock === 'low') {
     result = result.filter((product) =>
-      product.variants.some((variant) => variant.inventoryQuantity <= 2)
+      product.variants.some((variant) => variant.inventoryQuantity <= 2),
     );
   }
   if (filters.stock === 'out') {
     result = result.filter(
       (product) =>
-        product.variants.reduce(
-          (sum, variant) => sum + variant.inventoryQuantity,
-          0
-        ) <= 0
+        product.variants.reduce((sum, variant) => sum + variant.inventoryQuantity, 0) <= 0,
     );
   }
   return result;
@@ -96,11 +93,7 @@ export default async function PanelProductsPage({
           value={String(stats.active)}
           href="/admin/products?status=ACTIVE"
         />
-        <StatCard
-          title="Drafts"
-          value={String(stats.draft)}
-          href="/admin/products?status=DRAFT"
-        />
+        <StatCard title="Drafts" value={String(stats.draft)} href="/admin/products?status=DRAFT" />
         <StatCard
           title="Out of stock"
           value={String(stats.outOfStock)}
@@ -122,7 +115,7 @@ export default async function PanelProductsPage({
           type="search"
           defaultValue={search ?? ''}
           placeholder="Search by title…"
-          className="min-h-10 w-full flex-1 rounded-full border border-[rgb(var(--border-strong))] bg-white px-4 text-sm outline-none transition focus:border-[rgb(var(--accent))] focus:ring-2 focus:ring-[rgb(var(--accent))]/15 sm:w-auto"
+          className="min-h-10 w-full flex-1 rounded-full border border-[rgb(var(--border-strong))] bg-white px-4 text-sm transition outline-none focus:border-[rgb(var(--accent))] focus:ring-2 focus:ring-[rgb(var(--accent))]/15 sm:w-auto"
         />
         <label htmlFor="status" className="sr-only">
           Status

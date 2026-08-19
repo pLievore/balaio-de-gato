@@ -5,10 +5,7 @@ import {
   PRODUCT_ATTRIBUTES,
   type ProductAttributeKey,
 } from '../catalog/attributes';
-import {
-  adminGraphql,
-  assertNoUserErrors,
-} from '../shopify-admin/client';
+import { adminGraphql, assertNoUserErrors } from '../shopify-admin/client';
 
 /** Hand-maintained attributes, keyed as in `catalog/attributes`. */
 export type ProductAttributes = Partial<Record<ProductAttributeKey, string>>;
@@ -123,17 +120,12 @@ export async function listPanelProducts(search?: string): Promise<PanelProduct[]
   let after: string | null = null;
 
   do {
-    const data: ProductsResponse = await adminGraphql<ProductsResponse>(
-      PRODUCTS_PAGE_QUERY,
-      {
-        query: search ? `title:*${search.replace(/["\\]/g, '')}*` : null,
-        after,
-      }
-    );
+    const data: ProductsResponse = await adminGraphql<ProductsResponse>(PRODUCTS_PAGE_QUERY, {
+      query: search ? `title:*${search.replace(/["\\]/g, '')}*` : null,
+      after,
+    });
     products.push(...data.products.nodes.map(adaptProduct));
-    after = data.products.pageInfo.hasNextPage
-      ? data.products.pageInfo.endCursor
-      : null;
+    after = data.products.pageInfo.hasNextPage ? data.products.pageInfo.endCursor : null;
   } while (after && products.length < 1000);
 
   return products;
@@ -175,7 +167,7 @@ export function computeCatalogStats(products: PanelProduct[]): CatalogStats {
 
     const totalQuantity = product.variants.reduce(
       (sum, variant) => sum + variant.inventoryQuantity,
-      0
+      0,
     );
     if (product.status === 'ACTIVE' && totalQuantity <= 0) {
       stats.outOfStock += 1;
@@ -186,8 +178,7 @@ export function computeCatalogStats(products: PanelProduct[]): CatalogStats {
         stats.lowStock.push({
           productId: product.id,
           title: product.title,
-          variantTitle:
-            variant.title === 'Default Title' ? null : variant.title,
+          variantTitle: variant.title === 'Default Title' ? null : variant.title,
           imageUrl: product.imageUrl,
           quantity: variant.inventoryQuantity,
         });
@@ -213,9 +204,7 @@ export type PanelProductDetail = PanelProduct & {
   media: PanelProductMedia[];
 };
 
-export async function getPanelProductDetail(
-  numericId: string
-): Promise<PanelProductDetail | null> {
+export async function getPanelProductDetail(numericId: string): Promise<PanelProductDetail | null> {
   if (!/^\d+$/.test(numericId)) return null;
 
   const data = await adminGraphql<{
@@ -270,7 +259,7 @@ export async function getPanelProductDetail(
       }
     }
   `,
-    { id: `gid://shopify/Product/${numericId}` }
+    { id: `gid://shopify/Product/${numericId}` },
   );
 
   const product = data.product;
@@ -333,7 +322,7 @@ export async function updatePanelProductDetails(input: {
         title: input.title,
         descriptionHtml: input.descriptionHtml,
       },
-    }
+    },
   );
   assertNoUserErrors('productUpdate', data.productUpdate.userErrors);
 }
@@ -343,10 +332,7 @@ export async function updatePanelProductDetails(input: {
  * rather than storing a blank, so a cleared spreadsheet cell clears the value
  * on the product page too.
  */
-export async function setProductAttributes(
-  productId: string,
-  attributes: ProductAttributes
-) {
+export async function setProductAttributes(productId: string, attributes: ProductAttributes) {
   const toSet: Array<{
     ownerId: string;
     namespace: string;
@@ -354,8 +340,7 @@ export async function setProductAttributes(
     type: string;
     value: string;
   }> = [];
-  const toDelete: Array<{ ownerId: string; namespace: string; key: string }> =
-    [];
+  const toDelete: Array<{ ownerId: string; namespace: string; key: string }> = [];
 
   for (const spec of PRODUCT_ATTRIBUTES) {
     const value = attributes[spec.key];
@@ -391,7 +376,7 @@ export async function setProductAttributes(
         }
       }
     `,
-      { metafields: toSet }
+      { metafields: toSet },
     );
     assertNoUserErrors('metafieldsSet', data.metafieldsSet.userErrors);
   }
@@ -409,16 +394,13 @@ export async function setProductAttributes(
         }
       }
     `,
-      { metafields: toDelete }
+      { metafields: toDelete },
     );
     assertNoUserErrors('metafieldsDelete', data.metafieldsDelete.userErrors);
   }
 }
 
-export async function appendProductMedia(
-  productId: string,
-  resourceUrls: string[]
-) {
+export async function appendProductMedia(productId: string, resourceUrls: string[]) {
   const data = await adminGraphql<{
     productUpdate: {
       product: { id: string } | null;
@@ -439,7 +421,7 @@ export async function appendProductMedia(
         originalSource: resourceUrl,
         mediaContentType: 'IMAGE',
       })),
-    }
+    },
   );
   assertNoUserErrors('productUpdate', data.productUpdate.userErrors);
 }
@@ -457,15 +439,12 @@ export async function deleteProductMedia(mediaIds: string[]) {
       }
     }
   `,
-    { fileIds: mediaIds }
+    { fileIds: mediaIds },
   );
   assertNoUserErrors('fileDelete', data.fileDelete.userErrors);
 }
 
-export async function reorderProductMedia(
-  productId: string,
-  orderedMediaIds: string[]
-) {
+export async function reorderProductMedia(productId: string, orderedMediaIds: string[]) {
   const data = await adminGraphql<{
     productReorderMedia: {
       userErrors: Array<{ field?: string[] | null; message: string }>;
@@ -484,12 +463,9 @@ export async function reorderProductMedia(
         id: mediaId,
         newPosition: String(index),
       })),
-    }
+    },
   );
-  assertNoUserErrors(
-    'productReorderMedia',
-    data.productReorderMedia.userErrors
-  );
+  assertNoUserErrors('productReorderMedia', data.productReorderMedia.userErrors);
 }
 
 /** Converts operator-typed plain text into safe paragraph HTML. */
@@ -504,7 +480,7 @@ export function textToDescriptionHtml(text: string): string {
           .replace(/&/g, '&amp;')
           .replace(/</g, '&lt;')
           .replace(/>/g, '&gt;')
-          .replace(/\n/g, '<br>')}</p>`
+          .replace(/\n/g, '<br>')}</p>`,
     )
     .join('');
 }
@@ -572,7 +548,7 @@ export async function uploadImageToShopify(file: {
           fileSize: String(file.bytes.byteLength),
         },
       ],
-    }
+    },
   );
   assertNoUserErrors('stagedUploadsCreate', data.stagedUploadsCreate.userErrors);
 
@@ -583,11 +559,7 @@ export async function uploadImageToShopify(file: {
   for (const parameter of target.parameters) {
     form.append(parameter.name, parameter.value);
   }
-  form.append(
-    'file',
-    new Blob([file.bytes], { type: file.mimeType }),
-    file.filename
-  );
+  form.append('file', new Blob([file.bytes], { type: file.mimeType }), file.filename);
 
   const response = await fetch(target.url, { method: 'POST', body: form });
   if (!response.ok) {
@@ -641,7 +613,7 @@ export async function createPanelProduct(input: {
         originalSource: resourceUrl,
         mediaContentType: 'IMAGE',
       })),
-    }
+    },
   );
   assertNoUserErrors('productCreate', data.productCreate.userErrors);
 
@@ -676,12 +648,9 @@ export async function createPanelProduct(input: {
           },
         },
       ],
-    }
+    },
   );
-  assertNoUserErrors(
-    'productVariantsBulkUpdate',
-    pricing.productVariantsBulkUpdate.userErrors
-  );
+  assertNoUserErrors('productVariantsBulkUpdate', pricing.productVariantsBulkUpdate.userErrors);
 
   await setInventoryQuantities([
     { inventoryItemId: variant.inventoryItem.id, quantity: input.quantity },
@@ -690,10 +659,7 @@ export async function createPanelProduct(input: {
   return { productId: product.id };
 }
 
-export async function updateProductStatus(
-  productId: string,
-  status: PanelProduct['status']
-) {
+export async function updateProductStatus(productId: string, status: PanelProduct['status']) {
   const data = await adminGraphql<{
     productUpdate: {
       product: { id: string } | null;
@@ -708,14 +674,14 @@ export async function updateProductStatus(
       }
     }
   `,
-    { product: { id: productId, status } }
+    { product: { id: productId, status } },
   );
   assertNoUserErrors('productUpdate', data.productUpdate.userErrors);
 }
 
 export async function updateVariantPricing(
   productId: string,
-  variants: Array<{ id: string; price: string; compareAtPrice: string | null }>
+  variants: Array<{ id: string; price: string; compareAtPrice: string | null }>,
 ) {
   const data = await adminGraphql<{
     productVariantsBulkUpdate: {
@@ -729,17 +695,14 @@ export async function updateVariantPricing(
       }
     }
   `,
-    { productId, variants }
+    { productId, variants },
   );
-  assertNoUserErrors(
-    'productVariantsBulkUpdate',
-    data.productVariantsBulkUpdate.userErrors
-  );
+  assertNoUserErrors('productVariantsBulkUpdate', data.productVariantsBulkUpdate.userErrors);
 }
 
 async function getAvailableQuantities(
   inventoryItemIds: string[],
-  locationId: string
+  locationId: string,
 ): Promise<Map<string, number>> {
   const result = new Map<string, number>();
   for (let index = 0; index < inventoryItemIds.length; index += 100) {
@@ -764,7 +727,7 @@ async function getAvailableQuantities(
         }
       }
     `,
-      { ids: chunk, locationId }
+      { ids: chunk, locationId },
     );
     for (const node of data.nodes) {
       if (node?.id) {
@@ -776,14 +739,14 @@ async function getAvailableQuantities(
 }
 
 export async function setInventoryQuantities(
-  quantities: Array<{ inventoryItemId: string; quantity: number }>
+  quantities: Array<{ inventoryItemId: string; quantity: number }>,
 ) {
   const locationId = await getPrimaryLocationId();
   // 2026-07 requires changeFromQuantity (optimistic concurrency) on every
   // entry and an @idempotent key on the field.
   const current = await getAvailableQuantities(
     quantities.map((entry) => entry.inventoryItemId),
-    locationId
+    locationId,
   );
   const idempotencyKey = crypto.randomUUID();
   const data = await adminGraphql<{
@@ -809,10 +772,7 @@ export async function setInventoryQuantities(
           changeFromQuantity: current.get(entry.inventoryItemId) ?? 0,
         })),
       },
-    }
+    },
   );
-  assertNoUserErrors(
-    'inventorySetQuantities',
-    data.inventorySetQuantities.userErrors
-  );
+  assertNoUserErrors('inventorySetQuantities', data.inventorySetQuantities.userErrors);
 }

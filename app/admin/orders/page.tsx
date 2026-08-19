@@ -21,9 +21,8 @@ function StatusChip({ value }: { value: string | null }) {
   if (!value) return null;
   return (
     <span
-      className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide ${
-        FINANCIAL_PILL[value] ??
-        'bg-[rgb(var(--surface-muted))] text-[rgb(var(--muted))]'
+      className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-bold tracking-wide uppercase ${
+        FINANCIAL_PILL[value] ?? 'bg-[rgb(var(--surface-muted))] text-[rgb(var(--muted))]'
       }`}
     >
       {value.replaceAll('_', ' ').toLowerCase()}
@@ -85,7 +84,7 @@ export default async function PanelOrdersPage() {
                     {dateFormat.format(new Date(order.createdAt))} (MT)
                   </p>
                   {order.cancelled ? (
-                    <span className="inline-flex rounded-full bg-red-50 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-red-700">
+                    <span className="inline-flex rounded-full bg-red-50 px-2.5 py-1 text-[11px] font-bold tracking-wide text-red-700 uppercase">
                       cancelled
                     </span>
                   ) : (
@@ -110,10 +109,7 @@ export default async function PanelOrdersPage() {
 
                 <ul className="mt-4 space-y-2">
                   {order.lines.map((line, index) => (
-                    <li
-                      key={`${order.id}-${index}`}
-                      className="flex items-center gap-3 text-sm"
-                    >
+                    <li key={`${order.id}-${index}`} className="flex items-center gap-3 text-sm">
                       <span className="relative size-10 shrink-0 overflow-hidden rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--surface-muted))]">
                         {line.imageUrl ? (
                           <Image
@@ -125,12 +121,8 @@ export default async function PanelOrdersPage() {
                           />
                         ) : null}
                       </span>
-                      <span className="min-w-0 flex-1 truncate">
-                        {line.title}
-                      </span>
-                      <span className="text-xs text-[rgb(var(--muted))]">
-                        × {line.quantity}
-                      </span>
+                      <span className="min-w-0 flex-1 truncate">{line.title}</span>
+                      <span className="text-xs text-[rgb(var(--muted))]">× {line.quantity}</span>
                     </li>
                   ))}
                 </ul>
@@ -142,9 +134,8 @@ export default async function PanelOrdersPage() {
 
       <p className="flex items-start gap-2 text-xs leading-5 text-[rgb(var(--muted))]">
         <Info aria-hidden="true" className="mt-0.5 size-3.5 shrink-0" />
-        Customer names and delivery addresses are protected customer data in
-        Shopify and stay there — the Details button opens the full order,
-        including the shipping address.
+        Customer names and delivery addresses are protected customer data in Shopify and stay there
+        — the Details button opens the full order, including the shipping address.
       </p>
     </div>
   );

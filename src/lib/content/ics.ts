@@ -29,7 +29,10 @@ function foldLine(line: string): string {
 }
 
 function icsStamp(instant: Date): string {
-  return instant.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z');
+  return instant
+    .toISOString()
+    .replace(/[-:]/g, '')
+    .replace(/\.\d{3}Z$/, 'Z');
 }
 
 export function buildAppointmentInvite(input: {
@@ -47,13 +50,14 @@ export function buildAppointmentInvite(input: {
 }): string {
   const [hours, minutes] = input.time.split(':').map(Number);
   const compactDate = input.date.replace(/-/g, '');
-  const start = `${compactDate}T${String(hours).padStart(2, '0')}${String(
-    minutes
-  ).padStart(2, '0')}00`;
+  const start = `${compactDate}T${String(hours).padStart(2, '0')}${String(minutes).padStart(
+    2,
+    '0',
+  )}00`;
   const endTotal = hours * 60 + minutes + (input.durationMinutes ?? 60);
   const end = `${compactDate}T${String(Math.floor(endTotal / 60)).padStart(
     2,
-    '0'
+    '0',
   )}${String(endTotal % 60).padStart(2, '0')}00`;
 
   const lines = [
@@ -90,11 +94,11 @@ export function buildAppointmentInvite(input: {
     `DESCRIPTION:${escapeText(
       `Showroom appointment for ${input.customerName}.\n` +
         'Need to change or cancel? Text or call (801) 854-6060.\n' +
-        'https://801outlet.com/showroom'
+        'https://801outlet.com/showroom',
     )}`,
     `ORGANIZER;CN=801 Outlet:mailto:${input.organizerEmail}`,
     `ATTENDEE;CN=${escapeText(
-      input.customerName
+      input.customerName,
     )};ROLE=REQ-PARTICIPANT;PARTSTAT=ACCEPTED;RSVP=FALSE:mailto:${input.customerEmail}`,
     `ATTENDEE;CN=801 Outlet Showroom;ROLE=REQ-PARTICIPANT;PARTSTAT=ACCEPTED;RSVP=FALSE:mailto:${input.storeEmail}`,
     'STATUS:CONFIRMED',

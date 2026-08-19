@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <rect width="1200" height="630" fill="#f8f6ef"/>
+  <circle cx="1075" cy="80" r="215" fill="#ffeccc"/>
+  <circle cx="80" cy="615" r="245" fill="#e2f6f2"/>
+  <rect x="92" y="92" width="128" height="128" rx="36" fill="#18324d"/>
+  <path d="M122 148h68l-8 40a14 14 0 0 1-14 12h-24a14 14 0 0 1-14-12l-8-40Z" fill="#f2b134"/>
+  <path d="M132 162h48M130 176h52M146 150l4 50M166 150l-4 50" stroke="#18324d" stroke-width="5" opacity=".72"/>
+  <path d="M132 150c2-20 12-32 26-32 10 0 16 4 20 12" fill="none" stroke="#e2f6f2" stroke-width="8" stroke-linecap="round"/>
+  <path d="M176 130c14-4 18 8 12 16" fill="none" stroke="#e85d4a" stroke-width="8" stroke-linecap="round"/>
+  <text x="92" y="330" fill="#18324d" font-family="Arial, Helvetica, sans-serif" font-size="82" font-weight="800">Balaio de Gato</text>
+  <text x="96" y="390" fill="#a83225" font-family="Arial, Helvetica, sans-serif" font-size="28" font-weight="700" letter-spacing="3">PAPELARIA E MATERIAL ESCOLAR</text>
+  <text x="96" y="500" fill="#18324d" font-family="Arial, Helvetica, sans-serif" font-size="48" font-weight="700">Tudo da lista, num só balaio.</text>
+  <path d="M890 446c70-82 155-82 218 0" fill="none" stroke="#2a9d8f" stroke-width="18" stroke-linecap="round"/>
+  <path d="M918 450h162l-18 86a34 34 0 0 1-33 27h-60a34 34 0 0 1-33-27l-18-86Z" fill="#f2b134"/>
+  <path d="M944 482h110M938 512h122M974 454l8 107M1024 454l-8 107" stroke="#18324d" stroke-width="10" opacity=".7"/>
+</svg>

@@ -1,187 +1,132 @@
 import type { ReactNode } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Instagram } from 'lucide-react';
+import { ArrowUpRight, BookOpenCheck } from 'lucide-react';
 
 import { env } from '../../src/config/env';
-import {
-  MODE_LABEL,
-  SHOWROOM_HOURS,
-  SHOWROOM_HOURS_SCHEMA,
-} from '../../src/lib/content/hours';
-import {
-  INSTAGRAM_HANDLE,
-  INSTAGRAM_URL,
-  SOCIAL_PROFILES,
-} from '../../src/lib/content/social';
 import type { NavigationLink } from '../../src/lib/navigation/types';
-import { getMainNavigation } from '../../src/lib/shopify/navigation';
-import { CartProvider } from '../components/cart/cart-provider';
-import { CartButton, MiniCart } from '../components/cart/mini-cart';
+import { getCartProducts } from '../../src/lib/catalog/repository';
 import { MobileNav } from '../components/mobile-nav';
-import { PredictiveSearch } from '../components/predictive-search';
 import { TrackEvent } from '../components/track-event';
-import { buttonStyles } from '../components/ui/button';
+import { CartButton } from '../components/shop/cart-button';
+import { CartCatalogProvider } from '../components/shop/cart-catalog';
+import { ToastViewport } from '../components/shop/toast';
+import { ButtonLink } from '../components/ui/button';
 import { Container } from '../components/ui/container';
 
-export default async function PublicLayout({
-  children,
-}: {
-  children: ReactNode;
-}) {
-  const navigation = await getMainNavigation();
-  const phoneHref = env.getPhoneHref();
+const NAVIGATION: NavigationLink[] = [
+  { id: 'materiais', label: 'Materiais', href: '/products', external: false, children: [] },
+  { id: 'etapas', label: 'Ano ou etapa', href: '/#etapas', external: false, children: [] },
+  { id: 'programa', label: 'Como funciona', href: '/programa', external: false, children: [] },
+];
 
-  // Identity for search engines: name, logo and storefront details. Google
-  // uses this (plus the favicon) to render the brand in results.
+export default async function PublicLayout({ children }: { children: ReactNode }) {
+  // O catálogo enxuto desce uma vez por navegação; o carrinho no cliente cruza
+  // com ele para saber preço, estoque e limite atuais.
+  const cartProducts = await getCartProducts();
+
   const organizationSchema = {
     '@context': 'https://schema.org',
-    '@type': 'FurnitureStore',
+    '@type': 'Store',
     '@id': `${env.siteUrl}/#store`,
-    name: '801 Outlet',
-    description:
-      'Furniture outlet in South Salt Lake — sofas, sectionals, recliners and more, with delivery across Utah.',
+    name: 'Balaio de Gato',
+    description: 'Papelaria credenciada para o Kit Escolar da Prefeitura de São Paulo.',
     url: env.siteUrl,
-    logo: `${env.siteUrl}/icon.png`,
-    image: `${env.siteUrl}/opengraph-image.png`,
-    telephone: env.phoneE164,
-    priceRange: '$$',
-    address: {
-      '@type': 'PostalAddress',
-      streetAddress: '2251 South 400 East',
-      addressLocality: 'South Salt Lake',
-      addressRegion: 'UT',
-      postalCode: '84115',
-      addressCountry: 'US',
-    },
-    openingHoursSpecification: SHOWROOM_HOURS_SCHEMA.map((entry) => ({
-      '@type': 'OpeningHoursSpecification',
-      ...entry,
-    })),
-    areaServed: ['Utah', 'Wyoming', 'Idaho', 'Nevada'],
-    sameAs: SOCIAL_PROFILES,
+    logo: `${env.siteUrl}/brand/balaio-mark.svg`,
+    priceRange: 'R$',
+    currenciesAccepted: 'BRL',
+    areaServed: { '@type': 'City', name: 'São Paulo' },
   };
 
   return (
-    <CartProvider>
+    <CartCatalogProvider products={cartProducts}>
       <div className="min-h-dvh">
         <script
           type="application/ld+json"
-          // Serialized server-side from constants above — no user input.
           dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
         />
-        <TrackEvent />
         <a
-          href="#main-content"
-          className="fixed left-4 top-3 z-[100] -translate-y-24 rounded-full bg-[rgb(var(--fg))] px-5 py-3 text-sm font-semibold text-white transition focus:translate-y-0"
+          href="#conteudo-principal"
+          className="fixed top-3 left-4 z-[100] -translate-y-24 rounded-full bg-[rgb(var(--fg))] px-5 py-3 text-sm font-bold text-white transition focus:translate-y-0"
         >
-          Skip to content
+          Ir para o conteúdo
         </a>
         <AnnouncementBar />
-        <SiteHeader navigation={navigation} phoneHref={phoneHref} />
-        <div id="main-content" tabIndex={-1}>
+        <SiteHeader />
+        <div id="conteudo-principal" tabIndex={-1}>
           {children}
         </div>
         <SiteFooter />
-        <MiniCart />
+        <ToastViewport />
+        <TrackEvent />
       </div>
-    </CartProvider>
+    </CartCatalogProvider>
   );
 }
 
 function AnnouncementBar() {
   return (
-    <div className="bg-[rgb(var(--sage-ink))] text-white">
-      <Container className="flex min-h-9 items-center justify-center py-2 text-center text-xs font-semibold tracking-wide">
-        Utah delivery available · Showroom open weekends for walk-ins
+    <div className="bg-[rgb(var(--fg))] text-white">
+      <Container className="flex min-h-10 items-center justify-center gap-2 py-2 text-center text-xs font-bold tracking-wide sm:text-sm">
+        <BookOpenCheck aria-hidden="true" className="size-4 shrink-0 text-[rgb(var(--sun))]" />
+        <span className="min-w-0 leading-4">
+          Loja credenciada para o Kit Escolar da Prefeitura de São Paulo
+        </span>
       </Container>
     </div>
   );
 }
 
-function SiteHeader({
-  navigation,
-  phoneHref,
-}: {
-  navigation: NavigationLink[];
-  phoneHref: string;
-}) {
+function SiteHeader() {
   return (
-    <header className="sticky top-0 z-50 border-b border-[rgb(var(--border))] bg-[rgb(var(--bg))]/95 backdrop-blur-xl">
-      <Container size="wide" className="flex min-h-20 items-center gap-4 py-3">
+    <header className="sticky top-0 z-50 border-b border-[rgb(var(--border))] bg-[rgb(var(--bg))]/94 backdrop-blur-xl">
+      <Container size="wide" className="flex min-h-20 items-center gap-5 py-3">
         <Link
           href="/"
           className="flex shrink-0 items-center gap-3 rounded-xl"
-          aria-label="801 Outlet home"
+          aria-label="Página inicial da Balaio de Gato"
         >
-          <span className="relative size-11 overflow-hidden rounded-xl border border-[rgb(var(--border))] bg-white">
+          <span className="relative size-11 overflow-hidden rounded-[14px] shadow-sm">
             <Image
-              src="/brand/icon-512x512.png"
+              src="/brand/balaio-mark.svg"
               alt=""
               fill
               sizes="44px"
-              className="object-contain p-1"
+              className="object-contain"
               priority
             />
           </span>
-          <span className="hidden leading-tight sm:block">
-            <span className="block text-sm font-bold tracking-tight">801 Outlet</span>
-            <span className="block text-[11px] text-[rgb(var(--muted))]">
-              Best Furniture Store
+          <span className="leading-tight">
+            <span className="font-display block text-lg font-extrabold tracking-tight">
+              Balaio de Gato
+            </span>
+            <span className="hidden text-[10px] font-bold tracking-[0.16em] text-[rgb(var(--muted))] uppercase sm:block">
+              Papelaria &amp; material escolar
             </span>
           </span>
         </Link>
 
-        <nav
-          className="ml-3 hidden items-center gap-1 lg:flex"
-          aria-label="Main navigation"
-        >
-          {navigation.map((link) => (
-            <NavigationItem key={link.id} link={link} />
+        <nav className="ml-3 hidden items-center gap-1 lg:flex" aria-label="Navegação principal">
+          {NAVIGATION.map((link) => (
+            <Link
+              key={link.id}
+              href={link.href}
+              className="inline-flex min-h-11 items-center rounded-full px-4 text-sm font-bold text-[rgb(var(--fg))] transition hover:bg-[rgb(var(--surface-muted))]"
+            >
+              {link.label}
+            </Link>
           ))}
         </nav>
 
-        {/* Everything from here sits flush right — the search is hidden on
-            small screens, so the auto margin has to live on the group. */}
-        <div className="ml-auto flex items-center gap-3 md:w-full md:max-w-xs md:flex-1 xl:max-w-sm">
-          <PredictiveSearch className="hidden w-full md:block" />
-
+        <div className="ml-auto flex items-center gap-1.5 sm:gap-3">
+          <ButtonLink href="/products" size="md" className="hidden sm:inline-flex">
+            Montar meu kit
+          </ButtonLink>
           <CartButton />
-
-          <a
-            href={phoneHref}
-            className={buttonStyles({
-              variant: 'sage',
-              size: 'md',
-              className: 'hidden shrink-0 xl:inline-flex',
-            })}
-          >
-            Call now
-          </a>
-
-          <MobileNav phoneHref={phoneHref} links={navigation} />
+          <MobileNav links={NAVIGATION} />
         </div>
       </Container>
     </header>
-  );
-}
-
-function NavigationItem({ link }: { link: NavigationLink }) {
-  const className =
-    'rounded-full px-3 py-2 text-sm font-semibold text-[rgb(var(--fg))] transition hover:bg-[rgb(var(--surface-muted))]';
-
-  if (link.external) {
-    return (
-      <a href={link.href} target="_blank" rel="noreferrer" className={className}>
-        {link.label}
-      </a>
-    );
-  }
-
-  return (
-    <Link href={link.href} className={className}>
-      {link.label}
-    </Link>
   );
 }
 
@@ -189,128 +134,78 @@ function SiteFooter() {
   return (
     <footer className="mt-20 border-t border-[rgb(var(--border))] bg-[rgb(var(--surface))]">
       <Container size="wide" className="py-14 md:py-16">
-        <div className="grid gap-10 lg:grid-cols-[1.4fr_1fr_1fr] lg:gap-16">
+        <div className="grid gap-10 lg:grid-cols-[1.5fr_0.8fr_1fr] lg:gap-16">
           <div>
             <div className="flex items-center gap-3">
-              <span className="relative size-12 overflow-hidden rounded-xl border border-[rgb(var(--border))] bg-white">
-                <Image
-                  src="/brand/icon-512x512.png"
-                  alt=""
-                  fill
-                  sizes="48px"
-                  className="object-contain p-1"
-                />
+              <span className="relative size-12 overflow-hidden rounded-2xl">
+                <Image src="/brand/balaio-mark.svg" alt="" fill sizes="48px" />
               </span>
               <div>
-                <p className="font-bold tracking-tight">801 Outlet</p>
-                <p className="text-xs text-[rgb(var(--muted))]">
-                  Best Furniture Store
+                <p className="font-display text-lg font-extrabold">Balaio de Gato</p>
+                <p className="text-xs font-semibold text-[rgb(var(--muted))]">
+                  Todos os materiais, num só balaio
                 </p>
               </div>
             </div>
-            <p className="mt-5 max-w-md text-sm leading-6 text-[rgb(var(--muted))]">
-              Quality furniture at outlet pricing, with delivery throughout Utah and
-              personal service from our South Salt Lake showroom.
+            <p className="mt-5 max-w-lg text-sm leading-6 text-[rgb(var(--muted))]">
+              Escolha os materiais da lista e pague com o crédito do Kit Escolar da Prefeitura de
+              São Paulo.
             </p>
-            <a
-              href={INSTAGRAM_URL}
-              target="_blank"
-              rel="noreferrer"
-              className="mt-5 inline-flex items-center gap-2 rounded-full border border-[rgb(var(--border-strong))] px-4 py-2 text-sm font-semibold transition hover:border-[rgb(var(--fg))]"
-            >
-              <Instagram aria-hidden="true" className="size-4" />
-              {INSTAGRAM_HANDLE}
-            </a>
           </div>
 
           <div>
-            <h2 className="text-sm font-bold">Explore</h2>
-            <ul className="mt-4 space-y-3 text-sm text-[rgb(var(--muted))]">
+            <h2 className="text-sm font-extrabold">Explore</h2>
+            <ul className="mt-2 text-sm font-semibold text-[rgb(var(--muted))]">
               <li>
-                <Link className="hover:text-[rgb(var(--fg))]" href="/products">
-                  Catalog
+                <Link className="inline-flex min-h-11 items-center transition hover:text-[rgb(var(--fg))]" href="/products">
+                  Materiais
                 </Link>
               </li>
               <li>
-                <Link className="hover:text-[rgb(var(--fg))]" href="/showroom">
-                  Showroom
+                <Link className="inline-flex min-h-11 items-center transition hover:text-[rgb(var(--fg))]" href="/#etapas">
+                  Ano ou etapa
                 </Link>
               </li>
               <li>
-                <Link className="hover:text-[rgb(var(--fg))]" href="/delivery">
-                  Delivery
-                </Link>
-              </li>
-              <li>
-                <Link className="hover:text-[rgb(var(--fg))]" href="/about">
-                  About us
-                </Link>
-              </li>
-              <li>
-                <Link className="hover:text-[rgb(var(--fg))]" href="/contact">
-                  Contact
+                <Link className="inline-flex min-h-11 items-center transition hover:text-[rgb(var(--fg))]" href="/programa">
+                  Como funciona
                 </Link>
               </li>
             </ul>
           </div>
 
-          <div className="rounded-3xl bg-[rgb(var(--sage-soft))] p-6">
-            <h2 className="text-sm font-bold text-[rgb(var(--sage-ink))]">
-              Visit our showroom
-            </h2>
-            <p className="mt-3 text-sm leading-6 text-[rgb(var(--sage-ink))]">
-              2251 South 400 East
-              <br />
-              South Salt Lake, UT 84115
+          <div className="rounded-3xl bg-[rgb(var(--sage-soft))] p-6 text-[rgb(var(--sage-ink))]">
+            <h2 className="text-sm font-extrabold">Informação oficial</h2>
+            <p className="mt-3 text-sm leading-6">
+              Consulte saldo, prazos e regras no site da Prefeitura de São Paulo.
             </p>
-            <div className="mt-3 text-sm leading-6 text-[rgb(var(--sage-ink))]">
-              {SHOWROOM_HOURS.map((entry) => (
-                <p key={entry.days}>
-                  {entry.days}: {entry.time} (
-                  {MODE_LABEL[entry.mode].toLowerCase()})
-                </p>
-              ))}
-            </div>
-            <div className="mt-4 space-y-2 text-sm font-semibold">
-              <a className="block hover:underline" href="tel:+18018546060">
-                Call or text: (801) 854-6060
-              </a>
-              <a
-                className="block hover:underline"
-                href={env.getSmsHref()}
-              >
-                Text us: (801) 854-6060
-              </a>
-              <a
-                className="block break-all hover:underline"
-                href="mailto:support@801outlet.com"
-              >
-                support@801outlet.com
-              </a>
-            </div>
+            <a
+              href="https://educacao.sme.prefeitura.sp.gov.br/kit-escolar/"
+              target="_blank"
+              rel="noreferrer"
+              className="mt-2 inline-flex min-h-11 items-center gap-1.5 text-sm font-extrabold underline decoration-current/30 underline-offset-4"
+            >
+              Ver informações oficiais
+              <ArrowUpRight aria-hidden="true" className="size-4" />
+            </a>
           </div>
         </div>
 
         <div className="mt-12 flex flex-col gap-5 border-t border-[rgb(var(--border))] pt-8 text-xs text-[rgb(var(--muted))] sm:flex-row sm:items-center sm:justify-between">
-          <p>© {new Date().getFullYear()} 801 Outlet. All rights reserved.</p>
-          <div className="flex flex-wrap gap-x-5 gap-y-2">
-            <Link className="hover:text-[rgb(var(--fg))]" href="/delivery">
-              Delivery
+          <p>© {new Date().getFullYear()} Balaio de Gato.</p>
+          <div className="flex flex-wrap items-center gap-x-5">
+            <Link className="inline-flex min-h-11 items-center transition hover:text-[rgb(var(--fg))]" href="/privacy">
+              Privacidade
             </Link>
-            <Link className="hover:text-[rgb(var(--fg))]" href="/pickup">
-              Pickup
-            </Link>
-            <Link className="hover:text-[rgb(var(--fg))]" href="/returns">
-              Returns
-            </Link>
-            <Link className="hover:text-[rgb(var(--fg))]" href="/privacy">
-              Privacy
-            </Link>
-            <Link className="hover:text-[rgb(var(--fg))]" href="/terms">
-              Terms
+            <Link className="inline-flex min-h-11 items-center transition hover:text-[rgb(var(--fg))]" href="/terms">
+              Termos
             </Link>
           </div>
         </div>
+        <p className="mt-5 max-w-4xl text-[11px] leading-5 text-[rgb(var(--muted))]">
+          Este é o site da loja Balaio de Gato. Saldo, cadastro e regras do Kit Escolar devem ser
+          consultados nos canais da Prefeitura de São Paulo.
+        </p>
       </Container>
     </footer>
   );

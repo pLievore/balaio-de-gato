@@ -53,8 +53,7 @@ const SHOPIFY_ADMIN_URL = 'https://admin.shopify.com/store/xwn9c1-m8';
 function bestMatch(pathname: string): string | null {
   let winner: string | null = null;
   for (const item of ALL_ITEMS) {
-    const matches =
-      pathname === item.href || pathname.startsWith(`${item.href}/`);
+    const matches = pathname === item.href || pathname.startsWith(`${item.href}/`);
     if (matches && (winner === null || item.href.length > winner.length)) {
       winner = item.href;
     }
@@ -80,13 +79,12 @@ export function AdminShell({
   }
 
   const activeHref = bestMatch(pathname);
-  const currentLabel =
-    ALL_ITEMS.find((item) => item.href === activeHref)?.label ?? 'Panel';
+  const currentLabel = ALL_ITEMS.find((item) => item.href === activeHref)?.label ?? 'Panel';
 
   const sidebarBody = (
     <>
       <Link href="/admin" className="flex items-center gap-3 px-5 py-6">
-        <span className="relative size-10 overflow-hidden rounded-xl bg-white/10 ring-1 ring-inset ring-white/15">
+        <span className="relative size-10 overflow-hidden rounded-xl bg-white/10 ring-1 ring-white/15 ring-inset">
           <Image
             src="/brand/icon-512x512.png"
             alt=""
@@ -96,20 +94,15 @@ export function AdminShell({
           />
         </span>
         <div className="leading-tight">
-          <p className="text-sm font-bold tracking-tight text-white">
-            801 Outlet
-          </p>
+          <p className="text-sm font-bold tracking-tight text-white">801 Outlet</p>
           <p className="text-[11px] text-white/50">Admin panel</p>
         </div>
       </Link>
 
-      <nav
-        className="flex-1 space-y-6 overflow-y-auto px-3 pb-4"
-        aria-label="Panel navigation"
-      >
+      <nav className="flex-1 space-y-6 overflow-y-auto px-3 pb-4" aria-label="Panel navigation">
         {NAV.map((group) => (
           <div key={group.title}>
-            <p className="px-3 pb-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-white/40">
+            <p className="px-3 pb-1.5 text-[10px] font-semibold tracking-[0.14em] text-white/40 uppercase">
               {group.title}
             </p>
             <div className="space-y-0.5">
@@ -129,15 +122,13 @@ export function AdminShell({
                     {active ? (
                       <motion.span
                         layoutId="panel-nav-active"
-                        className="absolute bottom-1.5 left-0 top-1.5 w-0.5 rounded-full bg-[#a9bd95]"
+                        className="absolute top-1.5 bottom-1.5 left-0 w-0.5 rounded-full bg-[#a9bd95]"
                       />
                     ) : null}
                     <item.icon
                       aria-hidden="true"
                       className={`size-[18px] shrink-0 transition ${
-                        active
-                          ? 'text-[#a9bd95]'
-                          : 'text-white/40 group-hover:text-white/80'
+                        active ? 'text-[#a9bd95]' : 'text-white/40 group-hover:text-white/80'
                       }`}
                     />
                     <span className="truncate">{item.label}</span>
@@ -149,7 +140,7 @@ export function AdminShell({
         ))}
 
         <div>
-          <p className="px-3 pb-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-white/40">
+          <p className="px-3 pb-1.5 text-[10px] font-semibold tracking-[0.14em] text-white/40 uppercase">
             Links
           </p>
           <div className="space-y-0.5">
@@ -184,13 +175,11 @@ export function AdminShell({
 
       <div className="border-t border-white/10 p-3">
         <div className="flex items-center gap-2.5 rounded-xl px-2 py-1.5">
-          <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-white/10 text-xs font-bold text-[#a9bd95] ring-1 ring-inset ring-white/15">
+          <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-white/10 text-xs font-bold text-[#a9bd95] ring-1 ring-white/15 ring-inset">
             OP
           </span>
           <div className="min-w-0 flex-1 leading-tight">
-            <p className="truncate text-xs font-semibold text-white">
-              Store operator
-            </p>
+            <p className="truncate text-xs font-semibold text-white">Store operator</p>
             <p className="text-[10px] text-white/45">Signed in</p>
           </div>
           <form action={signOut}>
@@ -235,7 +224,7 @@ export function AdminShell({
                 type="button"
                 onClick={() => setDrawer(false)}
                 aria-label="Close menu"
-                className="absolute right-3 top-4 flex size-8 items-center justify-center rounded-lg text-white/50 hover:bg-white/10 hover:text-white"
+                className="absolute top-4 right-3 flex size-8 items-center justify-center rounded-lg text-white/50 hover:bg-white/10 hover:text-white"
               >
                 <X aria-hidden="true" className="size-[18px]" />
               </button>
@@ -258,10 +247,7 @@ export function AdminShell({
             </button>
             <div className="flex items-center gap-1.5 text-sm">
               <span className="text-[rgb(var(--muted))]">Panel</span>
-              <ChevronRight
-                aria-hidden="true"
-                className="size-3.5 text-[rgb(var(--muted))]/60"
-              />
+              <ChevronRight aria-hidden="true" className="size-3.5 text-[rgb(var(--muted))]/60" />
               <span className="font-semibold">{currentLabel}</span>
             </div>
           </div>

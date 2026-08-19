@@ -16,10 +16,7 @@ export class ShopifyAdminError extends Error {
 export class AdminUserErrorsError extends Error {
   readonly userErrors: Array<{ field?: string[] | null; message: string }>;
 
-  constructor(
-    operation: string,
-    userErrors: Array<{ field?: string[] | null; message: string }>
-  ) {
+  constructor(operation: string, userErrors: Array<{ field?: string[] | null; message: string }>) {
     super(`${operation} returned user errors`);
     this.name = 'AdminUserErrorsError';
     this.userErrors = userErrors;
@@ -28,7 +25,7 @@ export class AdminUserErrorsError extends Error {
 
 export function assertNoUserErrors(
   operation: string,
-  userErrors: Array<{ field?: string[] | null; message: string }> | undefined
+  userErrors: Array<{ field?: string[] | null; message: string }> | undefined,
 ) {
   if (userErrors && userErrors.length > 0) {
     throw new AdminUserErrorsError(operation, userErrors);
@@ -37,7 +34,7 @@ export function assertNoUserErrors(
 
 export async function adminGraphql<TData>(
   query: string,
-  variables?: Record<string, unknown>
+  variables?: Record<string, unknown>,
 ): Promise<TData> {
   const token = process.env.SHOPIFY_ADMIN_ACCESS_TOKEN;
   if (!token) {
@@ -55,7 +52,7 @@ export async function adminGraphql<TData>(
       body: JSON.stringify({ query, variables }),
       cache: 'no-store',
       signal: AbortSignal.timeout(15_000),
-    }
+    },
   );
 
   if (!response.ok) {

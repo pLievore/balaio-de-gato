@@ -1,26 +1,30 @@
 @import "tailwindcss";
 
 @theme inline {
-  --font-sans: var(--font-geist-sans), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --font-display: var(--font-instrument-serif), Georgia, "Times New Roman", serif;
+  --font-sans: var(--font-nunito-sans), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-display: var(--font-bricolage-grotesque), var(--font-nunito-sans), system-ui, sans-serif;
 }
 
 :root {
   color-scheme: light;
 
-  /* Brand */
-  --bg: 250 248 243;        /* off-white/cream */
-  --fg: 12 22 31;           /* navy-ish */
-  --muted: 90 102 112;      /* slate */
+  /* Balaio de Gato — papel, tinta e materiais escolares. */
+  --bg: 248 246 239;
+  --fg: 24 50 77;
+  --muted: 84 95 105;
   --surface: 255 255 255;
-  --surface-muted: 244 244 239;
-  --border: 220 225 230;    /* soft border */
-  --border-strong: 134 144 140; /* >=3:1 on white and bg per WCAG 1.4.11 */
-  --accent: 168 79 27;      /* accessible outlet orange */
-  --accent-soft: 247 237 226;
-  --sage: 122 143 122;
-  --sage-ink: 62 82 64;
-  --sage-soft: 238 242 236;
+  --surface-muted: 242 240 232;
+  --border: 216 221 218;
+  --border-strong: 122 137 139;
+  --accent: 168 50 37;
+  --accent-soft: 252 235 230;
+  --sage: 42 157 143;
+  --sage-ink: 11 82 78;
+  --sage-soft: 226 246 242;
+  --coral: 232 93 74;
+  --sun: 242 177 52;
+  --sun-soft: 255 244 204;
+  --blue-soft: 229 239 249;
 
   /* Premium feel */
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
@@ -63,7 +67,7 @@ a:focus-visible {
   outline-offset: 3px;
 }
 
-/* Premium grid texture util */
+/* Paper-grid texture used as a quiet reference to notebooks. */
 .bg-grid {
   background-image:
     linear-gradient(to right, rgba(0, 0, 0, 0.04) 1px, transparent 1px),
@@ -71,14 +75,10 @@ a:focus-visible {
   background-size: 64px 64px;
 }
 
-/* Display utility for editorial headlines.
-   Instrument Serif ships in 400 only — disable faux-bold synthesis so heavier
-   weight classes (font-medium/semibold) fall back gracefully without distortion. */
+/* Expressive but highly legible brand type. */
 .font-display {
   font-family: var(--font-display);
-  font-weight: 400 !important;
-  font-synthesis: none;
-  letter-spacing: -0.015em;
+  letter-spacing: -0.035em;
 }
 
 /* Editorial number style — for prices, stats */

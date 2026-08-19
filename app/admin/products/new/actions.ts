@@ -12,14 +12,9 @@ import { AdminUserErrorsError } from '../../../../src/lib/shopify-admin/client';
 
 const MONEY_PATTERN = /^\d+(\.\d{1,2})?$/;
 const MAX_IMAGE_BYTES = 6 * 1024 * 1024;
-const ALLOWED_IMAGE_TYPES = new Set([
-  'image/jpeg',
-  'image/png',
-  'image/webp',
-]);
+const ALLOWED_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
 // Staged upload resource URLs always live on Shopify's storage.
-const RESOURCE_URL_PATTERN =
-  /^https:\/\/[a-z0-9.-]+\.(googleapis|shopifycloud)\.com\//;
+const RESOURCE_URL_PATTERN = /^https:\/\/[a-z0-9.-]+\.(googleapis|shopifycloud)\.com\//;
 
 function errorMessage(error: unknown): string {
   if (error instanceof AdminUserErrorsError) {
@@ -29,7 +24,7 @@ function errorMessage(error: unknown): string {
 }
 
 export async function uploadProductImageAction(
-  formData: FormData
+  formData: FormData,
 ): Promise<{ ok: boolean; error?: string; resourceUrl?: string }> {
   if (!(await hasValidPanelSession())) {
     return { ok: false, error: 'Session expired. Sign in again.' };
@@ -83,19 +78,13 @@ export async function createProductAction(input: {
   if (input.compareAtPrice !== '' && !MONEY_PATTERN.test(input.compareAtPrice)) {
     return { ok: false, error: 'Enter a valid compare-at price.' };
   }
-  if (
-    !Number.isInteger(input.quantity) ||
-    input.quantity < 0 ||
-    input.quantity > 100000
-  ) {
+  if (!Number.isInteger(input.quantity) || input.quantity < 0 || input.quantity > 100000) {
     return { ok: false, error: 'Enter a valid stock quantity.' };
   }
   if (input.imageResourceUrls.length > 12) {
     return { ok: false, error: 'Use at most 12 photos.' };
   }
-  if (
-    input.imageResourceUrls.some((url) => !RESOURCE_URL_PATTERN.test(url))
-  ) {
+  if (input.imageResourceUrls.some((url) => !RESOURCE_URL_PATTERN.test(url))) {
     return { ok: false, error: 'Invalid image reference.' };
   }
 

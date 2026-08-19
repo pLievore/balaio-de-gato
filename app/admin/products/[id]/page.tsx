@@ -8,11 +8,7 @@ import { ProductEditor } from './product-editor';
 export const metadata: Metadata = { title: 'Edit product — 801 Outlet Panel' };
 export const dynamic = 'force-dynamic';
 
-export default async function EditProductPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
+export default async function EditProductPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const product = await getPanelProductDetail(id);
   if (!product) notFound();

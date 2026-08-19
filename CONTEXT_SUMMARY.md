@@ -1,68 +1,69 @@
-# 801 Outlet - Contexto para ChatGPT
+# Resumo de contexto
 
-## Projeto
-Site institucional premium (tipo Apple) para loja de móveis 801 Outlet. Showcase de produtos que redireciona para Shopify. Entrega apenas em Utah, EUA.
+- **Produto:** ecommerce de materiais escolares Balaio de Gato.
+- **Operação:** uma empresa, um site e um estoque lógico; origem física não faz parte da experiência.
+- **Mercado:** Brasil, `pt-BR`, BRL.
+- **Diferencial inicial:** loja credenciada pela SME da Prefeitura de São Paulo para o Programa Material Escolar.
+- **Público prioritário:** responsáveis por estudantes da rede municipal com crédito do benefício, sem excluir compras comuns futuras.
+- **Frontend:** Next.js 16, React 19, TypeScript e Tailwind CSS 4.
+- **Persistência atual:** Neon PostgreSQL em `sa-east-1`, Drizzle ORM e `pg`;
+  `DATABASE_URL` pooled no runtime e conexão direta para migrations/seed.
+- **Arquitetura alvo:** storefront, APIs internas e painel `/admin` no mesmo app; PostgreSQL como sistema de registro. O painel novo ainda não foi migrado.
+- **Pagamento:** link DUEPAY assistido no MVP. O PDF de 2022 é manual operacional, não documentação de API.
+- **Regra de segurança:** código do cartão virtual e senha nunca entram no site da Balaio de Gato.
+- **Legado:** Shopify, Square, Supabase, móveis, USD, Utah, showroom e conteúdo da 801 Outlet saíram do storefront; ainda sustentam o painel `/admin`.
+- **Fonte canônica:** `C:\dev\Renei-ecommerce\docs`.
 
-## Stack
-- Next.js 16.1.3 (App Router)
-- React 19.2.3
-- TypeScript 5
-- Tailwind CSS 4
-- Framer Motion (instalado, não usado ainda)
+## Como o storefront está montado
 
-## Estrutura
-```
-app/
-├── page.tsx              # Homepage (hero + categorias)
-├── products/
-│   ├── page.tsx          # Lista com filtros
-│   └── [slug]/page.tsx   # Detalhe do produto
-├── layout.tsx            # Header + Footer
-└── components/
-    └── herovideo.tsx     # Client component com vídeo
+O caminho público é `/` → `/products` → `/products/[slug]` → `/cart` →
+`/checkout` → `/pedido/[codigo]`.
 
-src/
-├── config/env.ts         # Variáveis de ambiente centralizadas
-└── data/products.ts      # Array estático de 4 produtos
-```
+**Duas costuras isolam o armazenamento do resto do app.** Nenhuma página lê
+dados direto; ambas já usam PostgreSQL:
 
-## Funcionalidades Principais
-1. **Homepage:** Hero com vídeo + grid de 4 categorias
-2. **Lista de produtos:** Filtro por categoria, hover effect (troca imagem)
-3. **Detalhe:** Gallery, specs, CTAs (Call Now + Buy on Shopify)
-4. **Header:** Logo, nav, botão Shop, CTA Call Now
-5. **Footer:** Links (Privacy, Terms, Contact - sem páginas ainda)
+| Costura | Persistência atual | Consumidores |
+| --- | --- | --- |
+| `src/lib/catalog/repository.ts` | consultas Drizzle ao catálogo no PostgreSQL | catálogo, ficha, home, sitemap, carrinho |
+| `src/lib/orders/repository.ts` | transações Drizzle de pedido e estoque | envio e acompanhamento do pedido |
 
-## Dados de Produtos
-Tipo `Product` com: slug, title, category, price, compareAtPrice, images[], specs{}, inStock, fastDelivery, utahOnly, shopifyUrl.
+Não há fallback de runtime para `src/data/catalog.ts`. Esse arquivo é somente
+a fonte do seed provisório `development_seed`, que permanece `draft`, com
+vínculos não aprovados. Hoje o banco contém 6 categorias, 9 etapas, 47
+produtos/variantes/estoques e 266 vínculos item-etapa fictícios. Catálogo,
+preços, fotos, SKUs e estoque reais continuam pendentes.
 
-4 produtos cadastrados: Harlow Sectional, Milo Sofa, Atlas Recliner, Nova Bed Frame.
+**Módulos puros, com teste próprio:**
 
-## Variáveis de Ambiente
-- `NEXT_PUBLIC_SHOPIFY_STORE_URL` (padrão: https://801outlet.com)
-- `NEXT_PUBLIC_PHONE_E164` (padrão: +1 385 201 6328)
+- `src/lib/catalog/query.ts` — URL ↔ consulta e pontuação da busca;
+- `src/lib/cart/summary.ts` — total, saldo do benefício e o que bloqueia o pedido;
+- `src/lib/orders/cpf.ts` — CPF, CEP e telefone;
+- `src/lib/orders/order.ts` — código do pedido e montagem dos itens.
 
-Funções: `env.getShopifyUrl()` (com UTM) e `env.getPhoneHref()`.
+**Regras do programa que viraram código:**
 
-## Design System
-- Cores: off-white bg, navy fg, orange accent
-- Componentes: rounded-full buttons, rounded-2xl cards
-- Animações sutis (hover translate-y)
-- Responsivo: mobile-first
+- elegibilidade por etapa vive em `Product.stages`; item fora da etapa bloqueia
+  o envio (`cart/summary.ts`);
+- o crédito por etapa vem de `program/material-escolar.ts` e é exibido como
+  valor publicado pela SME, nunca como saldo do responsável;
+- passar do crédito **não** bloqueia o pedido — a loja resolve a diferença no
+  atendimento;
+- entrega é sempre `shippingInCents: 0`; o endereço recusa escola, DRE e
+  unidade da SME (`orders/schema.ts`);
+- nenhum campo de senha ou código de cartão existe em qualquer formulário.
 
-## Integrações
-- Shopify: links com UTM parameters
-- Telefone: links tel: formatados
+**O carrinho guarda só slug e quantidade.** Preço, estoque e limite vêm sempre
+do servidor, via `CartCatalogProvider` no layout público. O `submitOrder`
+recarrega tudo e recalcula o total antes de gravar — o cliente não define
+preço. O carrinho ainda vive no navegador; apenas o pedido é persistido.
 
-## Status
-- ✅ Next/Image implementado
-- ✅ Variáveis de ambiente centralizadas
-- ⚠️ Framer Motion instalado mas não usado
-- ⚠️ 5 páginas linkadas mas não criadas (delivery, about, privacy, terms, contact)
-- ⚠️ URLs Shopify em produtos ainda com placeholder
+**A criação do pedido é atômica e idempotente.** Uma transação com bloqueio
+consultivo valida catálogo/etapa/preço/estoque, grava snapshots, endereço e
+consentimento, reserva estoque, registra movimento, cria a tentativa
+`duepay_manual` e anexa eventos/auditoria. O CPF é cifrado e recebe índice cego
+para consulta; `ORDER_DATA_ENCRYPTION_KEY` é obrigatório em deploy. A duração
+inicial da reserva vem de `ORDER_RESERVATION_TTL_MINUTES`.
 
-## Regras de Negócio
-- Entrega: apenas Utah
-- Checkout: não no site, redireciona para Shopify
-- CTA primário: chamada telefônica
-- Design: animações sutis, respeitar prefers-reduced-motion
+**Ilustrações no lugar de fotos.** Cada produto aponta para um dos 22
+arquétipos vetoriais de `app/components/product-illustration.tsx`, coloridos a
+partir do slug. Saem quando as fotos reais chegarem.

@@ -43,7 +43,7 @@ export type OrderConfirmationPayload = {
 };
 
 export async function sendOrderConfirmation(
-  payload: OrderConfirmationPayload
+  payload: OrderConfirmationPayload,
 ): Promise<{ ok: true } | { ok: false; reason: string }> {
   const config = readConfig();
   if (!config) {
@@ -75,7 +75,8 @@ function renderOrderConfirmationText(p: OrderConfirmationPayload): string {
     '',
     'Items:',
     ...p.items.map(
-      (i) => `  • ${i.productName} (${i.sku}) × ${i.quantity} — ${formatUsdCents(i.lineTotalCents)}`
+      (i) =>
+        `  • ${i.productName} (${i.sku}) × ${i.quantity} — ${formatUsdCents(i.lineTotalCents)}`,
     ),
     '',
     `Subtotal: ${formatUsdCents(p.subtotalCents)}`,
@@ -100,7 +101,7 @@ function renderOrderConfirmationHtml(p: OrderConfirmationPayload): string {
           <td style="padding:12px 0;border-bottom:1px solid #e5e7eb;text-align:right;font-weight:600;">
             ${formatUsdCents(i.lineTotalCents)}
           </td>
-        </tr>`
+        </tr>`,
     )
     .join('');
 

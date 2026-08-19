@@ -46,13 +46,11 @@ export async function GET() {
         variant.compareAtPrice ?? '',
         variant.inventoryQuantity,
         product.description,
-        ...PRODUCT_ATTRIBUTES.map(
-          (attribute) => product.attributes[attribute.key] ?? ''
-        ),
+        ...PRODUCT_ATTRIBUTES.map((attribute) => product.attributes[attribute.key] ?? ''),
       ]
         .map(csvCell)
-        .join(',')
-    )
+        .join(','),
+    ),
   );
 
   // BOM so Excel opens the file as UTF-8 — without it, accented characters and

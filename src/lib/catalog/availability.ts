@@ -41,9 +41,7 @@ const AVAILABILITY: Record<AvailabilityState, Availability> = {
 
 function hasComingSoonTag(tags: string[] | undefined): boolean {
   if (!tags?.length) return false;
-  return tags.some(
-    (tag) => tag.trim().toLowerCase().replace(/[-_]/g, ' ') === COMING_SOON_TAG
-  );
+  return tags.some((tag) => tag.trim().toLowerCase().replace(/[-_]/g, ' ') === COMING_SOON_TAG);
 }
 
 /**

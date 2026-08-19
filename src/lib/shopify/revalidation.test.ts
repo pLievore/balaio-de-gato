@@ -21,14 +21,14 @@ test('accepts only supported topics and safe Shopify handles', () => {
       handle: 'navy-sofa',
       webhookId: 'delivery-1',
     }).success,
-    true
+    true,
   );
   assert.equal(
     shopifyRevalidationSignalSchema.safeParse({
       topic: 'orders/create',
       handle: '../unsafe',
     }).success,
-    false
+    false,
   );
 });
 
@@ -38,15 +38,12 @@ test('maps minimal signals to broad and handle-specific cache tags', () => {
       topic: 'products/update',
       handle: 'navy-sofa',
     }),
-    ['shopify', 'shopify:products', 'shopify:products:navy-sofa']
+    ['shopify', 'shopify:products', 'shopify:products:navy-sofa'],
   );
-  assert.deepEqual(
-    revalidationTagsFor({ topic: 'collections/update', handle: 'frontpage' }),
-    [
-      'shopify',
-      'shopify:collections',
-      'shopify:products',
-      'shopify:collections:frontpage',
-    ]
-  );
+  assert.deepEqual(revalidationTagsFor({ topic: 'collections/update', handle: 'frontpage' }), [
+    'shopify',
+    'shopify:collections',
+    'shopify:products',
+    'shopify:collections:frontpage',
+  ]);
 });

@@ -52,8 +52,7 @@ export function storeParts(instant: Date): StoreParts {
     hour12: false,
   }).formatToParts(instant);
 
-  const lookup = (type: string) =>
-    parts.find((part) => part.type === type)?.value ?? '';
+  const lookup = (type: string) => parts.find((part) => part.type === type)?.value ?? '';
 
   return {
     year: Number(lookup('year')),
@@ -89,9 +88,10 @@ export function getBookingDays(now: Date = new Date()): BookingDay[] {
       if (offset > 0) return true;
       return minutes >= minutesNow + MIN_LEAD_TIME_MINUTES;
     }).map((minutes) => ({
-      value: `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(
-        minutes % 60
-      ).padStart(2, '0')}`,
+      value: `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(
+        2,
+        '0',
+      )}`,
       label: formatAppointmentTime(minutes),
     }));
 
@@ -116,11 +116,7 @@ export function getBookingDays(now: Date = new Date()): BookingDay[] {
 }
 
 /** Server-side guard: the pair must exist in the freshly computed schedule. */
-export function isSlotAvailable(
-  date: string,
-  time: string,
-  now: Date = new Date()
-): boolean {
+export function isSlotAvailable(date: string, time: string, now: Date = new Date()): boolean {
   const day = getBookingDays(now).find((entry) => entry.date === date);
   return Boolean(day?.slots.some((slot) => slot.value === time));
 }

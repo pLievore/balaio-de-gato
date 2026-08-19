@@ -1,10 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import {
-  parseShopifyConfig,
-  ShopifyConfigurationError,
-} from './config-schema';
+import { parseShopifyConfig, ShopifyConfigurationError } from './config-schema';
 
 test('normalizes and accepts the pinned Shopify configuration', () => {
   const config = parseShopifyConfig({
@@ -34,6 +31,6 @@ test('reports invalid keys without including secret values', () => {
       assert.match(error.message, /SHOPIFY_STOREFRONT_API_VERSION/);
       assert.doesNotMatch(error.message, new RegExp(secret));
       return true;
-    }
+    },
   );
 });

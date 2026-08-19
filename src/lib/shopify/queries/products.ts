@@ -11,10 +11,7 @@ import type {
   SearchProductsQueryVariables,
 } from '../types/storefront.generated';
 import { shopifyStorefrontRequest } from '../client';
-import {
-  shopifyCacheTags,
-  shopifyProductCacheTag,
-} from '../constants';
+import { shopifyCacheTags, shopifyProductCacheTag } from '../constants';
 
 export const PRODUCTS_QUERY = `#graphql
   query Products(
@@ -350,20 +347,18 @@ export const RELATED_PRODUCTS_QUERY = `#graphql
   }
 ` as const;
 
-export async function getProducts(
-  variables: ProductsQueryVariables = { first: 20 }
-) {
-  const result = await shopifyStorefrontRequest<
-    ProductsQuery,
-    ProductsQueryVariables
-  >(PRODUCTS_QUERY, {
-    operationName: 'Products',
-    variables,
-    next: {
-      revalidate: 300,
-      tags: [shopifyCacheTags.all, shopifyCacheTags.products],
+export async function getProducts(variables: ProductsQueryVariables = { first: 20 }) {
+  const result = await shopifyStorefrontRequest<ProductsQuery, ProductsQueryVariables>(
+    PRODUCTS_QUERY,
+    {
+      operationName: 'Products',
+      variables,
+      next: {
+        revalidate: 300,
+        tags: [shopifyCacheTags.all, shopifyCacheTags.products],
+      },
     },
-  });
+  );
 
   return result.data.products;
 }
@@ -378,11 +373,7 @@ export async function getProductByHandle(handle: string) {
     variables,
     next: {
       revalidate: 300,
-      tags: [
-        shopifyCacheTags.all,
-        shopifyCacheTags.products,
-        shopifyProductCacheTag(handle),
-      ],
+      tags: [shopifyCacheTags.all, shopifyCacheTags.products, shopifyProductCacheTag(handle)],
     },
   });
 
@@ -403,24 +394,21 @@ export async function getRelatedProducts(productId: string, limit = 4) {
     },
   });
 
-  return (result.data.productRecommendations ?? []).slice(
-    0,
-    Math.max(0, limit)
-  );
+  return (result.data.productRecommendations ?? []).slice(0, Math.max(0, limit));
 }
 
 export async function searchProducts(variables: SearchProductsQueryVariables) {
-  const result = await shopifyStorefrontRequest<
-    SearchProductsQuery,
-    SearchProductsQueryVariables
-  >(SEARCH_PRODUCTS_QUERY, {
-    operationName: 'SearchProducts',
-    variables,
-    next: {
-      revalidate: 300,
-      tags: [shopifyCacheTags.all, shopifyCacheTags.products],
+  const result = await shopifyStorefrontRequest<SearchProductsQuery, SearchProductsQueryVariables>(
+    SEARCH_PRODUCTS_QUERY,
+    {
+      operationName: 'SearchProducts',
+      variables,
+      next: {
+        revalidate: 300,
+        tags: [shopifyCacheTags.all, shopifyCacheTags.products],
+      },
     },
-  });
+  );
 
   return result.data.search;
 }

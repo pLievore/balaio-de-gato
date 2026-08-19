@@ -15,8 +15,7 @@ import { AdminUserErrorsError } from '../../../../src/lib/shopify-admin/client';
 const PRODUCT_GID = /^gid:\/\/shopify\/Product\/\d+$/;
 const MEDIA_GID = /^gid:\/\/shopify\/MediaImage\/\d+$/;
 // Staged upload resource URLs always live on Shopify's storage.
-const RESOURCE_URL_PATTERN =
-  /^https:\/\/[a-z0-9.-]+\.(googleapis|shopifycloud)\.com\//;
+const RESOURCE_URL_PATTERN = /^https:\/\/[a-z0-9.-]+\.(googleapis|shopifycloud)\.com\//;
 
 type ActionResult = { ok: boolean; error?: string };
 

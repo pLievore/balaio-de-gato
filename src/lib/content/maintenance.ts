@@ -32,12 +32,7 @@ export const MAINTENANCE_BYPASS_COOKIE = 'maintenance_bypass';
  *   sync and Shopify does not disable the subscriptions after repeated 503s;
  * - the maintenance page itself, to avoid a rewrite loop.
  */
-const ALWAYS_ALLOWED_PREFIXES = [
-  '/admin',
-  '/api/webhooks',
-  '/api/internal',
-  MAINTENANCE_PATH,
-];
+const ALWAYS_ALLOWED_PREFIXES = ['/admin', '/api/webhooks', '/api/internal', MAINTENANCE_PATH];
 
 /**
  * Read at build time and inlined into the edge bundle, so flipping this in
@@ -50,7 +45,7 @@ export function isMaintenanceEnabled(): boolean {
 
 export function isPathAlwaysAllowed(pathname: string): boolean {
   return ALWAYS_ALLOWED_PREFIXES.some(
-    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
   );
 }
 

@@ -15,9 +15,7 @@ function secret(): string {
 }
 
 function sign(expiresAt: number): string {
-  return createHmac('sha256', secret())
-    .update(String(expiresAt))
-    .digest('base64url');
+  return createHmac('sha256', secret()).update(String(expiresAt)).digest('base64url');
 }
 
 function safeEqual(a: string, b: string): boolean {

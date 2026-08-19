@@ -14,14 +14,11 @@ import path from 'node:path';
 
 type Rgb = [number, number, number];
 
-const stylesheet = readFileSync(
-  path.join(process.cwd(), 'app', 'globals.css'),
-  'utf8'
-);
+const stylesheet = readFileSync(path.join(process.cwd(), 'app', 'globals.css'), 'utf8');
 
 function token(name: string): Rgb {
   const match = stylesheet.match(
-    new RegExp(`--${name}:\\s*(\\d{1,3})\\s+(\\d{1,3})\\s+(\\d{1,3})\\s*;`)
+    new RegExp(`--${name}:\\s*(\\d{1,3})\\s+(\\d{1,3})\\s+(\\d{1,3})\\s*;`),
   );
   assert.ok(match, `token --${name} not found in app/globals.css`);
   return [Number(match[1]), Number(match[2]), Number(match[3])];
@@ -30,17 +27,13 @@ function token(name: string): Rgb {
 function relativeLuminance([r, g, b]: Rgb): number {
   const channel = (value: number) => {
     const scaled = value / 255;
-    return scaled <= 0.04045
-      ? scaled / 12.92
-      : Math.pow((scaled + 0.055) / 1.055, 2.4);
+    return scaled <= 0.04045 ? scaled / 12.92 : Math.pow((scaled + 0.055) / 1.055, 2.4);
   };
   return 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b);
 }
 
 function contrastRatio(a: Rgb, b: Rgb): number {
-  const [lighter, darker] = [relativeLuminance(a), relativeLuminance(b)].sort(
-    (x, y) => y - x
-  );
+  const [lighter, darker] = [relativeLuminance(a), relativeLuminance(b)].sort((x, y) => y - x);
   return (lighter + 0.05) / (darker + 0.05);
 }
 
@@ -70,19 +63,13 @@ const nonTextPairs: Array<[string, Rgb, Rgb]> = [
 test('text token pairs meet WCAG 2.2 AA (4.5:1)', () => {
   for (const [name, foreground, background] of textPairs) {
     const ratio = contrastRatio(foreground, background);
-    assert.ok(
-      ratio >= 4.5,
-      `${name}: ${ratio.toFixed(2)}:1 is below the 4.5:1 AA minimum`
-    );
+    assert.ok(ratio >= 4.5, `${name}: ${ratio.toFixed(2)}:1 is below the 4.5:1 AA minimum`);
   }
 });
 
 test('non-text UI token pairs meet WCAG 2.2 (3:1)', () => {
   for (const [name, foreground, background] of nonTextPairs) {
     const ratio = contrastRatio(foreground, background);
-    assert.ok(
-      ratio >= 3,
-      `${name}: ${ratio.toFixed(2)}:1 is below the 3:1 non-text minimum`
-    );
+    assert.ok(ratio >= 3, `${name}: ${ratio.toFixed(2)}:1 is below the 3:1 non-text minimum`);
   }
 });

@@ -16,7 +16,7 @@ export async function resizeImage(file: File): Promise<File> {
     if (!context) return file;
     context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
     const blob = await new Promise<Blob | null>((resolve) =>
-      canvas.toBlob(resolve, 'image/jpeg', 0.85)
+      canvas.toBlob(resolve, 'image/jpeg', 0.85),
     );
     if (!blob) return file;
     return new File([blob], file.name.replace(/\.\w+$/, '') + '.jpg', {

@@ -7,7 +7,7 @@ test('derives the RFC 7636 S256 code challenge', () => {
   // Appendix B of RFC 7636.
   assert.equal(
     codeChallengeFromVerifier('dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk'),
-    'E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM'
+    'E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM',
   );
 });
 

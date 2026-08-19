@@ -23,10 +23,7 @@ export async function POST(request: Request) {
     console.error('[shopify-revalidation]', {
       event: 'configuration_error',
     });
-    return NextResponse.json(
-      { error: 'Revalidation is not configured.' },
-      { status: 503 }
-    );
+    return NextResponse.json({ error: 'Revalidation is not configured.' }, { status: 503 });
   }
 
   const providedSecret = bearerToken(request.headers.get('authorization'));
@@ -53,10 +50,7 @@ export async function POST(request: Request) {
 
   const parsed = shopifyRevalidationSignalSchema.safeParse(payload);
   if (!parsed.success) {
-    return NextResponse.json(
-      { error: 'Invalid revalidation signal.' },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: 'Invalid revalidation signal.' }, { status: 400 });
   }
 
   const tags = revalidationTagsFor(parsed.data);

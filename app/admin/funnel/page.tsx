@@ -27,23 +27,19 @@ function SetupNotice() {
   return (
     <Panel title="Event collection is not connected yet">
       <div className="flex gap-3">
-        <Info
-          aria-hidden="true"
-          className="mt-0.5 size-5 shrink-0 text-[rgb(var(--sage-ink))]"
-        />
+        <Info aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-[rgb(var(--sage-ink))]" />
         <div className="text-sm leading-6 text-[rgb(var(--muted))]">
           <p>
-            The storefront is already sending funnel events, but they need a
-            place to be counted. In the Vercel dashboard open{' '}
+            The storefront is already sending funnel events, but they need a place to be counted. In
+            the Vercel dashboard open{' '}
             <span className="font-semibold text-[rgb(var(--fg))]">
               Storage → Create Database → Upstash for Redis
             </span>
-            , connect it to this project and redeploy. Nothing else is needed —
-            the panel picks the credentials up automatically.
+            , connect it to this project and redeploy. Nothing else is needed — the panel picks the
+            credentials up automatically.
           </p>
           <p className="mt-3">
-            Only daily totals are stored: no cookies, no visitor identifiers, no
-            personal data.
+            Only daily totals are stored: no cookies, no visitor identifiers, no personal data.
           </p>
         </div>
       </div>
@@ -51,13 +47,7 @@ function SetupNotice() {
   );
 }
 
-function BreakdownList({
-  entries,
-  emptyText,
-}: {
-  entries: BreakdownEntry[];
-  emptyText: string;
-}) {
+function BreakdownList({ entries, emptyText }: { entries: BreakdownEntry[]; emptyText: string }) {
   if (entries.length === 0) {
     return <p className="text-sm text-[rgb(var(--muted))]">{emptyText}</p>;
   }
@@ -95,12 +85,8 @@ export default async function FunnelPage({
   const [rows, summary, sources, locations] = await Promise.all([
     configured ? getFunnelCounts(days) : Promise.resolve([]),
     getSalesSummary(days === 7 ? 7 : 30),
-    configured
-      ? getFunnelBreakdown(days, 'src')
-      : Promise.resolve([] as BreakdownEntry[]),
-    configured
-      ? getFunnelBreakdown(days, 'geo')
-      : Promise.resolve([] as BreakdownEntry[]),
+    configured ? getFunnelBreakdown(days, 'src') : Promise.resolve([] as BreakdownEntry[]),
+    configured ? getFunnelBreakdown(days, 'geo') : Promise.resolve([] as BreakdownEntry[]),
   ]);
 
   const totals = FUNNEL_STEPS.reduce(
@@ -108,7 +94,7 @@ export default async function FunnelPage({
       accumulator[step] = rows.reduce((sum, row) => sum + row.counts[step], 0);
       return accumulator;
     },
-    {} as Record<FunnelStep, number>
+    {} as Record<FunnelStep, number>,
   );
 
   // Orders come from Shopify, which is the authoritative source for purchases.
@@ -160,8 +146,7 @@ export default async function FunnelPage({
               {formatPercent(overallRate)} visit → order
             </span>
             <p className="text-xs text-white/50">
-              {summary.orderCount} order{summary.orderCount === 1 ? '' : 's'} in
-              the period
+              {summary.orderCount} order{summary.orderCount === 1 ? '' : 's'} in the period
             </p>
           </>
         }
@@ -179,9 +164,7 @@ export default async function FunnelPage({
               value: row.counts.session,
               hint: `${formatShortDay(row.date)} — ${row.counts.session} visit${row.counts.session === 1 ? '' : 's'}`,
             }))}
-            maxLabel={String(
-              Math.max(...rows.map((row) => row.counts.session))
-            )}
+            maxLabel={String(Math.max(...rows.map((row) => row.counts.session)))}
             tone="dark"
             height={140}
           />
@@ -220,16 +203,13 @@ export default async function FunnelPage({
           <ol className="space-y-3">
             {stages.map((stage, index) => {
               const previous = index === 0 ? null : stages[index - 1].value;
-              const stepRate =
-                previous && previous > 0 ? stage.value / previous : null;
+              const stepRate = previous && previous > 0 ? stage.value / previous : null;
               const width = top > 0 ? Math.max((stage.value / top) * 100, 2) : 0;
 
               return (
                 <li key={stage.key}>
                   <div className="flex items-baseline justify-between gap-3 text-sm">
-                    <span className="font-semibold">
-                      {FUNNEL_STEP_LABEL[stage.key]}
-                    </span>
+                    <span className="font-semibold">{FUNNEL_STEP_LABEL[stage.key]}</span>
                     <span className="tabular-nums">
                       <span className="font-bold">{stage.value}</span>
                       {stepRate === null ? null : (
@@ -257,9 +237,7 @@ export default async function FunnelPage({
           <BreakdownList
             entries={sources.map((entry) => ({
               ...entry,
-              label:
-                TRAFFIC_SOURCE_LABEL[entry.label as TrafficSource] ??
-                entry.label,
+              label: TRAFFIC_SOURCE_LABEL[entry.label as TrafficSource] ?? entry.label,
             }))}
             emptyText="No visits recorded in this period yet."
           />
@@ -274,14 +252,12 @@ export default async function FunnelPage({
 
       <Panel title="By day">
         {rows.length === 0 ? (
-          <p className="text-sm text-[rgb(var(--muted))]">
-            Nothing recorded yet.
-          </p>
+          <p className="text-sm text-[rgb(var(--muted))]">Nothing recorded yet.</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[520px] text-sm">
               <thead>
-                <tr className="text-left text-xs uppercase tracking-wide text-[rgb(var(--muted))]">
+                <tr className="text-left text-xs tracking-wide text-[rgb(var(--muted))] uppercase">
                   <th className="py-2 pr-4 font-semibold">Day</th>
                   {FUNNEL_STEPS.map((step) => (
                     <th key={step} className="py-2 pr-4 font-semibold">
@@ -295,10 +271,7 @@ export default async function FunnelPage({
                   <tr key={row.date}>
                     <td className="py-2 pr-4 font-medium">{row.date}</td>
                     {FUNNEL_STEPS.map((step) => (
-                      <td
-                        key={step}
-                        className="py-2 pr-4 tabular-nums text-[rgb(var(--muted))]"
-                      >
+                      <td key={step} className="py-2 pr-4 text-[rgb(var(--muted))] tabular-nums">
                         {row.counts[step]}
                       </td>
                     ))}
@@ -312,8 +285,8 @@ export default async function FunnelPage({
 
       <p className="flex items-center gap-2 text-xs text-[rgb(var(--muted))]">
         <Filter aria-hidden="true" className="size-3.5" />
-        Visits count one per browser session. Orders come from Shopify, so the
-        last stage stays accurate even if a visitor finishes the purchase later.
+        Visits count one per browser session. Orders come from Shopify, so the last stage stays
+        accurate even if a visitor finishes the purchase later.
       </p>
     </div>
   );

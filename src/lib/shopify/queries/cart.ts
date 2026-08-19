@@ -188,43 +188,37 @@ export class CartUserErrorsError extends Error {
   }
 }
 
-function assertNoUserErrors(
-  operation: string,
-  userErrors: CartUserError[] | undefined
-) {
+function assertNoUserErrors(operation: string, userErrors: CartUserError[] | undefined) {
   if (userErrors && userErrors.length > 0) {
     throw new CartUserErrorsError(operation, userErrors);
   }
 }
 
 export async function fetchCart(cartId: string, buyerIp?: string) {
-  const result = await shopifyStorefrontRequest<CartQuery, CartQueryVariables>(
-    CART_QUERY,
-    {
-      operationName: 'Cart',
-      variables: { cartId },
-      cache: 'no-store',
-      buyerIp,
-    }
-  );
+  const result = await shopifyStorefrontRequest<CartQuery, CartQueryVariables>(CART_QUERY, {
+    operationName: 'Cart',
+    variables: { cartId },
+    cache: 'no-store',
+    buyerIp,
+  });
 
   return result.data.cart ?? null;
 }
 
 export async function createCart(
   lines: Array<{ merchandiseId: string; quantity: number }>,
-  buyerIp?: string
+  buyerIp?: string,
 ) {
-  const result = await shopifyStorefrontRequest<
-    CartCreateMutation,
-    CartCreateMutationVariables
-  >(CART_CREATE_MUTATION, {
-    operationName: 'CartCreate',
-    variables: { lines },
-    cache: 'no-store',
-    retries: 0,
-    buyerIp,
-  });
+  const result = await shopifyStorefrontRequest<CartCreateMutation, CartCreateMutationVariables>(
+    CART_CREATE_MUTATION,
+    {
+      operationName: 'CartCreate',
+      variables: { lines },
+      cache: 'no-store',
+      retries: 0,
+      buyerIp,
+    },
+  );
 
   assertNoUserErrors('cartCreate', result.data.cartCreate?.userErrors);
   return result.data.cartCreate?.cart ?? null;
@@ -233,7 +227,7 @@ export async function createCart(
 export async function addCartLines(
   cartId: string,
   lines: Array<{ merchandiseId: string; quantity: number }>,
-  buyerIp?: string
+  buyerIp?: string,
 ) {
   const result = await shopifyStorefrontRequest<
     CartAddLinesMutation,
@@ -253,7 +247,7 @@ export async function addCartLines(
 export async function updateCartLines(
   cartId: string,
   lines: Array<{ id: string; quantity: number }>,
-  buyerIp?: string
+  buyerIp?: string,
 ) {
   const result = await shopifyStorefrontRequest<
     CartUpdateLinesMutation,
@@ -273,7 +267,7 @@ export async function updateCartLines(
 export async function updateCartBuyerIdentity(
   cartId: string,
   customerAccessToken: string,
-  buyerIp?: string
+  buyerIp?: string,
 ) {
   const result = await shopifyStorefrontRequest<
     CartBuyerIdentityUpdateMutation,
@@ -286,18 +280,11 @@ export async function updateCartBuyerIdentity(
     buyerIp,
   });
 
-  assertNoUserErrors(
-    'cartBuyerIdentityUpdate',
-    result.data.cartBuyerIdentityUpdate?.userErrors
-  );
+  assertNoUserErrors('cartBuyerIdentityUpdate', result.data.cartBuyerIdentityUpdate?.userErrors);
   return result.data.cartBuyerIdentityUpdate?.cart ?? null;
 }
 
-export async function removeCartLines(
-  cartId: string,
-  lineIds: string[],
-  buyerIp?: string
-) {
+export async function removeCartLines(cartId: string, lineIds: string[], buyerIp?: string) {
   const result = await shopifyStorefrontRequest<
     CartRemoveLinesMutation,
     CartRemoveLinesMutationVariables

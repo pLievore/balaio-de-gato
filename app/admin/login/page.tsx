@@ -23,7 +23,7 @@ function LoginForm() {
             className="object-contain p-1.5"
           />
         </span>
-        <h1 className="mt-5 font-display text-3xl tracking-tight">
+        <h1 className="font-display mt-5 text-3xl tracking-tight">
           Team <span className="italic">panel</span>
         </h1>
         <p className="mt-2 text-sm text-[rgb(var(--muted))]">
@@ -33,10 +33,7 @@ function LoginForm() {
         <form action={formAction} className="mt-6 space-y-4 text-left">
           <input type="hidden" name="next" value={next} />
           <div>
-            <label
-              htmlFor="password"
-              className="mb-2 block text-xs font-semibold"
-            >
+            <label htmlFor="password" className="mb-2 block text-xs font-semibold">
               Password
             </label>
             <input
@@ -45,7 +42,7 @@ function LoginForm() {
               type="password"
               required
               autoComplete="current-password"
-              className="min-h-11 w-full rounded-xl border border-[rgb(var(--border-strong))] bg-white px-4 text-sm outline-none transition focus:border-[rgb(var(--accent))] focus:ring-2 focus:ring-[rgb(var(--accent))]/15"
+              className="min-h-11 w-full rounded-xl border border-[rgb(var(--border-strong))] bg-white px-4 text-sm transition outline-none focus:border-[rgb(var(--accent))] focus:ring-2 focus:ring-[rgb(var(--accent))]/15"
             />
           </div>
           {state.error ? (

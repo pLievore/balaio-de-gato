@@ -16,7 +16,7 @@ export function Container({
         size === 'narrow' && 'max-w-3xl',
         size === 'default' && 'max-w-6xl',
         size === 'wide' && 'max-w-7xl',
-        className
+        className,
       )}
       {...props}
     />

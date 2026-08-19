@@ -1,16 +1,13 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import {
-  normalizeGraphQLErrors,
-  ShopifyStorefrontError,
-} from './errors';
+import { normalizeGraphQLErrors, ShopifyStorefrontError } from './errors';
 
 test('normalizes GraphQL messages and unknown error shapes', () => {
-  assert.deepEqual(
-    normalizeGraphQLErrors([{ message: 'Invalid query' }, { unexpected: true }]),
-    ['Invalid query', 'Unknown Shopify GraphQL error']
-  );
+  assert.deepEqual(normalizeGraphQLErrors([{ message: 'Invalid query' }, { unexpected: true }]), [
+    'Invalid query',
+    'Unknown Shopify GraphQL error',
+  ]);
 });
 
 test('serializes only operationally safe error details', () => {

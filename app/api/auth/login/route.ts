@@ -39,6 +39,6 @@ export async function GET(request: NextRequest) {
       state,
       nonce,
       codeChallenge: codeChallengeFromVerifier(codeVerifier),
-    })
+    }),
   );
 }

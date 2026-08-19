@@ -25,28 +25,17 @@ function cookieOptions(maxAgeSeconds: number) {
 
 export async function persistCustomerSession(tokens: CustomerTokens) {
   const cookieStore = await cookies();
-  const accessMaxAge = Math.max(
-    60,
-    Math.floor((tokens.expiresAt - Date.now()) / 1000)
-  );
+  const accessMaxAge = Math.max(60, Math.floor((tokens.expiresAt - Date.now()) / 1000));
 
   cookieStore.set(ACCESS_COOKIE, tokens.accessToken, cookieOptions(accessMaxAge));
-  cookieStore.set(
-    EXPIRES_COOKIE,
-    String(tokens.expiresAt),
-    cookieOptions(accessMaxAge)
-  );
+  cookieStore.set(EXPIRES_COOKIE, String(tokens.expiresAt), cookieOptions(accessMaxAge));
   cookieStore.set(
     REFRESH_COOKIE,
     tokens.refreshToken,
-    cookieOptions(REFRESH_TOKEN_MAX_AGE_SECONDS)
+    cookieOptions(REFRESH_TOKEN_MAX_AGE_SECONDS),
   );
   if (tokens.idToken) {
-    cookieStore.set(
-      ID_TOKEN_COOKIE,
-      tokens.idToken,
-      cookieOptions(REFRESH_TOKEN_MAX_AGE_SECONDS)
-    );
+    cookieStore.set(ID_TOKEN_COOKIE, tokens.idToken, cookieOptions(REFRESH_TOKEN_MAX_AGE_SECONDS));
   }
 }
 
@@ -68,16 +57,15 @@ export async function getCustomerIdToken(): Promise<string | null> {
  * happens where cookies are writable (server actions / route handlers) —
  * pass `allowRefresh: false` from server components.
  */
-export async function getCustomerAccessToken(
-  { allowRefresh = true }: { allowRefresh?: boolean } = {}
-): Promise<string | null> {
+export async function getCustomerAccessToken({
+  allowRefresh = true,
+}: { allowRefresh?: boolean } = {}): Promise<string | null> {
   const cookieStore = await cookies();
   const accessToken = cookieStore.get(ACCESS_COOKIE)?.value;
   const expiresAt = Number(cookieStore.get(EXPIRES_COOKIE)?.value ?? 0);
   const refreshToken = cookieStore.get(REFRESH_COOKIE)?.value;
 
-  const stillValid =
-    Boolean(accessToken) && Date.now() < expiresAt - REFRESH_SKEW_MS;
+  const stillValid = Boolean(accessToken) && Date.now() < expiresAt - REFRESH_SKEW_MS;
   if (stillValid) return accessToken ?? null;
 
   if (!refreshToken || !allowRefresh) return null;

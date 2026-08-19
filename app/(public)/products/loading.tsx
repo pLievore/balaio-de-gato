@@ -1,33 +1,52 @@
+import { ProductGridSkeleton, SkeletonBlock } from '../../components/shop/skeletons';
+import { Container } from '../../components/ui/container';
+
 export default function ProductsLoading() {
   return (
-    <main>
-      <section className="mx-auto max-w-6xl px-5 pb-14 pt-10">
-        <p className="text-xs font-semibold tracking-[0.22em] text-[rgb(var(--muted))]">
-          801 OUTLET · UTAH
-        </p>
-        <h1 className="mt-3 font-display text-4xl font-medium tracking-tight md:text-6xl">
-          Browse furniture
-        </h1>
-        <div className="mt-8 h-32 animate-pulse rounded-2xl bg-neutral-200" />
-        <div
-          aria-busy="true"
-          aria-live="polite"
-          className="mt-10 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3"
-        >
-          {Array.from({ length: 6 }).map((_, index) => (
-            <div
-              key={index}
-              className="animate-pulse rounded-2xl border border-[rgb(var(--border))] bg-white p-4"
-            >
-              <div className="aspect-4/3 rounded-xl bg-neutral-200" />
-              <div className="mt-4 h-4 w-2/3 rounded bg-neutral-200" />
-              <div className="mt-2 h-3 w-full rounded bg-neutral-100" />
-              <div className="mt-3 h-5 w-16 rounded-full bg-neutral-100" />
-            </div>
-          ))}
-        </div>
-        <span className="sr-only">Loading products…</span>
+    <main aria-busy="true">
+      <section className="border-b border-[rgb(var(--border))] bg-white/55">
+        <Container size="wide" className="py-10 md:py-14">
+          <p className="text-xs font-extrabold tracking-[0.18em] text-[rgb(var(--accent))] uppercase">
+            Catálogo
+          </p>
+          <h1 className="font-display mt-3 max-w-3xl text-4xl leading-[1.05] font-extrabold md:text-5xl">
+            Tudo da lista, num só balaio.
+          </h1>
+          <SkeletonBlock className="mt-4 h-4 w-full max-w-lg" />
+          <SkeletonBlock className="mt-7 h-12 w-full max-w-2xl rounded-full" />
+        </Container>
       </section>
+
+      <Container size="wide" className="py-8 md:py-12">
+        <div className="grid gap-10 lg:grid-cols-[260px_1fr] lg:gap-12">
+          <div className="hidden space-y-8 lg:block">
+            {[6, 4, 2, 9].map((rows, group) => (
+              <div key={group}>
+                <SkeletonBlock className="h-3 w-24" />
+                <div className="mt-4 space-y-2">
+                  {Array.from({ length: rows }, (_, index) => (
+                    <SkeletonBlock key={index} className="h-9 w-full" />
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="min-w-0">
+            <div className="flex items-center justify-between gap-3 border-b border-[rgb(var(--border))] pb-5">
+              <SkeletonBlock className="h-4 w-28" />
+              <SkeletonBlock className="h-10 w-40 rounded-full" />
+            </div>
+            <div className="pt-11">
+              <ProductGridSkeleton />
+            </div>
+          </div>
+        </div>
+      </Container>
+
+      <p className="sr-only" aria-live="polite">
+        Carregando os materiais escolares…
+      </p>
     </main>
   );
 }

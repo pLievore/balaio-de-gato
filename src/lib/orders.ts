@@ -106,7 +106,7 @@ export type CreatePendingOrderResult =
  * confirms payment via the mark_order_paid SQL function.
  */
 export async function createPendingOrder(
-  input: CreatePendingOrderInput
+  input: CreatePendingOrderInput,
 ): Promise<CreatePendingOrderResult> {
   if (input.lines.length === 0) {
     return { ok: false, reason: 'empty_cart' };
@@ -183,7 +183,8 @@ export async function createPendingOrder(
       tax_cents: taxCents,
       shipping_cents: shippingCents,
       total_cents: totalCents,
-      shipping_address: input.shippingAddress as unknown as import('./supabase/database.types').Json,
+      shipping_address:
+        input.shippingAddress as unknown as import('./supabase/database.types').Json,
       billing_address: input.shippingAddress as unknown as import('./supabase/database.types').Json,
       notes: input.customer.fullName,
     })
@@ -209,9 +210,7 @@ export async function createPendingOrder(
     line_total_cents: l.lineTotalCents,
   }));
 
-  const { error: itemsErr } = await supabaseAdmin
-    .from('order_items')
-    .insert(itemsPayload);
+  const { error: itemsErr } = await supabaseAdmin.from('order_items').insert(itemsPayload);
 
   if (itemsErr) {
     // Clean up the orphan order
@@ -270,7 +269,7 @@ export async function getOrderForConfirmation(orderId: string): Promise<{
     .from('orders')
     .select(
       `id, order_number, email, status, subtotal_cents, tax_cents, shipping_cents, total_cents, notes,
-       order_items ( product_name, sku, quantity, line_total_cents )`
+       order_items ( product_name, sku, quantity, line_total_cents )`,
     )
     .eq('id', orderId)
     .maybeSingle();

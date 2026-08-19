@@ -27,7 +27,7 @@ test('builds only supported Shopify product filters', () => {
       minPrice: 500,
       maxPrice: 1800,
     }),
-    'available_for_sale:true AND variants.price:>=500.00 AND variants.price:<=1800.00'
+    'available_for_sale:true AND variants.price:>=500.00 AND variants.price:<=1800.00',
   );
   assert.equal(buildProductQuery({ availability: 'all' }), undefined);
   assert.deepEqual(normalizePriceRange(1800, 500), {

@@ -20,12 +20,7 @@ export const addressSchema = z.object({
 export const customerInputSchema = z.object({
   email: z.string().trim().email('Enter a valid email'),
   fullName: z.string().trim().min(2, 'Name is required').max(120),
-  phone: z
-    .string()
-    .trim()
-    .max(30)
-    .optional()
-    .or(z.literal('')),
+  phone: z.string().trim().max(30).optional().or(z.literal('')),
 });
 
 export const checkoutInputSchema = z.object({

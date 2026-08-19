@@ -55,9 +55,7 @@ function toImportRows(csv: string[][]): { rows?: ImportRow[]; error?: string } {
 
   // Excel writes a UTF-8 BOM into the first header cell; strip it or the
   // first column never matches.
-  const header = csv[0].map((cell) =>
-    cell.replace(/^﻿/, '').trim().toLowerCase()
-  );
+  const header = csv[0].map((cell) => cell.replace(/^﻿/, '').trim().toLowerCase());
   const columnOf = (name: string) => header.indexOf(name);
 
   const variantIndex = columnOf('variant_id');
@@ -194,10 +192,8 @@ export function ImportManager() {
           className="sr-only"
           onChange={(event) => onFile(event.target.files?.[0])}
         />
-        <span className="font-semibold text-[rgb(var(--fg))]">
-          Choose a CSV file
-        </span>{' '}
-        or drop it here
+        <span className="font-semibold text-[rgb(var(--fg))]">Choose a CSV file</span> or drop it
+        here
       </label>
 
       {pending ? <p className="text-sm text-[rgb(var(--muted))]">Working…</p> : null}
@@ -224,14 +220,14 @@ export function ImportManager() {
         <div className="rounded-3xl border border-[rgb(var(--border))] bg-white p-5">
           <h2 className="text-sm font-bold">Review before applying</h2>
           <p className="mt-1 text-xs text-[rgb(var(--muted))]">
-            {created.length} new · {updated.length} updated · {unchanged}{' '}
-            unchanged · {invalid.length} invalid
+            {created.length} new · {updated.length} updated · {unchanged} unchanged ·{' '}
+            {invalid.length} invalid
           </p>
 
           {created.length > 0 ? (
             <p className="mt-3 rounded-xl bg-[rgb(var(--sage-soft))] px-4 py-2.5 text-xs text-[rgb(var(--sage-ink))]">
-              New products are created as <strong>drafts</strong>. Add their
-              photos and publish them from the products list when they are ready.
+              New products are created as <strong>drafts</strong>. Add their photos and publish them
+              from the products list when they are ready.
             </p>
           ) : null}
 
@@ -251,15 +247,13 @@ export function ImportManager() {
                 <li key={row.key} className="py-2.5">
                   <p className="font-semibold">
                     {row.action === 'create' ? (
-                      <span className="mr-2 rounded-full bg-[rgb(var(--sage-ink))] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
+                      <span className="mr-2 rounded-full bg-[rgb(var(--sage-ink))] px-2 py-0.5 text-[10px] font-bold tracking-wide text-white uppercase">
                         New
                       </span>
                     ) : null}
                     {row.label}
                   </p>
-                  <p className="text-xs text-[rgb(var(--muted))]">
-                    {row.changes.join(' · ')}
-                  </p>
+                  <p className="text-xs text-[rgb(var(--muted))]">{row.changes.join(' · ')}</p>
                 </li>
               ))}
             </ul>
@@ -278,10 +272,12 @@ export function ImportManager() {
               changed.length > 0 && invalid.length === 0
                 ? 'bg-[rgb(var(--fg))] text-white hover:bg-[rgb(var(--fg))]/90'
                 : 'border border-[rgb(var(--border))] text-[rgb(var(--muted))]',
-              pending && 'opacity-60'
+              pending && 'opacity-60',
             )}
           >
-            {pending ? 'Applying…' : `Apply ${changed.length} ${changed.length === 1 ? 'change' : 'changes'}`}
+            {pending
+              ? 'Applying…'
+              : `Apply ${changed.length} ${changed.length === 1 ? 'change' : 'changes'}`}
           </button>
         </div>
       ) : null}

@@ -15,7 +15,7 @@ export function Section({
         spacing === 'sm' && 'py-10 md:py-12',
         spacing === 'md' && 'py-14 md:py-18',
         spacing === 'lg' && 'py-18 md:py-24',
-        className
+        className,
       )}
       {...props}
     />

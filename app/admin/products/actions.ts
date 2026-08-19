@@ -2,9 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 
-import {
-  PRODUCT_ATTRIBUTES,
-} from '../../../src/lib/catalog/attributes';
+import { PRODUCT_ATTRIBUTES } from '../../../src/lib/catalog/attributes';
 import { hasValidPanelSession } from '../../../src/lib/panel/session';
 import {
   createPanelProduct,
@@ -92,9 +90,8 @@ export async function saveProductAction(input: {
         pricing.map((variant) => ({
           id: variant.id,
           price: variant.price,
-          compareAtPrice:
-            variant.compareAtPrice === '' ? null : variant.compareAtPrice,
-        }))
+          compareAtPrice: variant.compareAtPrice === '' ? null : variant.compareAtPrice,
+        })),
       );
     }
     if (stock.length > 0) {
@@ -102,7 +99,7 @@ export async function saveProductAction(input: {
         stock.map((variant) => ({
           inventoryItemId: variant.inventoryItemId,
           quantity: variant.quantity,
-        }))
+        })),
       );
     }
 
@@ -159,10 +156,7 @@ function buildIndex(products: PanelProduct[]) {
  * the export; `sku` is the key the spreadsheet can carry on its own. A row with
  * neither — or with an sku the store has never seen — describes a new product.
  */
-function resolveRow(
-  row: ImportRow,
-  index: ReturnType<typeof buildIndex>
-): Match | null {
+function resolveRow(row: ImportRow, index: ReturnType<typeof buildIndex>): Match | null {
   if (row.variantId) return index.byVariant.get(row.variantId) ?? null;
 
   const sku = row.sku?.trim().toLowerCase();
@@ -173,7 +167,7 @@ function resolveRow(
 
 function attributeChanges(
   current: ProductAttributes,
-  incoming: ProductAttributes | undefined
+  incoming: ProductAttributes | undefined,
 ): string[] {
   if (!incoming) return [];
   const changes: string[] = [];
@@ -195,7 +189,7 @@ function validateNewRow(
   title: string,
   index: ReturnType<typeof buildIndex>,
   seenTitles: Set<string>,
-  seenSkus: Set<string>
+  seenSkus: Set<string>,
 ): string | null {
   if (row.variantId) return 'variant_id not found in the store.';
   if (!title) return 'New rows need a product_title.';
@@ -233,7 +227,7 @@ function validateNewRow(
 }
 
 export async function previewImportAction(
-  rows: ImportRow[]
+  rows: ImportRow[],
 ): Promise<{ ok: boolean; error?: string; preview?: ImportPreviewRow[] }> {
   if (!(await guard())) return { ok: false, error: 'Session expired. Sign in again.' };
   if (rows.length === 0 || rows.length > 500) {
@@ -267,7 +261,7 @@ export async function previewImportAction(
       const changes = [`create as draft at ${row.price}`];
       if (row.quantity !== undefined) changes.push(`stock ${row.quantity}`);
       const filled = PRODUCT_ATTRIBUTES.filter(
-        (spec) => (row.attributes?.[spec.key] ?? '').trim() !== ''
+        (spec) => (row.attributes?.[spec.key] ?? '').trim() !== '',
       );
       if (filled.length > 0) changes.push(filled.map((spec) => spec.key).join(', '));
 
@@ -277,9 +271,7 @@ export async function previewImportAction(
     const { product, variant } = match;
     const key = variant.id;
     const label =
-      variant.title === 'Default Title'
-        ? product.title
-        : `${product.title} / ${variant.title}`;
+      variant.title === 'Default Title' ? product.title : `${product.title} / ${variant.title}`;
     const changes: string[] = [];
 
     if (row.price !== undefined && row.price !== variant.price) {
@@ -300,9 +292,7 @@ export async function previewImportAction(
           error: 'Invalid compare-at price.',
         };
       }
-      changes.push(
-        `compare-at ${currentCompare || 'none'} to ${row.compareAtPrice || 'none'}`
-      );
+      changes.push(`compare-at ${currentCompare || 'none'} to ${row.compareAtPrice || 'none'}`);
     }
     if (row.quantity !== undefined && row.quantity !== variant.inventoryQuantity) {
       if (!Number.isInteger(row.quantity) || row.quantity < 0 || row.quantity > 100000) {
@@ -331,7 +321,7 @@ export async function previewImportAction(
 }
 
 export async function applyImportAction(
-  rows: ImportRow[]
+  rows: ImportRow[],
 ): Promise<{ ok: boolean; error?: string; applied?: number }> {
   if (!(await guard())) return { ok: false, error: 'Session expired. Sign in again.' };
 
@@ -380,8 +370,7 @@ export async function applyImportAction(
 
     const priceChanged = row.price !== undefined && row.price !== variant.price;
     const compareChanged =
-      row.compareAtPrice !== undefined &&
-      row.compareAtPrice !== (variant.compareAtPrice ?? '');
+      row.compareAtPrice !== undefined && row.compareAtPrice !== (variant.compareAtPrice ?? '');
     if (priceChanged || compareChanged) {
       const list = pricingByProduct.get(product.id) ?? [];
       list.push({
@@ -413,8 +402,7 @@ export async function applyImportAction(
       detailUpdates.push({
         productId: product.id,
         title: nextTitle || product.title,
-        description:
-          row.description === undefined ? product.description : row.description,
+        description: row.description === undefined ? product.description : row.description,
       });
       applied += 1;
     }
@@ -454,8 +442,7 @@ export async function applyImportAction(
         descriptionHtml: textToDescriptionHtml(row.description ?? ''),
         status: 'DRAFT',
         price: row.price ?? '0',
-        compareAtPrice:
-          row.compareAtPrice && row.compareAtPrice !== '' ? row.compareAtPrice : null,
+        compareAtPrice: row.compareAtPrice && row.compareAtPrice !== '' ? row.compareAtPrice : null,
         sku: row.sku?.trim() || null,
         quantity: row.quantity ?? 0,
         imageResourceUrls: [],

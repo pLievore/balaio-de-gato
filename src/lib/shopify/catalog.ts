@@ -1,9 +1,6 @@
 import 'server-only';
 
-import type {
-  CatalogAvailability,
-  CatalogSort,
-} from '../catalog/filters';
+import type { CatalogAvailability, CatalogSort } from '../catalog/filters';
 import { buildProductQuery } from '../catalog/filters';
 import type { CatalogProductCard } from '../catalog/types';
 import { adaptProductCard, type SearchProduct } from './adapters/products';
@@ -101,7 +98,7 @@ function searchFilters(input: ShopifyCatalogInput) {
 }
 
 export async function getShopifyCatalogPage(
-  input: ShopifyCatalogInput
+  input: ShopifyCatalogInput,
 ): Promise<ShopifyCatalogPage> {
   const pagination = paginationVariables(input);
 
@@ -113,7 +110,7 @@ export async function getShopifyCatalogPage(
       productFilters: searchFilters(input),
     });
     const products = result.nodes.filter(
-      (node): node is SearchProduct => node.__typename === 'Product'
+      (node): node is SearchProduct => node.__typename === 'Product',
     );
 
     return {

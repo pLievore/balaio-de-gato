@@ -39,8 +39,7 @@ export function ProductEditor({ product }: { product: PanelProductDetail }) {
   const [savingDetails, startDetails] = useTransition();
   const [mutatingMedia, startMedia] = useTransition();
 
-  const detailsDirty =
-    title !== product.title || description !== product.descriptionText;
+  const detailsDirty = title !== product.title || description !== product.descriptionText;
 
   const saveDetails = () => {
     setDetailsFeedback(null);
@@ -51,9 +50,7 @@ export function ProductEditor({ product }: { product: PanelProductDetail }) {
         description,
       });
       setDetailsFeedback(
-        result.ok
-          ? { ok: true, text: 'Saved.' }
-          : { ok: false, text: result.error ?? 'Failed.' }
+        result.ok ? { ok: true, text: 'Saved.' } : { ok: false, text: result.error ?? 'Failed.' },
       );
       if (result.ok) router.refresh();
     });
@@ -86,9 +83,7 @@ export function ProductEditor({ product }: { product: PanelProductDetail }) {
     startMedia(async () => {
       const result = await removeMediaAction({ productId: product.id, mediaId });
       if (result.ok) {
-        setMediaOrder((current) =>
-          current.filter((media) => media.id !== mediaId)
-        );
+        setMediaOrder((current) => current.filter((media) => media.id !== mediaId));
         router.refresh();
       } else {
         setMediaFeedback({ ok: false, text: result.error ?? 'Failed.' });
@@ -183,7 +178,7 @@ export function ProductEditor({ product }: { product: PanelProductDetail }) {
               detailsDirty
                 ? 'bg-[rgb(var(--fg))] text-white hover:bg-[rgb(var(--fg))]/90'
                 : 'border border-[rgb(var(--border))] text-[rgb(var(--muted))]',
-              savingDetails && 'opacity-60'
+              savingDetails && 'opacity-60',
             )}
           >
             {savingDetails ? 'Saving…' : 'Save details'}
@@ -218,9 +213,7 @@ export function ProductEditor({ product }: { product: PanelProductDetail }) {
             role="status"
             className={cn(
               'mt-3 text-xs font-semibold',
-              detailsFeedback.ok
-                ? 'text-[rgb(var(--sage-ink))]'
-                : 'text-[rgb(var(--accent))]'
+              detailsFeedback.ok ? 'text-[rgb(var(--sage-ink))]' : 'text-[rgb(var(--accent))]',
             )}
           >
             {detailsFeedback.text}
@@ -286,7 +279,7 @@ export function ProductEditor({ product }: { product: PanelProductDetail }) {
                     </div>
                   )}
                   {index === 0 ? (
-                    <span className="absolute left-2 top-2 rounded-full bg-[rgb(var(--fg))]/85 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white">
+                    <span className="absolute top-2 left-2 rounded-full bg-[rgb(var(--fg))]/85 px-2.5 py-1 text-[10px] font-bold tracking-wide text-white uppercase">
                       Cover
                     </span>
                   ) : null}
@@ -332,9 +325,7 @@ export function ProductEditor({ product }: { product: PanelProductDetail }) {
             role="status"
             className={cn(
               'mt-3 text-xs font-semibold',
-              mediaFeedback.ok
-                ? 'text-[rgb(var(--sage-ink))]'
-                : 'text-[rgb(var(--accent))]'
+              mediaFeedback.ok ? 'text-[rgb(var(--sage-ink))]' : 'text-[rgb(var(--accent))]',
             )}
           >
             {mediaFeedback.text}
@@ -348,8 +339,8 @@ export function ProductEditor({ product }: { product: PanelProductDetail }) {
           <div>
             <h2 className="text-sm font-bold">Facebook Marketplace</h2>
             <p className="mt-0.5 max-w-md text-xs leading-5 text-[rgb(var(--muted))]">
-              Copies a ready-to-paste listing — title, price, description and
-              the product link. Save the photos above straight from this page.
+              Copies a ready-to-paste listing — title, price, description and the product link. Save
+              the photos above straight from this page.
             </p>
           </div>
           <button

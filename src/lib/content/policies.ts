@@ -29,9 +29,9 @@ export const PICKUP_POLICY = {
   holdDays: 14,
 } as const;
 
-/** "August 18, 2026" — the format every policy page uses. */
+/** "18 de agosto de 2026" — formato usado nas páginas institucionais. */
 export function formatPolicyDate(date: Date = POLICY_LAST_UPDATED): string {
-  return date.toLocaleDateString('en-US', {
+  return date.toLocaleDateString('pt-BR', {
     year: 'numeric',
     month: 'long',
     day: 'numeric',

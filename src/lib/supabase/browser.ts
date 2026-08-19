@@ -10,9 +10,7 @@ import type { Database } from './database.types';
 const cookieStorage = {
   getItem(key: string): string | null {
     if (typeof document === 'undefined') return null;
-    const match = document.cookie
-      .split('; ')
-      .find((row) => row.startsWith(key + '='));
+    const match = document.cookie.split('; ').find((row) => row.startsWith(key + '='));
     return match ? decodeURIComponent(match.split('=').slice(1).join('=')) : null;
   },
   setItem(key: string, value: string): void {

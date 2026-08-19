@@ -14,11 +14,7 @@
 
 export const ATTRIBUTE_NAMESPACE = 'custom';
 
-export type ProductAttributeKey =
-  | 'dimensions'
-  | 'color'
-  | 'material'
-  | 'features';
+export type ProductAttributeKey = 'dimensions' | 'color' | 'material' | 'features';
 
 export type ProductAttributeSpec = {
   key: ProductAttributeKey;
@@ -37,8 +33,7 @@ export const PRODUCT_ATTRIBUTES: ProductAttributeSpec[] = [
     key: 'dimensions',
     label: 'Dimensions',
     type: 'single_line_text_field',
-    description:
-      'Overall size as the customer should read it, e.g. 88"W x 36"D x 34"H.',
+    description: 'Overall size as the customer should read it, e.g. 88"W x 36"D x 34"H.',
     example: '88"W x 36"D x 34"H',
   },
   {
@@ -59,8 +54,7 @@ export const PRODUCT_ATTRIBUTES: ProductAttributeSpec[] = [
     key: 'features',
     label: 'Features',
     type: 'multi_line_text_field',
-    description:
-      'One feature per line: reversible chaise, hidden storage, and so on.',
+    description: 'One feature per line: reversible chaise, hidden storage, and so on.',
     example: 'Reversible chaise\nHidden storage',
   },
 ];

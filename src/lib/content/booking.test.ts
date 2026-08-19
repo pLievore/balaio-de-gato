@@ -1,12 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import {
-  formatSlotForHumans,
-  getBookingDays,
-  isSlotAvailable,
-  storeParts,
-} from './booking';
+import { formatSlotForHumans, getBookingDays, isSlotAvailable, storeParts } from './booking';
 
 // 2026-07-20 is a Monday. 18:00Z = 12:00 in Denver (MDT, UTC-6).
 const MONDAY_NOON = new Date('2026-07-20T18:00:00Z');
@@ -67,10 +62,10 @@ test('slot validation mirrors the offered schedule', () => {
 test('formats the slot without shifting the calendar day', () => {
   assert.equal(
     formatSlotForHumans('2026-07-21', '14:00'),
-    'Tuesday, July 21 at 2:00 PM (Mountain Time)'
+    'Tuesday, July 21 at 2:00 PM (Mountain Time)',
   );
   assert.equal(
     formatSlotForHumans('2026-07-21', '14:30'),
-    'Tuesday, July 21 at 2:30 PM (Mountain Time)'
+    'Tuesday, July 21 at 2:30 PM (Mountain Time)',
   );
 });

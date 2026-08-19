@@ -1,91 +1,104 @@
 'use client';
 
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
-import type { AddToCartResult, CartItem } from './types';
+import { createJSONStorage, persist } from 'zustand/middleware';
+
+import type { AddToCartResult, CartLine } from './types';
 
 type CartState = {
-  items: CartItem[];
+  lines: CartLine[];
+  /** Etapa de ensino escolhida pelo responsável; define o crédito e o filtro. */
+  stage: string | null;
   hydrated: boolean;
-  addItem: (
-    item: Omit<CartItem, 'quantity'>,
-    qty: number,
-    stockQty: number
-  ) => AddToCartResult;
-  updateQuantity: (variantId: string, qty: number) => void;
-  removeItem: (variantId: string) => void;
+
+  /**
+   * `limit` é o menor entre estoque e teto por pedido, resolvido por quem
+   * chama a partir do produto atual do servidor. O store não conhece produto:
+   * ele só garante que a quantidade guardada nunca ultrapasse o permitido.
+   */
+  addLine: (slug: string, quantity: number, limit: number) => AddToCartResult;
+  setQuantity: (slug: string, quantity: number, limit: number) => void;
+  removeLine: (slug: string) => void;
+  setStage: (stage: string | null) => void;
   clear: () => void;
 };
 
 export const useCartStore = create<CartState>()(
   persist(
     (set, get) => ({
-      items: [],
+      lines: [],
+      stage: null,
       hydrated: false,
 
-      addItem: (item, qty, stockQty) => {
-        if (qty < 1) return { ok: false, reason: 'Quantity must be at least 1' };
-        const items = get().items;
-        const existing = items.find((i) => i.variantId === item.variantId);
-        const newQty = (existing?.quantity ?? 0) + qty;
-        if (newQty > stockQty) {
-          return { ok: false, reason: `Only ${stockQty} in stock` };
+      addLine: (slug, quantity, limit) => {
+        if (quantity < 1) return { ok: false, reason: 'Escolha ao menos uma unidade.' };
+        if (limit < 1) return { ok: false, reason: 'Este item está sem estoque.' };
+
+        const { lines } = get();
+        const existing = lines.find((line) => line.slug === slug);
+        const wanted = (existing?.quantity ?? 0) + quantity;
+        const next = Math.min(wanted, limit);
+
+        if (existing && next === existing.quantity) {
+          return {
+            ok: false,
+            reason: `Você já tem o máximo permitido deste item no carrinho (${limit}).`,
+          };
         }
-        if (existing) {
-          set({
-            items: items.map((i) =>
-              i.variantId === item.variantId ? { ...i, quantity: newQty } : i
-            ),
-          });
-        } else {
-          set({ items: [...items, { ...item, quantity: qty }] });
-        }
-        return { ok: true };
+
+        set({
+          lines: existing
+            ? lines.map((line) => (line.slug === slug ? { ...line, quantity: next } : line))
+            : [...lines, { slug, quantity: next }],
+        });
+
+        return { ok: true, quantity: next };
       },
 
-      updateQuantity: (variantId, qty) => {
-        if (qty < 1) {
-          get().removeItem(variantId);
+      setQuantity: (slug, quantity, limit) => {
+        if (quantity < 1) {
+          get().removeLine(slug);
           return;
         }
+        const next = Math.min(quantity, limit);
         set({
-          items: get().items.map((i) =>
-            i.variantId === variantId ? { ...i, quantity: qty } : i
+          lines: get().lines.map((line) =>
+            line.slug === slug ? { ...line, quantity: next } : line,
           ),
         });
       },
 
-      removeItem: (variantId) => {
-        set({ items: get().items.filter((i) => i.variantId !== variantId) });
+      removeLine: (slug) => {
+        set({ lines: get().lines.filter((line) => line.slug !== slug) });
       },
 
-      clear: () => {
-        set({ items: [] });
-      },
+      setStage: (stage) => set({ stage }),
+
+      clear: () => set({ lines: [] }),
     }),
     {
-      name: 'cart-v1',
+      // O nome traz a versão: mudar o formato do carrinho invalida o antigo em
+      // vez de tentar migrar um estado que o visitante nem lembra que existe.
+      name: 'balaio-carrinho-v1',
       storage: createJSONStorage(() => localStorage),
+      partialize: (state) => ({ lines: state.lines, stage: state.stage }),
       onRehydrateStorage: () => (state) => {
         if (state) state.hydrated = true;
       },
-      partialize: (state) => ({ items: state.items }),
-    }
-  )
+    },
+  ),
 );
 
-export const selectItemCount = (s: CartState): number =>
-  s.items.reduce((n, i) => n + i.quantity, 0);
-
-export const selectSubtotalCents = (s: CartState): number =>
-  s.items.reduce((c, i) => c + i.unitPriceCents * i.quantity, 0);
+export const selectItemCount = (state: CartState): number =>
+  state.lines.reduce((count, line) => count + line.quantity, 0);
 
 /**
- * Hook that returns the cart item count, but only after hydration.
- * Before hydration, returns null (header should hide the badge).
+ * Contagem só depois da hidratação. Antes disso devolve `null`, e o cabeçalho
+ * esconde o selo — renderizar zero no servidor e outro número no cliente causa
+ * um salto visível a cada carregamento.
  */
 export function useHydratedItemCount(): number | null {
-  const hydrated = useCartStore((s) => s.hydrated);
+  const hydrated = useCartStore((state) => state.hydrated);
   const count = useCartStore(selectItemCount);
   return hydrated ? count : null;
 }

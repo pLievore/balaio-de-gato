@@ -1,19 +1,7 @@
-export type Json =
-  | string
-  | number
-  | boolean
-  | null
-  | { [key: string]: Json | undefined }
-  | Json[];
+export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
 export type ProductStatus = 'draft' | 'active' | 'archived';
-export type OrderStatus =
-  | 'pending'
-  | 'paid'
-  | 'shipped'
-  | 'delivered'
-  | 'cancelled'
-  | 'refunded';
+export type OrderStatus = 'pending' | 'paid' | 'shipped' | 'delivered' | 'cancelled' | 'refunded';
 export type AddressType = 'shipping' | 'billing';
 export type AdminRole = 'admin' | 'viewer';
 export type InventoryReason =

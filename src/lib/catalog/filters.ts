@@ -1,26 +1,16 @@
-export type CatalogSort =
-  | 'featured'
-  | 'newest'
-  | 'price_asc'
-  | 'price_desc';
+export type CatalogSort = 'featured' | 'newest' | 'price_asc' | 'price_desc';
 
 export type CatalogAvailability = 'all' | 'available';
 
 export function parseCatalogSort(value: string | undefined): CatalogSort {
-  if (
-    value === 'newest' ||
-    value === 'price_asc' ||
-    value === 'price_desc'
-  ) {
+  if (value === 'newest' || value === 'price_asc' || value === 'price_desc') {
     return value;
   }
 
   return 'featured';
 }
 
-export function parseCatalogAvailability(
-  value: string | undefined
-): CatalogAvailability {
+export function parseCatalogAvailability(value: string | undefined): CatalogAvailability {
   return value === 'available' ? 'available' : 'all';
 }
 
@@ -71,11 +61,7 @@ export function buildProductQuery(filters: {
 }
 
 export function normalizePriceRange(minPrice?: number, maxPrice?: number) {
-  if (
-    minPrice !== undefined &&
-    maxPrice !== undefined &&
-    minPrice > maxPrice
-  ) {
+  if (minPrice !== undefined && maxPrice !== undefined && minPrice > maxPrice) {
     return { minPrice: maxPrice, maxPrice: minPrice };
   }
 

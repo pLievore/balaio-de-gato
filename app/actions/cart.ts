@@ -22,8 +22,7 @@ const VARIANT_GID_PATTERN = /^gid:\/\/shopify\/ProductVariant\/\d+$/;
 const LINE_GID_PATTERN = /^gid:\/\/shopify\/CartLine\/[\w-]+(\?cart=[\w-]+)?$/;
 const CART_GID_PATTERN = /^gid:\/\/shopify\/Cart\/[\w-]+(\?key=[\w-]+)?$/;
 
-const GENERIC_ERROR =
-  'We could not update your cart right now. Please try again.';
+const GENERIC_ERROR = 'We could not update your cart right now. Please try again.';
 
 async function getBuyerIp(): Promise<string | undefined> {
   const headerList = await headers();
@@ -53,17 +52,13 @@ function clampQuantity(quantity: number): number {
   return Math.min(99, Math.max(1, Math.trunc(quantity)));
 }
 
-function toResult(
-  cart: Awaited<ReturnType<typeof fetchCart>>
-): CartActionResult {
+function toResult(cart: Awaited<ReturnType<typeof fetchCart>>): CartActionResult {
   return { cart: cart ? adaptCart(cart) : null };
 }
 
 function toErrorResult(error: unknown): CartActionResult {
   if (error instanceof CartUserErrorsError) {
-    const messages = error.userErrors
-      .map((userError) => userError.message)
-      .filter(Boolean);
+    const messages = error.userErrors.map((userError) => userError.message).filter(Boolean);
     return { cart: null, errors: messages.length > 0 ? messages : [GENERIC_ERROR] };
   }
 
@@ -84,7 +79,7 @@ export async function getCartAction(): Promise<CartActionResult> {
 
 export async function addCartLineAction(
   variantId: string,
-  quantity: number
+  quantity: number,
 ): Promise<CartActionResult> {
   if (!VARIANT_GID_PATTERN.test(variantId)) {
     return { cart: null, errors: [GENERIC_ERROR] };
@@ -123,7 +118,7 @@ export async function addCartLineAction(
 
 export async function updateCartLineAction(
   lineId: string,
-  quantity: number
+  quantity: number,
 ): Promise<CartActionResult> {
   const cartId = await readCartId();
   if (!cartId || !LINE_GID_PATTERN.test(lineId)) {
@@ -137,11 +132,7 @@ export async function updateCartLineAction(
     const cart =
       quantity <= 0
         ? await removeCartLines(cartId, [lineId], buyerIp)
-        : await updateCartLines(
-            cartId,
-            [{ id: lineId, quantity: normalized }],
-            buyerIp
-          );
+        : await updateCartLines(cartId, [{ id: lineId, quantity: normalized }], buyerIp);
 
     return toResult(cart);
   } catch (error) {
@@ -149,18 +140,14 @@ export async function updateCartLineAction(
   }
 }
 
-export async function removeCartLineAction(
-  lineId: string
-): Promise<CartActionResult> {
+export async function removeCartLineAction(lineId: string): Promise<CartActionResult> {
   const cartId = await readCartId();
   if (!cartId || !LINE_GID_PATTERN.test(lineId)) {
     return { cart: null, errors: [GENERIC_ERROR] };
   }
 
   try {
-    return toResult(
-      await removeCartLines(cartId, [lineId], await getBuyerIp())
-    );
+    return toResult(await removeCartLines(cartId, [lineId], await getBuyerIp()));
   } catch (error) {
     return toErrorResult(error);
   }

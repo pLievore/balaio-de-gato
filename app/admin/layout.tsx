@@ -12,11 +12,7 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default async function AdminLayout({
-  children,
-}: {
-  children: ReactNode;
-}) {
+export default async function AdminLayout({ children }: { children: ReactNode }) {
   const headerList = await headers();
   const pathname = headerList.get('x-pathname') ?? '';
   const isLogin = pathname === '/admin/login';

@@ -64,24 +64,17 @@ export default async function AdminOverviewPage() {
   const [summary, products, funnelRows, sources] = await Promise.all([
     getSalesSummary(30),
     listPanelProducts(),
-    funnelConfigured
-      ? getFunnelCounts(30)
-      : Promise.resolve([] as FunnelDailyRow[]),
-    funnelConfigured
-      ? getFunnelBreakdown(30, 'src', 5)
-      : Promise.resolve([] as BreakdownEntry[]),
+    funnelConfigured ? getFunnelCounts(30) : Promise.resolve([] as FunnelDailyRow[]),
+    funnelConfigured ? getFunnelBreakdown(30, 'src', 5) : Promise.resolve([] as BreakdownEntry[]),
   ]);
   const catalog = computeCatalogStats(products);
 
   const funnelTotals = FUNNEL_STEPS.reduce(
     (accumulator, step) => {
-      accumulator[step] = funnelRows.reduce(
-        (sum, row) => sum + row.counts[step],
-        0
-      );
+      accumulator[step] = funnelRows.reduce((sum, row) => sum + row.counts[step], 0);
       return accumulator;
     },
-    {} as Record<FunnelStep, number>
+    {} as Record<FunnelStep, number>,
   );
   const funnelStages: Array<{ key: FunnelStep | 'purchase'; value: number }> = [
     ...FUNNEL_STEPS.map((step) => ({ key: step, value: funnelTotals[step] })),
@@ -121,9 +114,7 @@ export default async function AdminOverviewPage() {
         }
       >
         {summary.totalRevenue === 0 ? (
-          <p className="text-sm text-white/60">
-            No sales recorded in the last 30 days.
-          </p>
+          <p className="text-sm text-white/60">No sales recorded in the last 30 days.</p>
         ) : (
           <AreaTrend
             data={summary.daily.map((d) => ({
@@ -133,7 +124,7 @@ export default async function AdminOverviewPage() {
             }))}
             maxLabel={formatMoney(
               Math.max(...summary.daily.map((d) => d.revenue)),
-              summary.currencyCode
+              summary.currencyCode,
             )}
             tone="dark"
             height={150}
@@ -162,19 +153,13 @@ export default async function AdminOverviewPage() {
           title="Visits (30d)"
           value={funnelConfigured ? String(funnelTotals.session) : '—'}
           sub={funnelConfigured ? 'unique sessions' : 'connect storage'}
-          spark={
-            funnelConfigured
-              ? funnelRows.map((row) => row.counts.session)
-              : undefined
-          }
+          spark={funnelConfigured ? funnelRows.map((row) => row.counts.session) : undefined}
           href="/admin/funnel"
         />
         <KpiCard
           title="Visit → order"
           value={
-            funnelConfigured && funnelTop > 0
-              ? formatPercent(summary.orderCount / funnelTop)
-              : '—'
+            funnelConfigured && funnelTop > 0 ? formatPercent(summary.orderCount / funnelTop) : '—'
           }
           sub="overall conversion"
           href="/admin/funnel"
@@ -192,17 +177,13 @@ export default async function AdminOverviewPage() {
           ) : (
             <ol className="space-y-3">
               {funnelStages.map((stage, index) => {
-                const previous =
-                  index === 0 ? null : funnelStages[index - 1].value;
-                const stepRate =
-                  previous && previous > 0 ? stage.value / previous : null;
+                const previous = index === 0 ? null : funnelStages[index - 1].value;
+                const stepRate = previous && previous > 0 ? stage.value / previous : null;
                 const width = Math.max((stage.value / funnelTop) * 100, 2);
                 return (
                   <li key={stage.key}>
                     <div className="flex items-baseline justify-between gap-3 text-sm">
-                      <span className="font-semibold">
-                        {FUNNEL_STEP_LABEL[stage.key]}
-                      </span>
+                      <span className="font-semibold">{FUNNEL_STEP_LABEL[stage.key]}</span>
                       <span className="tabular-nums">
                         <span className="font-bold">{stage.value}</span>
                         {stepRate === null ? null : (
@@ -228,15 +209,11 @@ export default async function AdminOverviewPage() {
         <div className="space-y-4">
           <Panel title="Traffic sources (30d)">
             {sources.length === 0 ? (
-              <p className="text-sm text-[rgb(var(--muted))]">
-                Fills in as visits arrive.
-              </p>
+              <p className="text-sm text-[rgb(var(--muted))]">Fills in as visits arrive.</p>
             ) : (
               <HBar
                 rows={sources.map((entry) => ({
-                  label:
-                    TRAFFIC_SOURCE_LABEL[entry.label as TrafficSource] ??
-                    entry.label,
+                  label: TRAFFIC_SOURCE_LABEL[entry.label as TrafficSource] ?? entry.label,
                   value: entry.count,
                 }))}
               />
@@ -247,9 +224,7 @@ export default async function AdminOverviewPage() {
               segments={summary.byStatus.map((entry, index) => ({
                 label: financialStatusLabel(entry.status),
                 value: entry.count,
-                color:
-                  STATUS_COLORS[entry.status] ??
-                  CHART_PALETTE[index % CHART_PALETTE.length],
+                color: STATUS_COLORS[entry.status] ?? CHART_PALETTE[index % CHART_PALETTE.length],
                 hint: formatMoney(entry.revenue, summary.currencyCode),
               }))}
               centerLabel={{ value: String(summary.orderCount), label: 'orders' }}
@@ -315,9 +290,7 @@ export default async function AdminOverviewPage() {
                     ) : null}
                   </span>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-semibold">
-                      {entry.title}
-                    </p>
+                    <p className="truncate text-sm font-semibold">{entry.title}</p>
                     {entry.variantTitle ? (
                       <p className="truncate text-xs text-[rgb(var(--muted))]">
                         {entry.variantTitle}
@@ -326,9 +299,7 @@ export default async function AdminOverviewPage() {
                   </div>
                   <span
                     className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-bold ${
-                      entry.quantity <= 0
-                        ? 'bg-red-50 text-red-700'
-                        : 'bg-amber-50 text-amber-700'
+                      entry.quantity <= 0 ? 'bg-red-50 text-red-700' : 'bg-amber-50 text-amber-700'
                     }`}
                   >
                     <AlertTriangle aria-hidden="true" className="size-3" />
@@ -342,21 +313,13 @@ export default async function AdminOverviewPage() {
       </div>
 
       <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
-        <KpiCard
-          title="Products"
-          value={String(catalog.total)}
-          href="/admin/products"
-        />
+        <KpiCard title="Products" value={String(catalog.total)} href="/admin/products" />
         <KpiCard
           title="Active"
           value={String(catalog.active)}
           href="/admin/products?status=ACTIVE"
         />
-        <KpiCard
-          title="Drafts"
-          value={String(catalog.draft)}
-          href="/admin/products?status=DRAFT"
-        />
+        <KpiCard title="Drafts" value={String(catalog.draft)} href="/admin/products?status=DRAFT" />
         <KpiCard
           title="Out of stock"
           value={String(catalog.outOfStock)}
@@ -370,7 +333,7 @@ export default async function AdminOverviewPage() {
           {SHORTCUTS.map((shortcut) => {
             const inner = (
               <>
-                <span className="flex size-9 items-center justify-center rounded-lg bg-[rgb(var(--surface-muted))] text-[rgb(var(--muted))] ring-1 ring-inset ring-[rgb(var(--border))] transition group-hover:bg-[rgb(var(--sage-soft))] group-hover:text-[rgb(var(--sage-ink))]">
+                <span className="flex size-9 items-center justify-center rounded-lg bg-[rgb(var(--surface-muted))] text-[rgb(var(--muted))] ring-1 ring-[rgb(var(--border))] transition ring-inset group-hover:bg-[rgb(var(--sage-soft))] group-hover:text-[rgb(var(--sage-ink))]">
                   <shortcut.icon aria-hidden="true" className="size-[18px]" />
                 </span>
                 {shortcut.label}

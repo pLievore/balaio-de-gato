@@ -38,7 +38,7 @@ test('escapes attendee names and crosses the hour boundary correctly', () => {
       ...baseInput,
       time: '18:30',
       customerName: 'Family; Reunion, LLC',
-    })
+    }),
   );
   assert.match(ics, /DTEND;TZID=America\/Denver:20260727T193000/);
   assert.match(ics, /Family\\; Reunion\\, LLC/);

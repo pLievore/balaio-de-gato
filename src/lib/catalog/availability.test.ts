@@ -41,7 +41,7 @@ test('the tag is matched regardless of casing, spacing or separator', () => {
     assert.equal(
       getAvailability({ availableForSale: false, tags: [tag] }).state,
       'coming-soon',
-      `expected ${JSON.stringify(tag)} to mark the product as coming soon`
+      `expected ${JSON.stringify(tag)} to mark the product as coming soon`,
     );
   }
 });
@@ -49,7 +49,7 @@ test('the tag is matched regardless of casing, spacing or separator', () => {
 test('unrelated tags never change the state', () => {
   assert.equal(
     getAvailability({ availableForSale: false, tags: ['soon', 'coming'] }).state,
-    'sold-out'
+    'sold-out',
   );
 });
 

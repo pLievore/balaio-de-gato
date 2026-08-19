@@ -1,10 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import type {
-  CollectionByHandleQuery,
-  ProductByHandleQuery,
-} from '../types/storefront.generated';
+import type { CollectionByHandleQuery, ProductByHandleQuery } from '../types/storefront.generated';
 import { adaptProductCard, adaptProductDetail } from './products';
 
 type CollectionProduct = NonNullable<

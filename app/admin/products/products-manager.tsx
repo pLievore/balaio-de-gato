@@ -37,7 +37,7 @@ function initialDraft(product: PanelProduct): ProductDraft {
           compareAtPrice: variant.compareAtPrice ?? '',
           quantity: String(variant.inventoryQuantity),
         },
-      ])
+      ]),
     ),
   };
 }
@@ -54,14 +54,12 @@ function ProductRow({ product }: { product: PanelProduct }) {
       variant,
       value,
       pricingChanged:
-        value.price !== variant.price ||
-        value.compareAtPrice !== (variant.compareAtPrice ?? ''),
+        value.price !== variant.price || value.compareAtPrice !== (variant.compareAtPrice ?? ''),
       quantityChanged: value.quantity !== String(variant.inventoryQuantity),
     };
   });
   const dirty =
-    statusChanged ||
-    changedVariants.some((entry) => entry.pricingChanged || entry.quantityChanged);
+    statusChanged || changedVariants.some((entry) => entry.pricingChanged || entry.quantityChanged);
 
   const save = () => {
     setFeedback(null);
@@ -81,9 +79,7 @@ function ProductRow({ product }: { product: PanelProduct }) {
         })),
       });
       setFeedback(
-        result.ok
-          ? { ok: true, text: 'Saved.' }
-          : { ok: false, text: result.error ?? 'Failed.' }
+        result.ok ? { ok: true, text: 'Saved.' } : { ok: false, text: result.error ?? 'Failed.' },
       );
     });
   };
@@ -91,9 +87,7 @@ function ProductRow({ product }: { product: PanelProduct }) {
   // One tap when a piece sells in person: archive it and zero the stock.
   const markAsSold = () => {
     if (
-      !window.confirm(
-        `Mark "${product.title}" as sold? It will be archived and stock set to 0.`
-      )
+      !window.confirm(`Mark "${product.title}" as sold? It will be archived and stock set to 0.`)
     ) {
       return;
     }
@@ -120,14 +114,14 @@ function ProductRow({ product }: { product: PanelProduct }) {
             Object.entries(current.variants).map(([id, value]) => [
               id,
               { ...value, quantity: '0' },
-            ])
+            ]),
           ),
         }));
       }
       setFeedback(
         result.ok
           ? { ok: true, text: 'Marked as sold — archived with stock 0.' }
-          : { ok: false, text: result.error ?? 'Failed.' }
+          : { ok: false, text: result.error ?? 'Failed.' },
       );
     });
   };
@@ -152,7 +146,7 @@ function ProductRow({ product }: { product: PanelProduct }) {
         'rounded-3xl border bg-white p-5 transition',
         dirty
           ? 'border-[rgb(var(--accent))]/40 shadow-[0_4px_20px_rgba(0,0,0,0.05)]'
-          : 'border-[rgb(var(--border))]'
+          : 'border-[rgb(var(--border))]',
       )}
     >
       {/* Identity + actions */}
@@ -163,18 +157,16 @@ function ProductRow({ product }: { product: PanelProduct }) {
           ) : null}
         </span>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-[15px] font-bold tracking-tight">
-            {product.title}
-          </p>
+          <p className="truncate text-[15px] font-bold tracking-tight">{product.title}</p>
           <div className="mt-1.5 flex flex-wrap items-center gap-2">
             <span
               className={cn(
-                'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide',
+                'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold tracking-wide uppercase',
                 draft.status === 'ACTIVE' &&
                   'bg-[rgb(var(--sage-soft))] text-[rgb(var(--sage-ink))]',
                 draft.status === 'DRAFT' && 'bg-amber-50 text-amber-700',
                 draft.status === 'ARCHIVED' &&
-                  'bg-[rgb(var(--surface-muted))] text-[rgb(var(--muted))]'
+                  'bg-[rgb(var(--surface-muted))] text-[rgb(var(--muted))]',
               )}
             >
               <span
@@ -182,7 +174,7 @@ function ProductRow({ product }: { product: PanelProduct }) {
                   'size-1.5 rounded-full',
                   draft.status === 'ACTIVE' && 'bg-[rgb(var(--sage-ink))]',
                   draft.status === 'DRAFT' && 'bg-amber-500',
-                  draft.status === 'ARCHIVED' && 'bg-[rgb(var(--muted))]'
+                  draft.status === 'ARCHIVED' && 'bg-[rgb(var(--muted))]',
                 )}
               />
               {STATUS_LABEL[draft.status]}
@@ -228,27 +220,25 @@ function ProductRow({ product }: { product: PanelProduct }) {
               const value = draft.variants[variant.id];
               return (
                 <>
-                  <label className="block text-[11px] font-bold uppercase tracking-wide text-[rgb(var(--muted))]">
+                  <label className="block text-[11px] font-bold tracking-wide text-[rgb(var(--muted))] uppercase">
                     Price
                     <div className="relative mt-1.5">
-                      <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[rgb(var(--muted))]">
+                      <span className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-sm text-[rgb(var(--muted))]">
                         $
                       </span>
                       <input
                         value={value.price}
-                        onChange={(event) =>
-                          setVariant(variant.id, { price: event.target.value })
-                        }
+                        onChange={(event) => setVariant(variant.id, { price: event.target.value })}
                         inputMode="decimal"
                         aria-label={`Price for ${product.title}`}
-                        className={cn(fieldClass, 'pl-7 pr-3 font-semibold')}
+                        className={cn(fieldClass, 'pr-3 pl-7 font-semibold')}
                       />
                     </div>
                   </label>
-                  <label className="block text-[11px] font-bold uppercase tracking-wide text-[rgb(var(--muted))]">
+                  <label className="block text-[11px] font-bold tracking-wide text-[rgb(var(--muted))] uppercase">
                     Compare-at
                     <div className="relative mt-1.5">
-                      <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[rgb(var(--muted))]">
+                      <span className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-sm text-[rgb(var(--muted))]">
                         $
                       </span>
                       <input
@@ -261,17 +251,15 @@ function ProductRow({ product }: { product: PanelProduct }) {
                         inputMode="decimal"
                         placeholder="—"
                         aria-label={`Compare-at price for ${product.title}`}
-                        className={cn(fieldClass, 'pl-7 pr-3')}
+                        className={cn(fieldClass, 'pr-3 pl-7')}
                       />
                     </div>
                   </label>
-                  <label className="block text-[11px] font-bold uppercase tracking-wide text-[rgb(var(--muted))]">
+                  <label className="block text-[11px] font-bold tracking-wide text-[rgb(var(--muted))] uppercase">
                     Stock
                     <input
                       value={value.quantity}
-                      onChange={(event) =>
-                        setVariant(variant.id, { quantity: event.target.value })
-                      }
+                      onChange={(event) => setVariant(variant.id, { quantity: event.target.value })}
                       inputMode="numeric"
                       aria-label={`Stock for ${product.title}`}
                       className={cn(fieldClass, 'mt-1.5 px-3')}
@@ -280,7 +268,7 @@ function ProductRow({ product }: { product: PanelProduct }) {
                 </>
               );
             })()}
-            <label className="block text-[11px] font-bold uppercase tracking-wide text-[rgb(var(--muted))]">
+            <label className="block text-[11px] font-bold tracking-wide text-[rgb(var(--muted))] uppercase">
               Status
               <select
                 value={draft.status}
@@ -308,7 +296,7 @@ function ProductRow({ product }: { product: PanelProduct }) {
                 dirty
                   ? 'bg-[rgb(var(--fg))] text-white shadow-sm hover:bg-[rgb(var(--fg))]/90'
                   : 'cursor-default border border-[rgb(var(--border))] bg-white text-[rgb(var(--muted))]/60',
-                pending && 'opacity-60'
+                pending && 'opacity-60',
               )}
             >
               {pending ? 'Saving…' : dirty ? 'Save changes' : 'Saved'}
@@ -317,7 +305,7 @@ function ProductRow({ product }: { product: PanelProduct }) {
         ) : (
           <>
             <div className="flex items-center justify-between gap-3">
-              <label className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wide text-[rgb(var(--muted))]">
+              <label className="flex items-center gap-2 text-[11px] font-bold tracking-wide text-[rgb(var(--muted))] uppercase">
                 Status
                 <select
                   value={draft.status}
@@ -327,7 +315,7 @@ function ProductRow({ product }: { product: PanelProduct }) {
                       status: event.target.value as PanelProduct['status'],
                     }))
                   }
-                  className="min-h-9 rounded-full border border-[rgb(var(--border-strong))] bg-white px-3 text-xs font-semibold normal-case tracking-normal"
+                  className="min-h-9 rounded-full border border-[rgb(var(--border-strong))] bg-white px-3 text-xs font-semibold tracking-normal normal-case"
                 >
                   {Object.entries(STATUS_LABEL).map(([value, label]) => (
                     <option key={value} value={value}>
@@ -345,7 +333,7 @@ function ProductRow({ product }: { product: PanelProduct }) {
                   dirty
                     ? 'bg-[rgb(var(--fg))] text-white shadow-sm hover:bg-[rgb(var(--fg))]/90'
                     : 'cursor-default border border-[rgb(var(--border))] bg-white text-[rgb(var(--muted))]/60',
-                  pending && 'opacity-60'
+                  pending && 'opacity-60',
                 )}
               >
                 {pending ? 'Saving…' : dirty ? 'Save changes' : 'Saved'}
@@ -354,7 +342,7 @@ function ProductRow({ product }: { product: PanelProduct }) {
             <div className="mt-3 overflow-x-auto">
               <table className="w-full min-w-[34rem] text-sm">
                 <thead>
-                  <tr className="text-left text-[11px] uppercase tracking-wide text-[rgb(var(--muted))]">
+                  <tr className="text-left text-[11px] tracking-wide text-[rgb(var(--muted))] uppercase">
                     <th className="py-2 pr-4 font-bold">Variant</th>
                     <th className="py-2 pr-4 font-bold">SKU</th>
                     <th className="py-2 pr-4 font-bold">Price (USD)</th>
@@ -368,9 +356,7 @@ function ProductRow({ product }: { product: PanelProduct }) {
                     return (
                       <tr key={variant.id}>
                         <td className="py-2.5 pr-4 font-medium">
-                          {variant.title === 'Default Title'
-                            ? '—'
-                            : variant.title}
+                          {variant.title === 'Default Title' ? '—' : variant.title}
                         </td>
                         <td className="py-2.5 pr-4 text-[rgb(var(--muted))]">
                           {variant.sku || '—'}
@@ -430,7 +416,7 @@ function ProductRow({ product }: { product: PanelProduct }) {
           role="status"
           className={cn(
             'mt-3 text-xs font-semibold',
-            feedback.ok ? 'text-[rgb(var(--sage-ink))]' : 'text-[rgb(var(--accent))]'
+            feedback.ok ? 'text-[rgb(var(--sage-ink))]' : 'text-[rgb(var(--accent))]',
           )}
         >
           {feedback.text}

@@ -36,7 +36,7 @@ export function PageHeader({
           <p className="text-xs font-semibold tracking-[0.22em] text-[rgb(var(--muted))]">
             {eyebrow}
           </p>
-          <h1 className="mt-2 font-display text-4xl tracking-tight">
+          <h1 className="font-display mt-2 text-4xl tracking-tight">
             {title}
             {titleAccent ? (
               <>
@@ -45,13 +45,9 @@ export function PageHeader({
               </>
             ) : null}
           </h1>
-          {subtitle ? (
-            <p className="mt-2 text-sm text-[rgb(var(--muted))]">{subtitle}</p>
-          ) : null}
+          {subtitle ? <p className="mt-2 text-sm text-[rgb(var(--muted))]">{subtitle}</p> : null}
         </div>
-        {actions ? (
-          <div className="flex flex-wrap items-center gap-2">{actions}</div>
-        ) : null}
+        {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}
       </div>
     </div>
   );
@@ -77,9 +73,9 @@ export function StatCard({
   const body = (
     <>
       {accent ? (
-        <span className="pointer-events-none absolute -right-6 -top-6 size-24 rounded-full bg-[rgb(var(--sage-ink))]/10 blur-2xl" />
+        <span className="pointer-events-none absolute -top-6 -right-6 size-24 rounded-full bg-[rgb(var(--sage-ink))]/10 blur-2xl" />
       ) : null}
-      <p className="relative text-xs font-semibold uppercase tracking-[0.14em] text-[rgb(var(--muted))]">
+      <p className="relative text-xs font-semibold tracking-[0.14em] text-[rgb(var(--muted))] uppercase">
         {title}
       </p>
       <p className="relative mt-2 text-2xl font-bold tracking-tight tabular-nums md:text-[1.7rem] md:leading-none">
@@ -89,7 +85,9 @@ export function StatCard({
         {typeof trend === 'number' ? (
           <span
             className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-bold ${
-              up ? 'bg-[rgb(var(--sage-soft))] text-[rgb(var(--sage-ink))]' : 'bg-red-50 text-red-700'
+              up
+                ? 'bg-[rgb(var(--sage-soft))] text-[rgb(var(--sage-ink))]'
+                : 'bg-red-50 text-red-700'
             }`}
           >
             {up ? (
@@ -100,9 +98,7 @@ export function StatCard({
             {formatPercent(Math.abs(trend))}
           </span>
         ) : null}
-        {sub ? (
-          <span className="text-xs text-[rgb(var(--muted))]">{sub}</span>
-        ) : null}
+        {sub ? <span className="text-xs text-[rgb(var(--muted))]">{sub}</span> : null}
       </div>
     </>
   );
@@ -199,20 +195,16 @@ export function BiHero({
     <section className="relative overflow-hidden rounded-3xl bg-[#171c17] p-6 text-white md:p-8">
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute -right-20 -top-24 size-72 rounded-full bg-[#a9bd95]/15 blur-3xl"
+        className="pointer-events-none absolute -top-24 -right-20 size-72 rounded-full bg-[#a9bd95]/15 blur-3xl"
       />
       <div className="relative flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/50">
+          <p className="text-xs font-semibold tracking-[0.16em] text-white/50 uppercase">
             {eyebrow}
           </p>
-          <p className="mt-2 font-display text-5xl tracking-tight md:text-6xl">
-            {value}
-          </p>
+          <p className="font-display mt-2 text-5xl tracking-tight md:text-6xl">{value}</p>
         </div>
-        {side ? (
-          <div className="flex flex-col items-end gap-2">{side}</div>
-        ) : null}
+        {side ? <div className="flex flex-col items-end gap-2">{side}</div> : null}
       </div>
       {children ? <div className="relative mt-6">{children}</div> : null}
     </section>
@@ -237,15 +229,11 @@ export function KpiCard({
     <>
       <div className="flex items-start justify-between gap-2">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[rgb(var(--muted))]">
+          <p className="text-xs font-semibold tracking-[0.14em] text-[rgb(var(--muted))] uppercase">
             {title}
           </p>
-          <p className="mt-2 text-2xl font-bold tracking-tight tabular-nums">
-            {value}
-          </p>
-          {sub ? (
-            <p className="mt-1 text-xs text-[rgb(var(--muted))]">{sub}</p>
-          ) : null}
+          <p className="mt-2 text-2xl font-bold tracking-tight tabular-nums">{value}</p>
+          {sub ? <p className="mt-1 text-xs text-[rgb(var(--muted))]">{sub}</p> : null}
         </div>
         {href ? (
           <ArrowUpRight
@@ -282,7 +270,7 @@ const STATUS_PILL: Record<string, string> = {
 export function StatusPill({ status }: { status: string }) {
   return (
     <span
-      className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide ${
+      className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-bold tracking-wide uppercase ${
         STATUS_PILL[status] ?? 'bg-[rgb(var(--surface-muted))] text-[rgb(var(--muted))]'
       }`}
     >

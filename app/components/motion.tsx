@@ -11,7 +11,7 @@ import type { ReactNode } from 'react';
 
 // ─── Shared easing ───────────────────────────────────────────────────────────
 export const ease = {
-  out: [0.16, 1, 0.3, 1] as const,       // snappy out — feels natural
+  out: [0.16, 1, 0.3, 1] as const, // snappy out — feels natural
   in: [0.55, 0, 1, 0.45] as const,
   inOut: [0.87, 0, 0.13, 1] as const,
 };

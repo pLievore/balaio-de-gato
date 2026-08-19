@@ -46,9 +46,7 @@ type TokenResponse = {
   error?: string;
 };
 
-async function requestTokens(
-  body: URLSearchParams
-): Promise<CustomerTokens | null> {
+async function requestTokens(body: URLSearchParams): Promise<CustomerTokens | null> {
   const config = getCustomerAccountConfig();
 
   const response = await fetch(config.tokenUrl, {
@@ -95,13 +93,11 @@ export async function exchangeCodeForTokens({
       code,
       code_verifier: codeVerifier,
       redirect_uri: redirectUri,
-    })
+    }),
   );
 }
 
-export async function refreshCustomerTokens(
-  refreshToken: string
-): Promise<CustomerTokens | null> {
+export async function refreshCustomerTokens(refreshToken: string): Promise<CustomerTokens | null> {
   const config = getCustomerAccountConfig();
 
   return requestTokens(
@@ -109,7 +105,7 @@ export async function refreshCustomerTokens(
       grant_type: 'refresh_token',
       client_id: config.clientId,
       refresh_token: refreshToken,
-    })
+    }),
   );
 }
 

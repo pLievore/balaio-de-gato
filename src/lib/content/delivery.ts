@@ -47,8 +47,7 @@ export const DELIVERY_TIERS: DeliveryTier[] = [
     id: 'upstairs',
     name: 'Upstairs / basement',
     priceCents: 15000,
-    summary:
-      'Everything in the inside-home service, for a room up or down a flight of stairs.',
+    summary: 'Everything in the inside-home service, for a room up or down a flight of stairs.',
     includes: [
       'Inside-home delivery and setup',
       'Stairs to an upper floor or basement',
@@ -62,7 +61,8 @@ export const EXPRESS_DELIVERY = {
   surchargeCents: 6000,
   /** Delivered within this many hours of the order being confirmed. */
   windowHours: 24,
-  name: 'Express delivery (24h)',
+  /** Suffix on the Shopify rate name — kept short, it shows at checkout. */
+  name: 'Express 24h',
 } as const;
 
 /**

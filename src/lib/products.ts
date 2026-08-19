@@ -119,9 +119,7 @@ export async function getActiveProducts(options?: {
   return (data ?? []).map((row) => toCard(row as unknown as RawProductRow));
 }
 
-export async function getProductBySlug(
-  slug: string
-): Promise<ProductDetailData | null> {
+export async function getProductBySlug(slug: string): Promise<ProductDetailData | null> {
   const { data, error } = await supabase
     .from('products')
     .select(PRODUCT_LIST_SELECT)
@@ -163,7 +161,7 @@ export async function getVariantForCart(variantId: string): Promise<{
     .from('product_variants')
     .select(
       `id, sku, name, price_cents, stock_qty,
-       products!inner ( slug, name, status )`
+       products!inner ( slug, name, status )`,
     )
     .eq('id', variantId)
     .maybeSingle();
@@ -193,10 +191,7 @@ export async function getVariantForCart(variantId: string): Promise<{
 }
 
 export async function getAllActiveProductSlugs(): Promise<string[]> {
-  const { data, error } = await supabase
-    .from('products')
-    .select('slug')
-    .eq('status', 'active');
+  const { data, error } = await supabase.from('products').select('slug').eq('status', 'active');
   if (error) throw error;
   return (data ?? []).map((p) => p.slug);
 }
@@ -214,7 +209,7 @@ export async function getRecentProducts(limit = 8): Promise<ProductCardData[]> {
 
 export async function getRelatedProducts(
   currentSlug: string,
-  limit = 4
+  limit = 4,
 ): Promise<ProductCardData[]> {
   const { data: currentRaw, error: cErr } = await supabase
     .from('products')
@@ -275,7 +270,10 @@ export type SearchResult = {
 };
 
 function sanitizeSearchTerm(q: string): string {
-  return q.trim().replace(/[%,()'"]/g, '').slice(0, 100);
+  return q
+    .trim()
+    .replace(/[%,()'"]/g, '')
+    .slice(0, 100);
 }
 
 /**
@@ -283,9 +281,7 @@ function sanitizeSearchTerm(q: string): string {
  * Filtering by price and sorting by price are done in JS over the result set —
  * acceptable up to a few thousand products. Move to a SQL view if scale grows.
  */
-export async function searchActiveProducts(
-  filters: SearchFilters = {}
-): Promise<SearchResult> {
+export async function searchActiveProducts(filters: SearchFilters = {}): Promise<SearchResult> {
   let allowedIds: string[] | null = null;
   if (filters.category && filters.category !== 'all') {
     const { data: cat, error: catErr } = await supabase
@@ -307,10 +303,7 @@ export async function searchActiveProducts(
     if (allowedIds.length === 0) return emptyResult(filters);
   }
 
-  let query = supabase
-    .from('products')
-    .select(PRODUCT_LIST_SELECT)
-    .eq('status', 'active');
+  let query = supabase.from('products').select(PRODUCT_LIST_SELECT).eq('status', 'active');
 
   if (allowedIds) query = query.in('id', allowedIds);
 
@@ -380,7 +373,7 @@ export async function getCategoriesWithProducts(): Promise<CategoryRef[]> {
     .from('product_categories')
     .select(
       `categories!inner ( slug, name, sort_order ),
-       products!inner ( id, status )`
+       products!inner ( id, status )`,
     )
     .eq('products.status', 'active');
 

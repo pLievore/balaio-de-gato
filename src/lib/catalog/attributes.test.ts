@@ -4,10 +4,11 @@ import { test } from 'node:test';
 import { PRODUCT_ATTRIBUTES, parseFeatures } from './attributes';
 
 test('features are split one per line, ignoring blanks and padding', () => {
-  assert.deepEqual(
-    parseFeatures('Reversible chaise\n\n  Hidden storage  \nStain resistant\n'),
-    ['Reversible chaise', 'Hidden storage', 'Stain resistant']
-  );
+  assert.deepEqual(parseFeatures('Reversible chaise\n\n  Hidden storage  \nStain resistant\n'), [
+    'Reversible chaise',
+    'Hidden storage',
+    'Stain resistant',
+  ]);
 });
 
 test('an empty features value yields no items', () => {

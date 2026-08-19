@@ -10,7 +10,7 @@ export function formatUsdCents(cents: number): string {
 
 export function formatMoney(
   money: { amount: string; currencyCode: string },
-  locale = 'en-US'
+  locale = 'en-US',
 ): string {
   const amount = Number(money.amount);
 

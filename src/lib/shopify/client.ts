@@ -4,15 +4,9 @@ import { isIP } from 'node:net';
 
 import { createStorefrontApiClient } from '@shopify/storefront-api-client';
 
-import {
-  SHOPIFY_DEFAULT_REVALIDATE_SECONDS,
-  SHOPIFY_DEFAULT_TIMEOUT_MS,
-} from './constants';
+import { SHOPIFY_DEFAULT_REVALIDATE_SECONDS, SHOPIFY_DEFAULT_TIMEOUT_MS } from './constants';
 import { getShopifyConfig } from './config';
-import {
-  normalizeGraphQLErrors,
-  ShopifyStorefrontError,
-} from './errors';
+import { normalizeGraphQLErrors, ShopifyStorefrontError } from './errors';
 
 type NextFetchOptions = {
   revalidate?: number | false;
@@ -35,19 +29,13 @@ export type ShopifyRequestResult<TData> = {
   extensions?: Record<string, unknown>;
 };
 
-function writeSafeLog(
-  level: 'error' | 'warn',
-  details: Record<string, unknown>
-) {
+function writeSafeLog(level: 'error' | 'warn', details: Record<string, unknown>) {
   const log = level === 'error' ? console.error : console.warn;
   log('[shopify-storefront]', details);
 }
 
 function isAbortError(error: unknown): boolean {
-  return (
-    error instanceof Error &&
-    (error.name === 'AbortError' || error.name === 'TimeoutError')
-  );
+  return error instanceof Error && (error.name === 'AbortError' || error.name === 'TimeoutError');
 }
 
 export async function shopifyStorefrontRequest<
@@ -55,7 +43,7 @@ export async function shopifyStorefrontRequest<
   TVariables extends object = Record<string, never>,
 >(
   document: string,
-  options: ShopifyRequestOptions<TVariables>
+  options: ShopifyRequestOptions<TVariables>,
 ): Promise<ShopifyRequestResult<TData>> {
   const config = getShopifyConfig();
   const hasBuyerIp = Boolean(options.buyerIp && isIP(options.buyerIp));
@@ -64,8 +52,7 @@ export async function shopifyStorefrontRequest<
     cache === 'no-store'
       ? undefined
       : {
-          revalidate:
-            options.next?.revalidate ?? SHOPIFY_DEFAULT_REVALIDATE_SECONDS,
+          revalidate: options.next?.revalidate ?? SHOPIFY_DEFAULT_REVALIDATE_SECONDS,
           tags: [...new Set(options.next?.tags ?? [])],
         };
 
@@ -92,20 +79,15 @@ export async function shopifyStorefrontRequest<
     const response = await client.request<TData>(document, {
       variables: options.variables,
       headers,
-      signal: AbortSignal.timeout(
-        options.timeoutMs ?? SHOPIFY_DEFAULT_TIMEOUT_MS
-      ),
+      signal: AbortSignal.timeout(options.timeoutMs ?? SHOPIFY_DEFAULT_TIMEOUT_MS),
     });
 
-    const graphQLErrors = normalizeGraphQLErrors(
-      response.errors?.graphQLErrors
-    );
+    const graphQLErrors = normalizeGraphQLErrors(response.errors?.graphQLErrors);
     const statusCode = response.errors?.networkStatusCode;
 
     if (response.data == null) {
       const error = new ShopifyStorefrontError({
-        code:
-          graphQLErrors.length > 0 ? 'GRAPHQL_ERROR' : 'EMPTY_RESPONSE',
+        code: graphQLErrors.length > 0 ? 'GRAPHQL_ERROR' : 'EMPTY_RESPONSE',
         operationName: options.operationName,
         message: 'Shopify did not return usable data.',
         statusCode,

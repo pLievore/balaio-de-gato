@@ -72,9 +72,7 @@ const ORDERS_LIST_QUERY = `#graphql
 
 /** Most recent orders within the 60-day read_orders horizon. */
 export async function listRecentPanelOrders(): Promise<PanelOrder[]> {
-  const since = new Date(Date.now() - 59 * 86400000)
-    .toISOString()
-    .slice(0, 10);
+  const since = new Date(Date.now() - 59 * 86400000).toISOString().slice(0, 10);
   const data = await adminGraphql<OrdersListResponse>(ORDERS_LIST_QUERY, {
     query: `created_at:>=${since}`,
   });

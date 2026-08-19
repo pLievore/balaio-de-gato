@@ -15,7 +15,7 @@ export class CustomerApiError extends Error {
 export async function customerAccountRequest<TData>(
   accessToken: string,
   query: string,
-  variables?: Record<string, unknown>
+  variables?: Record<string, unknown>,
 ): Promise<TData> {
   const config = getCustomerAccountConfig();
 
@@ -213,12 +213,12 @@ type OrderDetailResponse = {
 
 export async function getCustomerOrder(
   accessToken: string,
-  orderId: string
+  orderId: string,
 ): Promise<CustomerOrderDetail | null> {
   const data = await customerAccountRequest<OrderDetailResponse>(
     accessToken,
     CUSTOMER_ORDER_QUERY,
-    { orderId }
+    { orderId },
   );
 
   const order = data.order;
@@ -245,13 +245,8 @@ export async function getCustomerOrder(
   };
 }
 
-export async function getCustomerProfile(
-  accessToken: string
-): Promise<CustomerProfile> {
-  const data = await customerAccountRequest<ProfileResponse>(
-    accessToken,
-    CUSTOMER_PROFILE_QUERY
-  );
+export async function getCustomerProfile(accessToken: string): Promise<CustomerProfile> {
+  const data = await customerAccountRequest<ProfileResponse>(accessToken, CUSTOMER_PROFILE_QUERY);
 
   return {
     displayName: data.customer.displayName,
@@ -261,13 +256,11 @@ export async function getCustomerProfile(
 
 export async function getCustomerOrders(
   accessToken: string,
-  first = 10
+  first = 10,
 ): Promise<CustomerOrderSummary[]> {
-  const data = await customerAccountRequest<OrdersResponse>(
-    accessToken,
-    CUSTOMER_ORDERS_QUERY,
-    { first }
-  );
+  const data = await customerAccountRequest<OrdersResponse>(accessToken, CUSTOMER_ORDERS_QUERY, {
+    first,
+  });
 
   return data.customer.orders.nodes.map((order) => ({
     id: order.id,

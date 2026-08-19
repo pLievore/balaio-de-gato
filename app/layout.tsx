@@ -1,41 +1,42 @@
 import './globals.css';
 import type { Metadata } from 'next';
 import { ReactNode } from 'react';
-import { Geist, Instrument_Serif } from 'next/font/google';
+import { Bricolage_Grotesque, Nunito_Sans } from 'next/font/google';
 import { Analytics } from '@vercel/analytics/next';
 import { env } from '../src/config/env';
 
-const geistSans = Geist({
+const nunitoSans = Nunito_Sans({
   subsets: ['latin'],
   display: 'swap',
-  variable: '--font-geist-sans',
+  variable: '--font-nunito-sans',
 });
 
-const instrumentSerif = Instrument_Serif({
+const bricolageGrotesque = Bricolage_Grotesque({
   subsets: ['latin'],
   display: 'swap',
-  weight: '400',
-  style: ['normal', 'italic'],
-  variable: '--font-instrument-serif',
+  variable: '--font-bricolage-grotesque',
 });
 
-const SITE_TITLE = '801 Outlet — Premium Furniture Deals in Utah';
+const SITE_TITLE = 'Balaio de Gato — Papelaria e Material Escolar';
 const SITE_DESCRIPTION =
-  'Sofas, beds, recliners and more. Utah-only delivery. Browse products and shop online.';
+  'Materiais escolares para todas as idades, com compra online e pagamento pelo crédito do Kit Escolar.';
 
 export const metadata: Metadata = {
   metadataBase: new URL(env.siteUrl),
-  title: SITE_TITLE,
+  title: {
+    default: SITE_TITLE,
+    template: '%s — Balaio de Gato',
+  },
   description: SITE_DESCRIPTION,
-  // Icons and preview images come from the app/ file conventions
-  // (favicon.ico, icon.png, apple-icon.png, opengraph-image.png).
+  applicationName: 'Balaio de Gato',
+  icons: { icon: '/brand/balaio-mark.svg' },
   openGraph: {
     type: 'website',
-    siteName: '801 Outlet',
+    siteName: 'Balaio de Gato',
     title: SITE_TITLE,
     description: SITE_DESCRIPTION,
     url: env.siteUrl,
-    locale: 'en_US',
+    locale: 'pt_BR',
   },
   twitter: {
     card: 'summary_large_image',
@@ -46,7 +47,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en" className={`${geistSans.variable} ${instrumentSerif.variable}`}>
+    <html lang="pt-BR" className={`${nunitoSans.variable} ${bricolageGrotesque.variable}`}>
       <body>
         {children}
         <Analytics />

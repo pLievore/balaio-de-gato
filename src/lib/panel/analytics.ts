@@ -133,7 +133,7 @@ const PREVIOUS_ORDERS_QUERY = `#graphql
 `;
 
 async function getPreviousWindowTotals(
-  days: SalesPeriodDays
+  days: SalesPeriodDays,
 ): Promise<{ revenue: number; orders: number } | null> {
   // read_orders only exposes the trailing 60 days; a previous window that
   // starts earlier than that would silently undercount.
@@ -158,19 +158,17 @@ async function getPreviousWindowTotals(
   let after: string | null = null;
   let fetched = 0;
   do {
-    const data: PreviousResponse = await adminGraphql<PreviousResponse>(
-      PREVIOUS_ORDERS_QUERY,
-      { query, after }
-    );
+    const data: PreviousResponse = await adminGraphql<PreviousResponse>(PREVIOUS_ORDERS_QUERY, {
+      query,
+      after,
+    });
     for (const order of data.orders.nodes) {
       if (order.cancelledAt) continue;
       revenue += Number(order.currentTotalPriceSet.shopMoney.amount);
       orders += 1;
     }
     fetched += data.orders.nodes.length;
-    after = data.orders.pageInfo.hasNextPage
-      ? data.orders.pageInfo.endCursor
-      : null;
+    after = data.orders.pageInfo.hasNextPage ? data.orders.pageInfo.endCursor : null;
   } while (after && fetched < 2000);
 
   return { revenue, orders };
@@ -191,9 +189,7 @@ function toLocalDateString(iso: string, timeZone: string): string {
  * The `read_orders` scope only exposes the trailing 60 days, so periods are
  * capped accordingly.
  */
-export async function getSalesSummary(
-  days: SalesPeriodDays
-): Promise<SalesSummary> {
+export async function getSalesSummary(days: SalesPeriodDays): Promise<SalesSummary> {
   const [{ timezone, currencyCode }, previous] = await Promise.all([
     getShopInfo(),
     getPreviousWindowTotals(days),
@@ -205,14 +201,9 @@ export async function getSalesSummary(
   const orders: OrdersResponse['orders']['nodes'] = [];
   let after: string | null = null;
   do {
-    const data: OrdersResponse = await adminGraphql<OrdersResponse>(
-      ORDERS_QUERY,
-      { query, after }
-    );
+    const data: OrdersResponse = await adminGraphql<OrdersResponse>(ORDERS_QUERY, { query, after });
     orders.push(...data.orders.nodes);
-    after = data.orders.pageInfo.hasNextPage
-      ? data.orders.pageInfo.endCursor
-      : null;
+    after = data.orders.pageInfo.hasNextPage ? data.orders.pageInfo.endCursor : null;
   } while (after && orders.length < 2000);
 
   const active = orders.filter((order) => !order.cancelledAt);
@@ -222,7 +213,7 @@ export async function getSalesSummary(
   for (let i = days - 1; i >= 0; i -= 1) {
     const date = toLocalDateString(
       new Date(Date.now() - i * 24 * 60 * 60 * 1000).toISOString(),
-      timezone
+      timezone,
     );
     dailyMap.set(date, { revenue: 0, orders: 0 });
   }
@@ -294,9 +285,7 @@ export async function getSalesSummary(
       revenue: value.revenue,
       orders: value.orders,
     })),
-    bestSellers: [...sellers.values()]
-      .sort((a, b) => b.revenue - a.revenue)
-      .slice(0, 10),
+    bestSellers: [...sellers.values()].sort((a, b) => b.revenue - a.revenue).slice(0, 10),
     recentOrders: active.slice(0, 12).map((order) => ({
       id: order.id,
       name: order.name,

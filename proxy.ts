@@ -18,10 +18,7 @@ import {
  *
  * Returns `null` when the request should carry on to the storefront.
  */
-function maintenanceGate(
-  request: NextRequest,
-  requestHeaders: Headers
-): NextResponse | null {
+function maintenanceGate(request: NextRequest, requestHeaders: Headers): NextResponse | null {
   if (!isMaintenanceEnabled()) return null;
 
   const { pathname, searchParams } = request.nextUrl;
@@ -57,29 +54,38 @@ function maintenanceGate(
   });
 }
 
+const LEGACY_API_PATHS = [
+  '/api/auth',
+  '/api/events',
+  '/api/internal/shopify',
+  '/api/search/predictive',
+  '/api/webhooks/square',
+] as const;
+
 /**
- * Fast-path guard for the premium admin panel (D-013). Only checks that the
- * panel session cookie exists; the signed value is fully verified in the
- * admin layout server component, where node crypto is available.
+ * O painel e as APIs abaixo pertencem à 801 Outlet. Eles permanecem no
+ * repositório somente como material de migração e não podem responder no
+ * runtime da Balaio de Gato.
  */
-function adminGuard(
-  request: NextRequest,
-  requestHeaders: Headers
-): NextResponse {
+function legacyRuntimeGate(request: NextRequest): NextResponse | null {
   const { pathname } = request.nextUrl;
 
-  if (pathname === '/admin/login') {
-    return NextResponse.next({ request: { headers: requestHeaders } });
+  if (pathname === '/admin' || pathname.startsWith('/admin/')) {
+    return NextResponse.redirect(new URL('/', request.url));
   }
 
-  const hasSession = Boolean(request.cookies.get('panel_session')?.value);
-  if (!hasSession) {
-    const loginUrl = new URL('/admin/login', request.url);
-    loginUrl.searchParams.set('next', pathname);
-    return NextResponse.redirect(loginUrl);
+  const isLegacyApi = LEGACY_API_PATHS.some(
+    (path) => pathname === path || pathname.startsWith(`${path}/`),
+  );
+
+  if (isLegacyApi) {
+    return NextResponse.json(
+      { error: 'Not found' },
+      { status: 404, headers: { 'Cache-Control': 'no-store' } },
+    );
   }
 
-  return NextResponse.next({ request: { headers: requestHeaders } });
+  return null;
 }
 
 export function proxy(request: NextRequest) {
@@ -88,12 +94,11 @@ export function proxy(request: NextRequest) {
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set('x-pathname', pathname);
 
+  const legacyResponse = legacyRuntimeGate(request);
+  if (legacyResponse) return legacyResponse;
+
   const gated = maintenanceGate(request, requestHeaders);
   if (gated) return gated;
-
-  if (pathname === '/admin' || pathname.startsWith('/admin/')) {
-    return adminGuard(request, requestHeaders);
-  }
 
   return NextResponse.next({ request: { headers: requestHeaders } });
 }

@@ -17,7 +17,9 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: '*',
         allow: '/',
-        disallow: ['/api/', '/admin/', '/account/'],
+        // Carrinho, envio de pedido e acompanhamento são páginas pessoais:
+        // não têm o que indexar e não devem aparecer em busca.
+        disallow: ['/api/', '/admin/', '/account/', '/cart', '/checkout', '/pedido/'],
       },
     ],
     sitemap: `${base}/sitemap.xml`,

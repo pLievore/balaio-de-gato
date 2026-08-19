@@ -1,60 +1,31 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { PackageSearch, SlidersHorizontal } from 'lucide-react';
 
 import {
-  normalizeCatalogSearch,
-  normalizePriceRange,
-  parseCatalogAvailability,
-  parseCatalogPrice,
-  parseCatalogSort,
-} from '../../../src/lib/catalog/filters';
-import { getShopifyCatalogPage } from '../../../src/lib/shopify/catalog';
-import { CatalogProductCard } from '../../components/catalog-product-card';
+  ActiveFilterChips,
+  CatalogFilterDrawer,
+  CatalogFilterRail,
+  CatalogSearch,
+  SortSelect,
+} from '../../components/shop/catalog-filters';
+import { ProductCard } from '../../components/shop/product-card';
+import { StageBenefitBanner } from '../../components/shop/stage-benefit-banner';
+import { Container } from '../../components/ui/container';
+import { buttonStyles } from '../../components/ui/button';
 import { StaggerGrid, StaggerItem } from '../../components/motion';
-
-export const revalidate = 300;
+import { parseCatalogQuery } from '../../../src/lib/catalog/query';
+import { listProducts } from '../../../src/lib/catalog/repository';
+import { getEducationStage } from '../../../src/lib/program/material-escolar';
 
 export const metadata: Metadata = {
-  title: 'Furniture Catalog — 801 Outlet',
+  title: 'Materiais escolares',
   description:
-    'Browse premium outlet furniture available for delivery and pickup in Utah.',
+    'Cadernos, lápis, mochilas e todo o material da lista escolar, com pagamento pelo crédito do Kit Escolar da Prefeitura de São Paulo.',
   alternates: { canonical: '/products' },
 };
 
-const SORT_OPTIONS = [
-  { value: 'featured', label: 'Featured' },
-  { value: 'newest', label: 'Newest' },
-  { value: 'price_asc', label: 'Price: Low to high' },
-  { value: 'price_desc', label: 'Price: High to low' },
-] as const;
-
-type SearchParams = {
-  q?: string;
-  sort?: string;
-  availability?: string;
-  priceMin?: string;
-  priceMax?: string;
-  after?: string;
-  before?: string;
-};
-
-function safeCursor(value: string | undefined) {
-  if (!value || value.length > 1_000) return undefined;
-  return /^[A-Za-z0-9+/_=-]+$/.test(value) ? value : undefined;
-}
-
-function buildQuery(
-  base: Record<string, string | undefined>,
-  override: Record<string, string | undefined>
-) {
-  const params = new URLSearchParams();
-  for (const [key, value] of Object.entries({ ...base, ...override })) {
-    if (value) params.set(key, value);
-  }
-
-  const query = params.toString();
-  return query ? `?${query}` : '';
-}
+type SearchParams = Record<string, string | string[] | undefined>;
 
 export default async function ProductsPage({
   searchParams,
@@ -62,222 +33,106 @@ export default async function ProductsPage({
   searchParams?: Promise<SearchParams>;
 }) {
   const params = (await searchParams) ?? {};
-  const search = normalizeCatalogSearch(params.q);
-  const sort = parseCatalogSort(params.sort);
-  const availability = parseCatalogAvailability(params.availability);
-  const parsedPrices = normalizePriceRange(
-    parseCatalogPrice(params.priceMin),
-    parseCatalogPrice(params.priceMax)
-  );
-  const after = safeCursor(params.after);
-  const before = after ? undefined : safeCursor(params.before);
-
-  const result = await getShopifyCatalogPage({
-    search,
-    sort,
-    availability,
-    ...parsedPrices,
-    after,
-    before,
-    pageSize: 12,
-  });
-
-  const baseQuery = {
-    q: search || undefined,
-    sort: sort === 'featured' ? undefined : sort,
-    availability:
-      availability === 'available' ? availability : undefined,
-    priceMin: params.priceMin || undefined,
-    priceMax: params.priceMax || undefined,
-  };
-  const hasFilters = Boolean(
-    search ||
-      availability === 'available' ||
-      parsedPrices.minPrice !== undefined ||
-      parsedPrices.maxPrice !== undefined ||
-      sort !== 'featured'
-  );
-  const inputClass =
-    'w-full rounded-xl border border-[rgb(var(--border))] bg-white px-4 py-2.5 text-sm transition ' +
-    'focus:border-[rgb(var(--accent))] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--accent))]/20';
+  const query = parseCatalogQuery(params);
+  const result = await listProducts(query);
+  const stage = query.stage ? getEducationStage(query.stage) : undefined;
 
   return (
     <main>
-      <section className="mx-auto max-w-6xl px-5 pb-14 pt-10">
-        <div className="flex items-start justify-between gap-6">
-          <div>
-            <p className="text-xs font-semibold tracking-[0.22em] text-[rgb(var(--muted))]">
-              801 OUTLET · UTAH
-            </p>
-            <h1 className="mt-3 font-display text-4xl font-medium tracking-tight md:text-6xl">
-              Browse furniture
-            </h1>
-            <p className="mt-3 max-w-2xl text-sm leading-relaxed text-[rgb(var(--muted))]">
-              Premium outlet pieces with live pricing and availability from our
-              Shopify catalog.
-            </p>
-          </div>
-
-          <p className="hidden text-xs text-[rgb(var(--muted))] md:block">
-            {result.totalCount !== null
-              ? `${result.totalCount} matching ${result.totalCount === 1 ? 'piece' : 'pieces'}`
-              : `${result.products.length} ${result.products.length === 1 ? 'piece' : 'pieces'} shown`}
+      <section className="border-b border-[rgb(var(--border))] bg-white/55">
+        <Container size="wide" className="py-10 md:py-14">
+          <p className="text-xs font-extrabold tracking-[0.18em] text-[rgb(var(--accent))] uppercase">
+            Catálogo
           </p>
-        </div>
+          <h1 className="font-display mt-3 max-w-3xl text-4xl leading-[1.05] font-extrabold md:text-5xl">
+            Tudo da lista, num só balaio.
+          </h1>
+          <p className="mt-4 max-w-2xl text-sm leading-6 text-[rgb(var(--muted))] md:text-base">
+            Busque pelo nome do material ou escolha o ano do estudante para ver somente o que está
+            autorizado no crédito.
+          </p>
 
-        <form
-          method="get"
-          action="/products"
-          className="mt-8 rounded-2xl border border-[rgb(var(--border))] bg-white/70 p-4 sm:p-5"
-        >
-          <div className="grid gap-3 lg:grid-cols-[minmax(0,1.5fr)_repeat(3,minmax(0,0.7fr))_auto]">
-            <input
-              type="search"
-              name="q"
-              defaultValue={search}
-              placeholder="Search sofas, sectionals, colors…"
-              className={inputClass}
-              aria-label="Search products"
-            />
-            <input
-              type="number"
-              name="priceMin"
-              defaultValue={params.priceMin ?? ''}
-              placeholder="Min price"
-              min="0"
-              step="1"
-              inputMode="decimal"
-              className={inputClass}
-              aria-label="Minimum price in US dollars"
-            />
-            <input
-              type="number"
-              name="priceMax"
-              defaultValue={params.priceMax ?? ''}
-              placeholder="Max price"
-              min="0"
-              step="1"
-              inputMode="decimal"
-              className={inputClass}
-              aria-label="Maximum price in US dollars"
-            />
-            <select
-              name="availability"
-              defaultValue={availability}
-              className={inputClass}
-              aria-label="Availability"
-            >
-              <option value="all">All availability</option>
-              <option value="available">In stock</option>
-            </select>
-            <button
-              type="submit"
-              className="inline-flex items-center justify-center rounded-full bg-[rgb(var(--fg))] px-6 py-2.5 text-sm font-semibold text-white transition hover:-translate-y-px hover:shadow-sm"
-            >
-              Apply
-            </button>
+          <div className="mt-7 max-w-2xl">
+            <CatalogSearch query={query} />
           </div>
-
-          <div className="mt-3 flex flex-wrap items-center gap-3">
-            <label className="text-xs font-semibold text-[rgb(var(--muted))]">
-              Sort by
-              <select
-                name="sort"
-                defaultValue={sort}
-                className="ml-2 rounded-lg border border-[rgb(var(--border))] bg-white px-3 py-1.5 text-xs text-[rgb(var(--fg))]"
-              >
-                {SORT_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <Link
-              href="/collections/all-products"
-              className="text-xs font-semibold text-[rgb(var(--accent))] transition hover:opacity-75"
-            >
-              View the complete collection
-            </Link>
-            {hasFilters ? (
-              <Link
-                href="/products"
-                className="text-xs font-semibold text-[rgb(var(--muted))] underline decoration-[rgb(var(--border))] underline-offset-4 transition hover:text-[rgb(var(--fg))]"
-              >
-                Clear filters
-              </Link>
-            ) : null}
-          </div>
-        </form>
-
-        {result.products.length === 0 ? (
-          <div className="relative mt-12 overflow-hidden rounded-3xl border border-[rgb(var(--border))] bg-white p-12 text-center sm:p-16">
-            <h2 className="font-display text-3xl font-medium tracking-tight md:text-4xl">
-              Nothing matched
-              <span className="italic text-[rgb(var(--accent))]">
-                {' '}
-                this search.
-              </span>
-            </h2>
-            <p className="mx-auto mt-3 max-w-md text-sm text-[rgb(var(--muted))]">
-              Try a broader term or clear the filters to see every available
-              piece.
-            </p>
-            <Link
-              href="/products"
-              className="mt-7 inline-flex items-center justify-center rounded-full bg-[rgb(var(--fg))] px-7 py-3.5 text-sm font-semibold text-white transition hover:-translate-y-px hover:shadow-md"
-            >
-              See all products
-            </Link>
-            <div className="pointer-events-none absolute inset-x-0 -bottom-12 mx-auto h-40 max-w-sm rounded-full bg-[rgb(var(--accent))]/10 blur-3xl" />
-          </div>
-        ) : (
-          <StaggerGrid className="mt-10 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
-            {result.products.map((product) => (
-              <StaggerItem key={product.id}>
-                <CatalogProductCard product={product} />
-              </StaggerItem>
-            ))}
-          </StaggerGrid>
-        )}
-
-        {result.pageInfo.hasNextPage || result.pageInfo.hasPreviousPage ? (
-          <nav
-            className="mt-10 flex items-center justify-center gap-3"
-            aria-label="Catalog pagination"
-          >
-            {result.pageInfo.hasPreviousPage &&
-            result.pageInfo.startCursor ? (
-              <Link
-                href={`/products${buildQuery(baseQuery, {
-                  before: result.pageInfo.startCursor,
-                  after: undefined,
-                })}`}
-                className="rounded-full border border-[rgb(var(--border))] bg-white px-5 py-2.5 text-sm font-semibold transition hover:bg-neutral-50"
-              >
-                ← Previous
-              </Link>
-            ) : null}
-            {result.pageInfo.hasNextPage && result.pageInfo.endCursor ? (
-              <Link
-                href={`/products${buildQuery(baseQuery, {
-                  after: result.pageInfo.endCursor,
-                  before: undefined,
-                })}`}
-                className="rounded-full border border-[rgb(var(--border))] bg-white px-5 py-2.5 text-sm font-semibold transition hover:bg-neutral-50"
-              >
-                Next →
-              </Link>
-            ) : null}
-          </nav>
-        ) : null}
-
-        <p className="mt-8 text-center text-xs text-[rgb(var(--muted))] md:hidden">
-          {result.totalCount !== null
-            ? `${result.totalCount} matching ${result.totalCount === 1 ? 'piece' : 'pieces'}`
-            : `${result.products.length} ${result.products.length === 1 ? 'piece' : 'pieces'} shown`}
-        </p>
+        </Container>
       </section>
+
+      <Container size="wide" className="py-8 md:py-12">
+        {stage ? <StageBenefitBanner stage={stage} className="mb-8" /> : null}
+
+        <div className="grid gap-10 lg:grid-cols-[260px_1fr] lg:gap-12">
+          <CatalogFilterRail
+            query={query}
+            facets={result.categoryFacets}
+            priceRange={result.priceRange}
+          />
+
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[rgb(var(--border))] pb-5">
+              <p className="text-sm font-bold" aria-live="polite">
+                <span className="tabular-nums-tight">{result.total}</span>{' '}
+                {result.total === 1 ? 'material' : 'materiais'}
+                {result.total !== result.totalUnfiltered ? (
+                  <span className="font-semibold text-[rgb(var(--muted))]">
+                    {' '}
+                    de {result.totalUnfiltered}
+                  </span>
+                ) : null}
+              </p>
+
+              <div className="flex w-full flex-col gap-3 min-[360px]:w-auto min-[360px]:flex-row min-[360px]:items-center">
+                <CatalogFilterDrawer
+                  query={query}
+                  facets={result.categoryFacets}
+                  priceRange={result.priceRange}
+                  total={result.total}
+                />
+                <SortSelect query={query} />
+              </div>
+            </div>
+
+            <div className="pt-5">
+              <ActiveFilterChips query={query} />
+            </div>
+
+            {result.items.length > 0 ? (
+              <StaggerGrid className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                {result.items.map((product) => (
+                  <StaggerItem key={product.slug} className="h-full">
+                    <ProductCard product={product} />
+                  </StaggerItem>
+                ))}
+              </StaggerGrid>
+            ) : (
+              <EmptyResult />
+            )}
+          </div>
+        </div>
+      </Container>
     </main>
+  );
+}
+
+function EmptyResult() {
+  return (
+    <div className="mt-8 rounded-3xl border border-dashed border-[rgb(var(--border-strong))] bg-[rgb(var(--surface-muted))] px-6 py-14 text-center">
+      <span
+        aria-hidden="true"
+        className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-white text-[rgb(var(--muted))]"
+      >
+        <PackageSearch className="size-7" />
+      </span>
+      <h2 className="font-display mt-5 text-2xl font-extrabold">
+        Nenhum material com esses filtros.
+      </h2>
+      <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-[rgb(var(--muted))]">
+        Tente outra palavra, amplie o preço máximo ou escolha mais de uma categoria.
+      </p>
+      <Link href="/products" className={buttonStyles({ size: 'md', className: 'mt-7' })}>
+        <SlidersHorizontal aria-hidden="true" className="size-4" />
+        Limpar os filtros
+      </Link>
+    </div>
   );
 }

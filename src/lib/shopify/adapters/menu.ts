@@ -2,10 +2,7 @@ import type { NavigationLink } from '../../navigation/types';
 import type { MenuQuery } from '../types/storefront.generated';
 
 type GeneratedMenuItem = NonNullable<MenuQuery['menu']>['items'][number];
-type ShopifyMenuItem = Pick<
-  GeneratedMenuItem,
-  'id' | 'title' | 'type' | 'url'
-> & {
+type ShopifyMenuItem = Pick<GeneratedMenuItem, 'id' | 'title' | 'type' | 'url'> & {
   items?: ShopifyMenuItem[];
 };
 
@@ -31,7 +28,7 @@ function isStoreHost(hostname: string): boolean {
 
 export function normalizeShopifyMenuUrl(
   url: string | null | undefined,
-  type: ShopifyMenuItem['type']
+  type: ShopifyMenuItem['type'],
 ) {
   if (type === 'FRONTPAGE') return { href: '/', external: false };
   if (type === 'CATALOG') return { href: '/products', external: false };
@@ -95,11 +92,7 @@ export function withDeliveryLink(links: NavigationLink[]): NavigationLink[] {
   const contactIndex = links.findIndex((link) => link.href === '/contact');
   const showroomIndex = links.findIndex((link) => link.href === '/showroom');
   const insertAt =
-    contactIndex >= 0
-      ? contactIndex + 1
-      : showroomIndex >= 0
-        ? showroomIndex
-        : links.length;
+    contactIndex >= 0 ? contactIndex + 1 : showroomIndex >= 0 ? showroomIndex : links.length;
 
   return [...links.slice(0, insertAt), deliveryLink, ...links.slice(insertAt)];
 }

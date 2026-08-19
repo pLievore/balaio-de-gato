@@ -20,20 +20,14 @@ type CollectionProduct = NonNullable<
 
 type ProductListItem = ProductsQuery['products']['nodes'][number];
 
-type RelatedProduct = NonNullable<
-  RelatedProductsQuery['productRecommendations']
->[number];
+type RelatedProduct = NonNullable<RelatedProductsQuery['productRecommendations']>[number];
 
 export type SearchProduct = Extract<
   SearchProductsQuery['search']['nodes'][number],
   { __typename: 'Product' }
 >;
 
-type ProductSummary =
-  | CollectionProduct
-  | ProductListItem
-  | RelatedProduct
-  | SearchProduct;
+type ProductSummary = CollectionProduct | ProductListItem | RelatedProduct | SearchProduct;
 type ProductDetail = NonNullable<ProductByHandleQuery['product']>;
 
 function toMoney(money: CatalogMoney): CatalogMoney {
@@ -52,7 +46,7 @@ function toImage(
         height?: number | null;
       }
     | null
-    | undefined
+    | undefined,
 ): CatalogImage | null {
   if (!image) return null;
 
@@ -66,7 +60,7 @@ function toImage(
 
 export function validCompareAtPrice(
   price: CatalogMoney,
-  compareAtPrice: CatalogMoney | null | undefined
+  compareAtPrice: CatalogMoney | null | undefined,
 ): CatalogMoney | null {
   if (!compareAtPrice) return null;
   if (price.currencyCode !== compareAtPrice.currencyCode) return null;
@@ -90,10 +84,7 @@ export function adaptProductCard(product: ProductSummary): CatalogProductCard {
     availableForSale: product.availableForSale,
     tags: 'tags' in product ? product.tags : [],
     price,
-    compareAtPrice: validCompareAtPrice(
-      price,
-      product.compareAtPriceRange.minVariantPrice
-    ),
+    compareAtPrice: validCompareAtPrice(price, product.compareAtPriceRange.minVariantPrice),
     images: image ? [image] : [],
   };
 }
@@ -132,9 +123,7 @@ function adaptAttributes(product: ProductDetail): ProductAttributeValues {
   return attributes;
 }
 
-export function adaptProductDetail(
-  product: ProductDetail
-): CatalogProductDetail {
+export function adaptProductDetail(product: ProductDetail): CatalogProductDetail {
   const card = adaptProductCard(product);
 
   return {

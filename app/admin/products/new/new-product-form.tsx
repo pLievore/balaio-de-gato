@@ -34,9 +34,7 @@ export function NewProductForm() {
   const [quantity, setQuantity] = useState('1');
 
   function addFiles(list: FileList | File[]) {
-    const incoming = [...list].filter((file) =>
-      /^image\/(jpeg|png|webp)$/.test(file.type)
-    );
+    const incoming = [...list].filter((file) => /^image\/(jpeg|png|webp)$/.test(file.type));
     setImages((current) => {
       const room = MAX_IMAGES - current.length;
       return [
@@ -126,10 +124,7 @@ export function NewProductForm() {
             />
           </div>
           <div>
-            <label
-              htmlFor="description"
-              className="text-xs font-semibold text-[rgb(var(--muted))]"
-            >
+            <label htmlFor="description" className="text-xs font-semibold text-[rgb(var(--muted))]">
               Description
             </label>
             <textarea
@@ -150,9 +145,7 @@ export function NewProductForm() {
               <select
                 id="status"
                 value={status}
-                onChange={(event) =>
-                  setStatus(event.target.value === 'DRAFT' ? 'DRAFT' : 'ACTIVE')
-                }
+                onChange={(event) => setStatus(event.target.value === 'DRAFT' ? 'DRAFT' : 'ACTIVE')}
                 className={`mt-1 ${inputClass}`}
               >
                 <option value="ACTIVE">Active — visible on the site</option>
@@ -194,10 +187,7 @@ export function NewProductForm() {
             />
           </div>
           <div>
-            <label
-              htmlFor="compareAt"
-              className="text-xs font-semibold text-[rgb(var(--muted))]"
-            >
+            <label htmlFor="compareAt" className="text-xs font-semibold text-[rgb(var(--muted))]">
               Compare-at (optional)
             </label>
             <input
@@ -293,7 +283,7 @@ export function NewProductForm() {
                   type="button"
                   onClick={() => removeImage(image.id)}
                   aria-label={`Remove photo ${index + 1}`}
-                  className="absolute -right-1.5 -top-1.5 inline-flex size-6 items-center justify-center rounded-full bg-[rgb(var(--fg))] text-white transition hover:bg-red-600"
+                  className="absolute -top-1.5 -right-1.5 inline-flex size-6 items-center justify-center rounded-full bg-[rgb(var(--fg))] text-white transition hover:bg-red-600"
                 >
                   <X aria-hidden="true" className="size-3.5" />
                 </button>
@@ -304,7 +294,10 @@ export function NewProductForm() {
       </div>
 
       {error ? (
-        <p role="alert" className="rounded-xl bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
+        <p
+          role="alert"
+          className="rounded-xl bg-red-50 px-4 py-3 text-sm font-semibold text-red-700"
+        >
           {error}
         </p>
       ) : null}
@@ -315,14 +308,11 @@ export function NewProductForm() {
           disabled={submitting}
           className="inline-flex min-h-11 items-center gap-2 rounded-full bg-[rgb(var(--fg))] px-6 text-sm font-semibold text-white transition hover:bg-[rgb(var(--fg))]/90 disabled:opacity-60"
         >
-          {submitting ? (
-            <Loader2 aria-hidden="true" className="size-4 animate-spin" />
-          ) : null}
+          {submitting ? <Loader2 aria-hidden="true" className="size-4 animate-spin" /> : null}
           {submitting ? (progress ?? 'Working…') : 'Create product'}
         </button>
         <p className="text-xs text-[rgb(var(--muted))]">
-          The product is created in Shopify with tracked inventory at your
-          primary location.
+          The product is created in Shopify with tracked inventory at your primary location.
         </p>
       </div>
     </form>

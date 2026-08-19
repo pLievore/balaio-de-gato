@@ -7,10 +7,7 @@ import type {
   CollectionsQueryVariables,
 } from '../types/storefront.generated';
 import { shopifyStorefrontRequest } from '../client';
-import {
-  shopifyCacheTags,
-  shopifyCollectionCacheTag,
-} from '../constants';
+import { shopifyCacheTags, shopifyCollectionCacheTag } from '../constants';
 
 export const COLLECTIONS_QUERY = `#graphql
   query Collections(
@@ -119,27 +116,23 @@ export const COLLECTION_BY_HANDLE_QUERY = `#graphql
   }
 ` as const;
 
-export async function getCollections(
-  variables: CollectionsQueryVariables = { first: 20 }
-) {
-  const result = await shopifyStorefrontRequest<
-    CollectionsQuery,
-    CollectionsQueryVariables
-  >(COLLECTIONS_QUERY, {
-    operationName: 'Collections',
-    variables,
-    next: {
-      revalidate: 600,
-      tags: [shopifyCacheTags.all, shopifyCacheTags.collections],
+export async function getCollections(variables: CollectionsQueryVariables = { first: 20 }) {
+  const result = await shopifyStorefrontRequest<CollectionsQuery, CollectionsQueryVariables>(
+    COLLECTIONS_QUERY,
+    {
+      operationName: 'Collections',
+      variables,
+      next: {
+        revalidate: 600,
+        tags: [shopifyCacheTags.all, shopifyCacheTags.collections],
+      },
     },
-  });
+  );
 
   return result.data.collections;
 }
 
-export async function getCollectionByHandle(
-  variables: CollectionByHandleQueryVariables
-) {
+export async function getCollectionByHandle(variables: CollectionByHandleQueryVariables) {
   const result = await shopifyStorefrontRequest<
     CollectionByHandleQuery,
     CollectionByHandleQueryVariables

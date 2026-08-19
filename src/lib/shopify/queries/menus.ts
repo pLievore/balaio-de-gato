@@ -1,14 +1,8 @@
 import 'server-only';
 
-import type {
-  MenuQuery,
-  MenuQueryVariables,
-} from '../types/storefront.generated';
+import type { MenuQuery, MenuQueryVariables } from '../types/storefront.generated';
 import { shopifyStorefrontRequest } from '../client';
-import {
-  shopifyCacheTags,
-  shopifyMenuCacheTag,
-} from '../constants';
+import { shopifyCacheTags, shopifyMenuCacheTag } from '../constants';
 
 export const MENU_QUERY = `#graphql
   query Menu($handle: String!) {
@@ -46,19 +40,12 @@ export const MENU_QUERY = `#graphql
 
 export async function getMenu(handle: string) {
   const variables: MenuQueryVariables = { handle };
-  const result = await shopifyStorefrontRequest<
-    MenuQuery,
-    MenuQueryVariables
-  >(MENU_QUERY, {
+  const result = await shopifyStorefrontRequest<MenuQuery, MenuQueryVariables>(MENU_QUERY, {
     operationName: 'Menu',
     variables,
     next: {
       revalidate: 3_600,
-      tags: [
-        shopifyCacheTags.all,
-        shopifyCacheTags.menus,
-        shopifyMenuCacheTag(handle),
-      ],
+      tags: [shopifyCacheTags.all, shopifyCacheTags.menus, shopifyMenuCacheTag(handle)],
     },
   });
 

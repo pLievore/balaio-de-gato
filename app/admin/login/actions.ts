@@ -23,16 +23,12 @@ function isRateLimited(key: string): boolean {
 
 export async function loginAction(
   _previous: { error?: string } | undefined,
-  formData: FormData
+  formData: FormData,
 ): Promise<{ error?: string }> {
   const password =
-    typeof formData.get('password') === 'string'
-      ? (formData.get('password') as string)
-      : '';
+    typeof formData.get('password') === 'string' ? (formData.get('password') as string) : '';
   const next =
-    typeof formData.get('next') === 'string'
-      ? (formData.get('next') as string)
-      : '/admin';
+    typeof formData.get('next') === 'string' ? (formData.get('next') as string) : '/admin';
 
   if (isRateLimited('panel-login')) {
     return { error: 'Too many attempts. Try again in a few minutes.' };

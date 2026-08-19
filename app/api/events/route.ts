@@ -28,7 +28,10 @@ function visitorLocation(headers: Headers): string | null {
   } catch {
     // Keep the raw value if it is not URI-encoded.
   }
-  city = city.replace(/[^\p{L}\p{N} .'-]/gu, '').trim().slice(0, 40);
+  city = city
+    .replace(/[^\p{L}\p{N} .'-]/gu, '')
+    .trim()
+    .slice(0, 40);
   if (!city) return null;
 
   const region = (headers.get('x-vercel-ip-country-region') ?? '')
@@ -67,8 +70,7 @@ export async function POST(request: Request) {
     await recordFunnelStep(step);
 
     if (step === 'session') {
-      const referrer =
-        typeof body.ref === 'string' ? body.ref.slice(0, 300) : '';
+      const referrer = typeof body.ref === 'string' ? body.ref.slice(0, 300) : '';
       const utm = typeof body.utm === 'string' ? body.utm.slice(0, 60) : '';
       await recordSessionContext({
         source: classifyTrafficSource(referrer, utm),

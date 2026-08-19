@@ -1,14 +1,21 @@
 'use client';
 
-import { useEffect, useRef, useSyncExternalStore } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import Image from 'next/image';
 
-type NetworkInformation = { saveData?: boolean; effectiveType?: string };
+type NetworkInformation = {
+  saveData?: boolean;
+  effectiveType?: string;
+  addEventListener?: (type: 'change', listener: () => void) => void;
+  removeEventListener?: (type: 'change', listener: () => void) => void;
+};
+
+function getConnection(): NetworkInformation | undefined {
+  return (navigator as Navigator & { connection?: NetworkInformation }).connection;
+}
 
 function connectionAllowsVideo(): boolean {
-  const connection = (
-    navigator as Navigator & { connection?: NetworkInformation }
-  ).connection;
+  const connection = getConnection();
   if (!connection) return true;
   if (connection.saveData) return false;
   return !/(^|-)2g$/.test(connection.effectiveType ?? '');
@@ -18,18 +25,21 @@ const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)';
 
 function subscribeToMotionPreference(onChange: () => void) {
   const media = window.matchMedia(REDUCED_MOTION_QUERY);
+  const connection = getConnection();
   media.addEventListener('change', onChange);
-  return () => media.removeEventListener('change', onChange);
+  connection?.addEventListener?.('change', onChange);
+  return () => {
+    media.removeEventListener('change', onChange);
+    connection?.removeEventListener?.('change', onChange);
+  };
 }
 
 function useShowVideo(): boolean {
   return useSyncExternalStore(
     subscribeToMotionPreference,
-    () =>
-      !window.matchMedia(REDUCED_MOTION_QUERY).matches &&
-      connectionAllowsVideo(),
+    () => !window.matchMedia(REDUCED_MOTION_QUERY).matches && connectionAllowsVideo(),
     // Server snapshot: render only the poster.
-    () => false
+    () => false,
   );
 }
 
@@ -39,55 +49,88 @@ function useShowVideo(): boolean {
  * visitor's connection and motion preferences allow it.
  */
 export default function HeroVideo() {
-  const ref = useRef<HTMLVideoElement | null>(null);
   const showVideo = useShowVideo();
 
+  return (
+    <div className="relative h-full w-full">
+      <Image
+        src="/brand/hero-poster-balaio.png"
+        alt=""
+        fill
+        priority
+        sizes="(max-width: 639px) calc(100vw - 40px), (max-width: 1023px) 580px, 48vw"
+        className="scale-[1.16] object-cover"
+      />
+      {showVideo ? <PlaybackVideo /> : null}
+    </div>
+  );
+}
+
+function PlaybackVideo() {
+  const ref = useRef<HTMLVideoElement | null>(null);
+  const [ready, setReady] = useState(false);
+
   useEffect(() => {
-    if (!showVideo) return;
     const video = ref.current;
     if (!video) return;
+    let inView = true;
 
-    const tryPlay = async () => {
+    const syncPlayback = async () => {
+      if (!inView || document.visibilityState !== 'visible') {
+        video.pause();
+        return;
+      }
+
       try {
         video.muted = true;
         video.playsInline = true;
         await video.play();
       } catch {
-        // Autoplay blocked: the poster keeps the hero presentable.
+        // Autoplay blocked: the poster remains visible.
       }
     };
 
-    tryPlay();
-    video.addEventListener('canplay', tryPlay);
-    return () => video.removeEventListener('canplay', tryPlay);
-  }, [showVideo]);
+    const observer =
+      'IntersectionObserver' in window
+        ? new IntersectionObserver(
+            ([entry]) => {
+              inView = entry?.isIntersecting ?? true;
+              void syncPlayback();
+            },
+            { rootMargin: '200px 0px' },
+          )
+        : null;
+    const handleVisibilityChange = () => void syncPlayback();
+
+    observer?.observe(video);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    void syncPlayback();
+
+    return () => {
+      observer?.disconnect();
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      video.pause();
+    };
+  }, []);
 
   return (
-    <div className="relative h-full w-full">
-      <Image
-        src="/brand/hero-poster.jpg"
-        alt=""
-        fill
-        priority
-        sizes="(max-width: 768px) 100vw, 50vw"
-        className="object-cover"
-      />
-      {showVideo ? (
-        <video
-          ref={ref}
-          className="absolute inset-0 h-full w-full object-cover"
-          autoPlay
-          muted
-          playsInline
-          loop
-          preload="auto"
-          poster="/brand/hero-poster.jpg"
-          controls={false}
-          disablePictureInPicture
-        >
-          <source src="/brand/hero.mp4" type="video/mp4" />
-        </video>
-      ) : null}
-    </div>
+    <video
+      ref={ref}
+      className={`absolute inset-0 h-full w-full scale-[1.16] object-cover transition-opacity duration-500 ${ready ? 'opacity-100' : 'opacity-0'}`}
+      autoPlay
+      muted
+      playsInline
+      loop
+      preload="metadata"
+      controls={false}
+      disablePictureInPicture
+      disableRemotePlayback
+      aria-hidden="true"
+      tabIndex={-1}
+      onLoadedData={() => setReady(true)}
+      onPlaying={() => setReady(true)}
+    >
+      <source src="/brand/hero.mp4" type="video/mp4" />
+    </video>
   );
 }

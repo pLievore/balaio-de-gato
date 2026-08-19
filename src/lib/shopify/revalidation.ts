@@ -2,11 +2,7 @@ import { timingSafeEqual } from 'node:crypto';
 
 import { z } from 'zod';
 
-import {
-  shopifyCacheTags,
-  shopifyCollectionCacheTag,
-  shopifyProductCacheTag,
-} from './constants';
+import { shopifyCacheTags, shopifyCollectionCacheTag, shopifyProductCacheTag } from './constants';
 
 const handlePattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
@@ -24,13 +20,11 @@ export const shopifyRevalidationSignalSchema = z.object({
   webhookId: z.string().trim().min(1).max(255).optional(),
 });
 
-export type ShopifyRevalidationSignal = z.infer<
-  typeof shopifyRevalidationSignalSchema
->;
+export type ShopifyRevalidationSignal = z.infer<typeof shopifyRevalidationSignalSchema>;
 
 export function verifyRevalidationSecret(
   provided: string | undefined,
-  expected: string | undefined
+  expected: string | undefined,
 ) {
   if (!provided || !expected || expected.length < 32) return false;
 

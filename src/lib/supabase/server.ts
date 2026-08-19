@@ -34,6 +34,8 @@ export async function getServerSession() {
     global: { headers: { Authorization: `Bearer ${accessToken}` } },
   });
 
-  const { data: { user } } = await client.auth.getUser(accessToken);
+  const {
+    data: { user },
+  } = await client.auth.getUser(accessToken);
   return user ?? null;
 }

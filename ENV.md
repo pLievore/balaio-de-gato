@@ -1,76 +1,65 @@
-# Variáveis de Ambiente
+# Variáveis de ambiente
 
-Este projeto utiliza variáveis de ambiente para integrações (Supabase, Square, Resend) e configuração do site.
+Este arquivo descreve o ambiente alvo da Balaio de Gato. Nunca versione segredos; use `.env.local` somente para desenvolvimento e o cofre do provedor nos demais ambientes.
 
-## Setup
+## Base pública
 
-1. Copie `env.example` para `.env.local`:
-   ```bash
-   cp env.example .env.local
-   ```
-2. Preencha cada chave com os valores do seu ambiente (sandbox para dev).
+```dotenv
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
+NEXT_PUBLIC_ALLOW_INDEXING=false
+```
 
-## Variáveis
+`NEXT_PUBLIC_ALLOW_INDEXING` só deve ser `true` no domínio público final.
 
-### App
+## PostgreSQL e dados protegidos
 
-| Variável | Pública? | Descrição | Padrão |
-|---|---|---|---|
-| `NEXT_PUBLIC_SITE_URL` | sim | URL canônica do site | `https://801outlet.com` |
-| `NEXT_PUBLIC_PHONE_E164` | sim | Telefone em E.164 | `+13852016328` |
+```dotenv
+DATABASE_URL=postgresql://...
+DATABASE_URL_UNPOOLED=postgresql://...
+ORDER_DATA_ENCRYPTION_KEY=...
+ORDER_RESERVATION_TTL_MINUTES=1440
+```
 
-### Manutenção
+- `DATABASE_URL` é a conexão pooled usada pelo Next.js em runtime.
+- `DATABASE_URL_UNPOOLED` é a conexão direta preferida por migrations, seed e
+  ferramentas do Drizzle.
+- `ORDER_DATA_ENCRYPTION_KEY` protege o CPF persistido e gera o índice cego de
+  consulta. É **obrigatória em todo deploy** e deve ser longa, aleatória,
+  exclusiva por ambiente e mantida no cofre do provedor. Trocar esse segredo
+  sem um plano de rotação torna os dados existentes ilegíveis.
+- `ORDER_RESERVATION_TTL_MINUTES` define, em minutos inteiros positivos, a
+  validade inicial da reserva de estoque. É obrigatório em produção; `1440` é
+  apenas um exemplo e deve ser calibrado com a operação Personal Net.
 
-| Variável | Pública? | Descrição | Padrão |
-|---|---|---|---|
-| `MAINTENANCE_MODE` | não | `1`/`true`/`on` bloqueia todas as rotas públicas com HTTP 503 e a página de manutenção. Qualquer outro valor (ou ausente) mantém o site no ar | desligado |
-| `MAINTENANCE_BYPASS_TOKEN` | não | Segredo aleatório que libera o site normal via `?preview=<token>` enquanto o bloqueio está ligado. Sem ele, não há bypass | — |
+O fallback local temporário que deriva a proteção de dados de
+`ADMIN_PANEL_SESSION_SECRET` é apenas uma compatibilidade de desenvolvimento e
+não é uma configuração de deploy suportada. Defina sempre a chave dedicada
+fora do ambiente local.
 
-O bloqueio é lido em build time e inlined no bundle do edge: **ligar ou desligar exige redeploy** (mudar a env no Vercel e redeploy, ~1 min). `/admin`, `/api/webhooks/*`, `/api/internal/*`, `robots.txt` e `sitemap.xml` continuam acessíveis durante a manutenção.
+## Sessão administrativa
 
-### Shopify Headless
+```dotenv
+ADMIN_PANEL_SESSION_SECRET=...
+```
 
-| Variável | Pública? | Descrição |
-|---|---|---|
-| `SHOPIFY_STORE_DOMAIN` | não | Domínio canônico `myshopify.com` |
-| `SHOPIFY_STOREFRONT_API_VERSION` | não | Versão fixada da Storefront API |
-| `SHOPIFY_STOREFRONT_PRIVATE_ACCESS_TOKEN` | **não** | Token privado server-side do Headless channel |
-| `SHOPIFY_REVALIDATION_SECRET` | **não** | Segredo aleatório de no mínimo 32 caracteres compartilhado somente entre o app Admin e o endpoint interno de revalidação |
-| `SHOPIFY_SHOP_ID` | não | ID numérico da loja, usado nos endpoints do Customer Account API |
-| `SHOPIFY_CUSTOMER_ACCOUNT_CLIENT_ID` | não | Client ID público (PKCE) do Customer Account API no canal Headless; sem client secret |
+Esse segredo ainda sustenta o painel legado enquanto ele permanece no código.
+O novo painel terá autenticação e autorização próprias; não considere a sessão
+atual como migração concluída. Segredos administrativos devem ter alta entropia
+e ser diferentes por ambiente.
 
-### Database / Auth legado (Supabase)
+## Comunicação — pendente de fornecedor
 
-| Variável | Pública? | Descrição |
-|---|---|---|
-| `NEXT_PUBLIC_SUPABASE_URL` | sim | URL do projeto Supabase |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | sim | Chave anônima (RLS aplicado) |
-| `SUPABASE_SERVICE_ROLE_KEY` | **não** | Chave de service role — somente server-side |
+```dotenv
+TRANSACTIONAL_EMAIL_FROM=...
+TRANSACTIONAL_EMAIL_PROVIDER_KEY=...
+```
 
-### Pagamento (Square Hosted Checkout)
+Remetente, domínio e fornecedor precisam ser validados antes da ativação.
 
-| Variável | Descrição |
-|---|---|
-| `SQUARE_ACCESS_TOKEN` | Token da API |
-| `SQUARE_LOCATION_ID` | ID da localização da conta |
-| `SQUARE_ENVIRONMENT` | `sandbox` ou `production` |
-| `SQUARE_WEBHOOK_SIGNATURE_KEY` | Chave para validar assinatura do webhook |
+## Personal Net / DUEPAY
 
-### Email (Resend)
+O fluxo inicial não requer credencial de API porque é assistido no portal autorizado. Não crie variáveis falsas. Se a Personal Net fornecer uma API vigente, as variáveis serão definidas conforme a documentação oficial, separando sandbox e produção.
 
-| Variável | Descrição |
-|---|---|
-| `RESEND_API_KEY` | Chave da API Resend |
-| `EMAIL_FROM` | Endereço verificado de envio (ex: `orders@801outlet.com`) |
+## Legado em remoção
 
-### Admin
-
-| Variável | Descrição |
-|---|---|
-| `ADMIN_ALLOWED_EMAILS` | Lista separada por vírgula de e-mails autorizados ao painel admin |
-
-## Notas
-
-- Variáveis com prefixo `NEXT_PUBLIC_` são expostas ao browser. Não use esse prefixo em chaves secretas.
-- `.env.local` está no `.gitignore`. Em produção, configure direto no Vercel.
-- Em dev local, use o ambiente `sandbox` do Square. O webhook precisa ser exposto com ngrok ou similar.
+Variáveis `SHOPIFY_*`, `SQUARE_*`, `SUPABASE_*`, contatos e endereços da 801 Outlet não pertencem ao ambiente alvo. Elas podem continuar presentes localmente enquanto módulos antigos ainda compilam, mas não devem ser copiadas para a nova infraestrutura nem usadas nas rotas públicas novas.

@@ -1,9 +1,6 @@
 export { getShop } from './queries/shop';
 export { getMenu } from './queries/menus';
-export {
-  getCollectionByHandle,
-  getCollections,
-} from './queries/collections';
+export { getCollectionByHandle, getCollections } from './queries/collections';
 export {
   getProductByHandle,
   getProducts,
@@ -11,7 +8,4 @@ export {
   searchProducts,
 } from './queries/products';
 
-export {
-  ShopifyStorefrontError,
-  type ShopifyStorefrontErrorCode,
-} from './errors';
+export { ShopifyStorefrontError, type ShopifyStorefrontErrorCode } from './errors';

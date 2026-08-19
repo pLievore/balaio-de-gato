@@ -62,11 +62,7 @@ export async function getPredictiveSearch(query: string, limit = 5) {
     variables,
     next: {
       revalidate: 60,
-      tags: [
-        shopifyCacheTags.all,
-        shopifyCacheTags.products,
-        shopifyCacheTags.collections,
-      ],
+      tags: [shopifyCacheTags.all, shopifyCacheTags.products, shopifyCacheTags.collections],
     },
   });
 

@@ -8,19 +8,13 @@ import type { FunnelStep } from '../../src/lib/analytics/funnel';
  * Fire-and-forget funnel beacon. Sends only the step name — no identifiers,
  * no cookies — so nothing here identifies the visitor.
  */
-export function trackFunnelStep(
-  step: FunnelStep,
-  extra?: { ref?: string; utm?: string }
-): void {
+export function trackFunnelStep(step: FunnelStep, extra?: { ref?: string; utm?: string }): void {
   if (typeof window === 'undefined') return;
 
   const body = JSON.stringify({ step, ...extra });
   try {
     if (navigator.sendBeacon) {
-      navigator.sendBeacon(
-        '/api/events',
-        new Blob([body], { type: 'application/json' })
-      );
+      navigator.sendBeacon('/api/events', new Blob([body], { type: 'application/json' }));
       return;
     }
   } catch {
@@ -48,9 +42,7 @@ export function TrackEvent({ step }: { step?: FunnelStep }) {
         window.sessionStorage.setItem(SESSION_FLAG, '1');
         // Referrer/UTM travel with the visit beacon so the panel can show
         // where visitors come from; the server buckets and discards them.
-        const utm = new URLSearchParams(window.location.search).get(
-          'utm_source'
-        );
+        const utm = new URLSearchParams(window.location.search).get('utm_source');
         trackFunnelStep('session', {
           ref: document.referrer.slice(0, 300),
           utm: utm ? utm.slice(0, 60) : undefined,

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title id="title">Balaio de Gato</title>
+  <rect width="64" height="64" rx="18" fill="#18324d"/>
+  <path d="M15 28h34l-4 20a7 7 0 0 1-7 6H26a7 7 0 0 1-7-6l-4-20Z" fill="#f2b134"/>
+  <path d="M20 35h24M19 42h26M27 29l2 25M37 29l-2 25" stroke="#18324d" stroke-width="2.5" opacity=".72"/>
+  <path d="M20 29c1-10 6-16 13-16 5 0 8 2 10 6" fill="none" stroke="#e2f6f2" stroke-width="4" stroke-linecap="round"/>
+  <path d="M42 19c7-2 9 4 6 8" fill="none" stroke="#e85d4a" stroke-width="4" stroke-linecap="round"/>
+</svg>

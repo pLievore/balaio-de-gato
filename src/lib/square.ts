@@ -69,7 +69,7 @@ export type CreateCheckoutResult = {
  * Throws if Square is not configured — callers should check isSquareConfigured() first.
  */
 export async function createCheckoutLink(
-  input: CreateCheckoutInput
+  input: CreateCheckoutInput,
 ): Promise<CreateCheckoutResult> {
   const config = readConfig();
   if (!config) throw new Error('Square is not configured');
