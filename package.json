@@ -16,6 +16,7 @@
     "db:seed": "tsx --conditions=react-server --env-file=.env.local scripts/db-seed.ts",
     "db:check": "tsx --conditions=react-server --env-file=.env.local scripts/db-check.ts",
     "db:clear-test-orders": "tsx --conditions=react-server --env-file=.env.local scripts/db-clear-test-orders.ts",
+    "db:smoke-catalog": "tsx --conditions=react-server --env-file=.env.local scripts/db-catalog-smoke.ts",
     "db:smoke-funnel": "tsx --conditions=react-server --env-file=.env.local scripts/db-funnel-smoke.ts",
     "db:smoke-fulfillment": "tsx --conditions=react-server --env-file=.env.local scripts/db-fulfillment-smoke.ts",
     "db:smoke-order": "tsx --conditions=react-server --env-file=.env.local scripts/db-order-smoke.ts",
@@ -23,11 +24,12 @@
     "test": "npm run test:design && npm run test:balaio && npm run test:loja",
     "test:design": "tsx --test src/lib/design/contrast.test.ts src/lib/content/booking.test.ts src/lib/content/ics.test.ts",
     "test:balaio": "tsx --test src/lib/program/material-escolar.test.ts src/lib/payments/duepay.test.ts",
-    "test:loja": "tsx --test src/lib/catalog/query.test.ts src/lib/cart/summary.test.ts src/lib/orders/cpf.test.ts src/lib/orders/order.test.ts src/lib/orders/schema.test.ts src/lib/orders/transitions.test.ts"
+    "test:loja": "tsx --test src/lib/catalog/query.test.ts src/lib/cart/summary.test.ts src/lib/orders/cpf.test.ts src/lib/orders/order.test.ts src/lib/orders/schema.test.ts src/lib/orders/transitions.test.ts src/lib/panel/product-form.test.ts src/lib/panel/csv.test.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
     "@vercel/analytics": "^1.6.1",
+    "@vercel/blob": "^2.8.0",
     "clsx": "^2.1.1",
     "drizzle-orm": "^0.45.2",
     "framer-motion": "^12.27.1",

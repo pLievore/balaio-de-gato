@@ -78,6 +78,7 @@ ORDER_RESERVATION_TTL_MINUTES=...
 ADMIN_PANEL_PASSWORD=...             # acesso ao painel
 ADMIN_PANEL_SESSION_SECRET=...       # ≥32 bytes, assina o cookie de sessão
 ALLOW_DEVELOPMENT_CATALOG=true       # temporária: serve o catálogo de seed
+BLOB_READ_WRITE_TOKEN=...            # fotos de produto; a Vercel injeta ao ligar o store
 ```
 
 `ORDER_DATA_ENCRYPTION_KEY` é obrigatória em produção — sem ela o envio do

@@ -14,6 +14,8 @@ import {
   LogOut,
   Menu,
   Package,
+  Plus,
+  FileUp,
   ReceiptText,
   Store,
   X,
@@ -35,15 +37,14 @@ const NAV: NavGroup[] = [
   },
   {
     title: 'Catálogo',
-    items: [{ href: '/admin/products', label: 'Produtos', icon: Package }],
+    items: [
+      { href: '/admin/products', label: 'Produtos', icon: Package },
+      { href: '/admin/products/new', label: 'Novo produto', icon: Plus },
+      { href: '/admin/products/import', label: 'Importar CSV', icon: FileUp },
+    ],
   },
 ];
 
-/*
- * A autoria de catálogo (novo produto, edição, importação) saiu junto com a
- * integração antiga. Ela volta escrita sobre o PostgreSQL, depois que o
- * catálogo oficial substituir o seed de desenvolvimento.
- */
 
 const ALL_ITEMS = NAV.flatMap((group) => group.items);
 

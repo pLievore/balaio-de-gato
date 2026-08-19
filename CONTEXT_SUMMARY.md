@@ -64,6 +64,12 @@ consentimento, reserva estoque, registra movimento, cria a tentativa
 para consulta; `ORDER_DATA_ENCRYPTION_KEY` é obrigatório em deploy. A duração
 inicial da reserva vem de `ORDER_RESERVATION_TTL_MINUTES`.
 
+**O catálogo é editável pelo painel.** `lib/panel/catalog-write.ts` é o único
+lugar que monta um produto inteiro — produto, categoria, variante, item do
+programa com as etapas e estoque —, sempre em transação, para nunca existir
+produto pela metade. Fotos vão para o Vercel Blob e convivem com as
+ilustrações: a loja usa a foto quando há uma e o desenho quando não há.
+
 **A coleta de eventos vive no PostgreSQL.** `funnel_counters` guarda contagem
 agregada por dia — etapa do funil, origem do tráfego, cidade aproximada e funil
 por produto. Sem cookie, identificador ou registro por visitante, então a loja

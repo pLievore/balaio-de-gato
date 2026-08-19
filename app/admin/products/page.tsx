@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { ExternalLink, Info, Search } from 'lucide-react';
+import { Download, ExternalLink, Pencil, Plus, Search } from 'lucide-react';
 
 import { getCatalogCounts, listPanelProducts } from '../../../src/lib/panel/catalog';
 import { formatBRL } from '../../../src/lib/money';
@@ -42,6 +42,26 @@ export default async function PanelProductsPage({
         title="Produtos"
         titleAccent="e estoque"
         subtitle="O que a loja tem cadastrado, com o saldo disponível de cada item."
+        actions={
+          <div className="flex flex-wrap gap-2">
+            {/* `prefetch={false}`: é um download, não uma página para pré-carregar. */}
+            <Link
+              href="/admin/products/export"
+              prefetch={false}
+              className="inline-flex min-h-10 items-center gap-2 rounded-full border border-[rgb(var(--border-strong))] bg-white px-4 text-sm font-semibold transition hover:border-[rgb(var(--fg))]"
+            >
+              <Download aria-hidden="true" className="size-4" />
+              Exportar CSV
+            </Link>
+            <Link
+              href="/admin/products/new"
+              className="inline-flex min-h-10 items-center gap-2 rounded-full bg-[rgb(var(--fg))] px-4 text-sm font-bold text-white transition hover:opacity-90"
+            >
+              <Plus aria-hidden="true" className="size-4" />
+              Novo produto
+            </Link>
+          </div>
+        }
       />
 
       <div className="grid gap-3 sm:grid-cols-4">
@@ -105,7 +125,7 @@ export default async function PanelProductsPage({
                     Reservado
                   </th>
                   <th scope="col" className="px-5 py-3">
-                    <span className="sr-only">Ver na loja</span>
+                    <span className="sr-only">Ações</span>
                   </th>
                 </tr>
               </thead>
@@ -116,7 +136,12 @@ export default async function PanelProductsPage({
                     className="transition hover:bg-[rgb(var(--surface-muted))]/40"
                   >
                     <td className="px-5 py-3.5">
-                      <span className="block font-semibold">{produto.name}</span>
+                      <Link
+                        href={`/admin/products/${produto.slug}`}
+                        className="block font-semibold hover:underline"
+                      >
+                        {produto.name}
+                      </Link>
                       <span className="block text-[11px] text-[rgb(var(--muted))]">
                         {produto.brand ?? '—'}
                       </span>
@@ -150,15 +175,24 @@ export default async function PanelProductsPage({
                     <td className="px-5 py-3.5 text-right tabular-nums text-[rgb(var(--muted))]">
                       {produto.reserved}
                     </td>
-                    <td className="px-5 py-3.5 text-right">
-                      <Link
-                        href={`/products/${produto.slug}`}
-                        target="_blank"
-                        aria-label={`Ver ${produto.name} na loja`}
-                        className="inline-flex size-9 items-center justify-center rounded-full text-[rgb(var(--muted))] transition hover:bg-[rgb(var(--surface-muted))] hover:text-[rgb(var(--fg))]"
-                      >
-                        <ExternalLink aria-hidden="true" className="size-4" />
-                      </Link>
+                    <td className="px-5 py-3.5">
+                      <div className="flex justify-end gap-1">
+                        <Link
+                          href={`/admin/products/${produto.slug}`}
+                          aria-label={`Editar ${produto.name}`}
+                          className="inline-flex size-9 items-center justify-center rounded-full text-[rgb(var(--muted))] transition hover:bg-[rgb(var(--surface-muted))] hover:text-[rgb(var(--fg))]"
+                        >
+                          <Pencil aria-hidden="true" className="size-4" />
+                        </Link>
+                        <Link
+                          href={`/products/${produto.slug}`}
+                          target="_blank"
+                          aria-label={`Ver ${produto.name} na loja`}
+                          className="inline-flex size-9 items-center justify-center rounded-full text-[rgb(var(--muted))] transition hover:bg-[rgb(var(--surface-muted))] hover:text-[rgb(var(--fg))]"
+                        >
+                          <ExternalLink aria-hidden="true" className="size-4" />
+                        </Link>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -168,11 +202,10 @@ export default async function PanelProductsPage({
         </div>
       )}
 
-      <p className="flex items-start gap-2 text-xs leading-5 text-[rgb(var(--muted))]">
-        <Info aria-hidden="true" className="mt-0.5 size-3.5 shrink-0" />
-        Esta tela é somente leitura. A edição de catálogo pelo painel ainda será
-        construída sobre o PostgreSQL — hoje os produtos vêm do seed de
-        desenvolvimento, que continua como rascunho não aprovado.
+      <p className="text-xs leading-5 text-[rgb(var(--muted))]">
+        O estoque disponível já desconta o que está reservado por pedidos
+        abertos. Ajustes de saldo são feitos na ficha do produto e ficam
+        registrados como movimento.
       </p>
     </div>
   );

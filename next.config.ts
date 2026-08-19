@@ -1,6 +1,11 @@
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
+  images: {
+    // As fotos de produto vivem no Vercel Blob; sem isto o next/image recusa
+    // a URL. O host tem o id da store como subdomínio, daí o curinga.
+    remotePatterns: [{ protocol: 'https', hostname: '*.public.blob.vercel-storage.com' }],
+  },
   experimental: {
     serverActions: {
       bodySizeLimit: '8mb',

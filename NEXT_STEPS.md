@@ -39,10 +39,20 @@ O ciclo de vida do pedido agora vai até o fim: `ORDER_TRANSITIONS`
 vira `consumed` e sai um movimento `consume`). Cobertura em
 `npm run db:smoke-fulfillment`.
 
-Removidos junto com a integração antiga: autoria de catálogo pelo painel
-(`novo produto`, `edição`, `importar CSV`) e a tela de vendas. Voltam escritos
-sobre o PostgreSQL — a autoria só faz sentido depois que o catálogo oficial
-substituir o seed.
+A autoria de catálogo voltou, escrita sobre o PostgreSQL: cadastro, edição,
+ajuste de estoque, upload de fotos (Vercel Blob) e importação de planilha com
+pré-visualização, além da exportação em CSV. Cobertura em
+`npm run db:smoke-catalog`.
+
+Duas regras que a versão antiga não tinha, porque o Shopify não modelava:
+
+- **etapas autorizadas são obrigatórias.** Sem ao menos uma, o item não pode
+  ser comprado com o crédito, então o cadastro recusa;
+- **estoque nunca é escrito direto.** Todo ajuste vira `receipt` ou
+  `adjustment` em `inventory_movements`, com motivo obrigatório, e o novo saldo
+  nunca desce abaixo do que já está reservado por pedidos abertos.
+
+A tela de vendas segue removida.
 
 ## Em aberto
 
