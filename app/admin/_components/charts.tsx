@@ -57,7 +57,7 @@ export function AreaTrend({
           className="w-full"
           style={{ height }}
           role="img"
-          aria-label="Area chart of daily revenue"
+          aria-label="Gráfico de área da série diária"
         >
           <defs>
             <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
@@ -195,7 +195,7 @@ export function RevenueBarChart({
         className="w-full"
         style={{ height }}
         role="img"
-        aria-label="Bar chart of daily revenue"
+        aria-label="Gráfico de barras da série diária"
       >
         {data.map((day, index) => {
           const barHeight = (day.revenue / max) * (height - 20);
@@ -257,7 +257,7 @@ export function Donut({
   }
 
   if (segments.length === 0) {
-    return <p className="text-sm text-[rgb(var(--muted))]">No data in this period.</p>;
+    return <p className="text-sm text-[rgb(var(--muted))]">Sem dados neste período.</p>;
   }
 
   return (
@@ -309,7 +309,7 @@ export function Donut({
 
 export function HBar({
   rows,
-  emptyLabel = 'No data in this period.',
+  emptyLabel = 'Sem dados neste período.',
 }: {
   rows: Array<{
     label: string;

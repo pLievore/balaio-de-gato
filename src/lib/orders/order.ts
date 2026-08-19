@@ -63,8 +63,6 @@ export type OrderCustomer = {
   responsavelCpf: string;
   email: string;
   telefone: string;
-  /** Mantido temporariamente no formulário; não é persistido sem necessidade operacional comprovada. */
-  estudanteNome?: string;
   etapa: string;
 };
 
@@ -93,6 +91,53 @@ export type Order = {
   /** Quanto do total excede o crédito da etapa. */
   overBudgetInCents: number;
   observacoes?: string;
+};
+
+/**
+ * Transições permitidas do pedido.
+ *
+ * O fluxo do MVP é assistido: a loja confere o pedido, envia o link DUEPAY,
+ * confirma o pagamento e só então separa e entrega. Cada seta aqui é uma ação
+ * que uma pessoa executa no painel — nada avança sozinho.
+ *
+ * `paid` não volta para cancelado: desfazer um pagamento exige estorno e
+ * devolução de estoque, que este serviço ainda não faz. Melhor recusar a
+ * transição do que fingir que ela é reversível.
+ *
+ * A tabela mora aqui, e não no repositório, para o painel poder desenhar os
+ * botões disponíveis sem importar o banco junto.
+ */
+export const ORDER_TRANSITIONS: Record<OrderStatus, readonly OrderStatus[]> = {
+  draft: ['awaiting_payment_link', 'cancelled'],
+  awaiting_payment_link: ['payment_link_sent', 'manual_review', 'cancelled'],
+  payment_link_sent: ['paid', 'manual_review', 'cancelled'],
+  manual_review: ['awaiting_payment_link', 'payment_link_sent', 'cancelled'],
+  paid: ['preparing'],
+  preparing: ['out_for_delivery'],
+  out_for_delivery: ['delivered'],
+  delivered: [],
+  cancelled: [],
+};
+
+export function allowedTransitions(from: OrderStatus): readonly OrderStatus[] {
+  return ORDER_TRANSITIONS[from];
+}
+
+export function canTransition(from: OrderStatus, to: OrderStatus): boolean {
+  return ORDER_TRANSITIONS[from].includes(to);
+}
+
+/** Rótulo do botão que executa a transição, na voz de quem opera a loja. */
+export const ORDER_TRANSITION_ACTION: Record<OrderStatus, string> = {
+  draft: 'Reabrir como rascunho',
+  awaiting_payment_link: 'Voltar para conferência',
+  payment_link_sent: 'Marcar link como enviado',
+  paid: 'Confirmar pagamento',
+  preparing: 'Iniciar separação',
+  out_for_delivery: 'Sair para entrega',
+  delivered: 'Confirmar entrega',
+  cancelled: 'Cancelar pedido',
+  manual_review: 'Enviar para análise manual',
 };
 
 /**

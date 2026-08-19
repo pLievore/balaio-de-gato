@@ -8,7 +8,6 @@ const VALIDO = {
   responsavelCpf: '529.982.247-25',
   email: 'maria@exemplo.com',
   telefone: '(11) 95555-1234',
-  estudanteNome: 'João Souza',
   etapa: 'alfabetizacao',
   cep: '01310-100',
   logradouro: 'Avenida Paulista',

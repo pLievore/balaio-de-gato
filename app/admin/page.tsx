@@ -1,357 +1,213 @@
 import type { Metadata } from 'next';
-import Image from 'next/image';
 import Link from 'next/link';
-import {
-  AlertTriangle,
-  Download,
-  FileUp,
-  Filter,
-  LineChart,
-  Plus,
-  ReceiptText,
-  Store,
-  type LucideIcon,
-} from 'lucide-react';
+import { AlertTriangle, ArrowRight, PackageX, Store } from 'lucide-react';
 
-import { getSalesSummary } from '../../src/lib/panel/analytics';
+import type { OrderStatus } from '../../src/lib/orders/order';
 import {
-  FUNNEL_STEPS,
-  FUNNEL_STEP_LABEL,
-  TRAFFIC_SOURCE_LABEL,
-  getFunnelBreakdown,
-  getFunnelCounts,
-  isFunnelStorageConfigured,
-  type BreakdownEntry,
-  type FunnelDailyRow,
-  type FunnelStep,
-  type TrafficSource,
-} from '../../src/lib/analytics/funnel';
-import {
-  computeCatalogStats,
-  listPanelProducts,
-  LOW_STOCK_THRESHOLD,
-} from '../../src/lib/panel/products';
-import {
-  CHART_PALETTE,
-  financialStatusLabel,
-  formatMoney,
-  formatPercent,
-  formatShortDay,
-  STATUS_COLORS,
-} from './_components/format';
-import { BiHero, DeltaChip, KpiCard, Panel, PageHeader } from './_components/ui';
-import { AreaTrend, Donut, HBar } from './_components/charts';
+  getCatalogHealth,
+  getDailyOrders,
+  getLowStock,
+  getOverviewTotals,
+  getRecentOrders,
+  getTopProducts,
+} from '../../src/lib/panel/overview';
+import { formatBRL } from '../../src/lib/money';
+import { BiHero, KpiCard, PageHeader, Panel } from './_components/ui';
+import { OrderStatusPill } from './orders/status-pill';
 
-export const metadata: Metadata = { title: 'Overview — 801 Outlet Panel' };
+export const metadata: Metadata = { title: 'Visão geral — Painel Balaio de Gato' };
 export const dynamic = 'force-dynamic';
 
-const SHORTCUTS: Array<{
-  href: string;
-  label: string;
-  icon: LucideIcon;
-  external?: boolean;
-}> = [
-  { href: '/admin/products/new', label: 'New product', icon: Plus },
-  { href: '/admin/products/import', label: 'Import CSV', icon: FileUp },
-  { href: '/admin/products/export', label: 'Export CSV', icon: Download, external: true },
-  { href: '/admin/orders', label: 'Orders', icon: ReceiptText },
-  { href: '/admin/funnel', label: 'Funnel', icon: Filter },
-  { href: 'https://801outlet.com', label: 'View store', icon: Store, external: true },
-];
+const dataCurta = new Intl.DateTimeFormat('pt-BR', {
+  timeZone: 'America/Sao_Paulo',
+  day: '2-digit',
+  month: 'short',
+});
 
-export default async function AdminOverviewPage() {
-  const funnelConfigured = isFunnelStorageConfigured();
-  const [summary, products, funnelRows, sources] = await Promise.all([
-    getSalesSummary(30),
-    listPanelProducts(),
-    funnelConfigured ? getFunnelCounts(30) : Promise.resolve([] as FunnelDailyRow[]),
-    funnelConfigured ? getFunnelBreakdown(30, 'src', 5) : Promise.resolve([] as BreakdownEntry[]),
+export default async function PanelOverviewPage() {
+  const [totais, serie, topProdutos, estoqueBaixo, recentes, catalogo] = await Promise.all([
+    getOverviewTotals(),
+    getDailyOrders(14),
+    getTopProducts(6),
+    getLowStock(8),
+    getRecentOrders(6),
+    getCatalogHealth(),
   ]);
-  const catalog = computeCatalogStats(products);
-
-  const funnelTotals = FUNNEL_STEPS.reduce(
-    (accumulator, step) => {
-      accumulator[step] = funnelRows.reduce((sum, row) => sum + row.counts[step], 0);
-      return accumulator;
-    },
-    {} as Record<FunnelStep, number>,
-  );
-  const funnelStages: Array<{ key: FunnelStep | 'purchase'; value: number }> = [
-    ...FUNNEL_STEPS.map((step) => ({ key: step, value: funnelTotals[step] })),
-    { key: 'purchase' as const, value: summary.orderCount },
-  ];
-  const funnelTop = funnelStages[0].value;
 
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="OVERVIEW"
-        title="Store"
-        titleAccent="overview"
-        subtitle="Sales from the last 30 days and the current state of the catalog."
+        eyebrow="PAINEL"
+        title="Visão"
+        titleAccent="geral"
+        subtitle="O que a operação precisa olhar hoje."
         actions={
           <Link
-            href="/admin/sales"
+            href="/"
+            target="_blank"
             className="inline-flex min-h-10 items-center gap-2 rounded-full border border-[rgb(var(--border-strong))] bg-white px-4 text-sm font-semibold transition hover:border-[rgb(var(--fg))]"
           >
-            <LineChart aria-hidden="true" className="size-4" />
-            Full sales view
+            <Store aria-hidden="true" className="size-4" />
+            Ver a loja
           </Link>
         }
       />
 
-      {/* Revenue hero — the one number that matters, with its trend inside. */}
       <BiHero
-        eyebrow="Revenue · last 30 days"
-        value={formatMoney(summary.totalRevenue, summary.currencyCode)}
+        eyebrow="Aguardando ação"
+        value={String(totais.awaitingAction)}
         side={
-          <>
-            <DeltaChip value={summary.revenueDelta} suffix="vs previous 30d" dark />
-            <p className="text-xs text-white/50">
-              {summary.orderCount} orders · {summary.unitsSold} units
-            </p>
-          </>
+          <Link
+            href="/admin/orders"
+            className="inline-flex min-h-11 items-center gap-2 rounded-full bg-white px-5 text-sm font-bold text-[rgb(var(--fg))] transition hover:opacity-90"
+          >
+            Abrir pedidos
+            <ArrowRight aria-hidden="true" className="size-4" />
+          </Link>
         }
       >
-        {summary.totalRevenue === 0 ? (
-          <p className="text-sm text-white/60">No sales recorded in the last 30 days.</p>
-        ) : (
-          <AreaTrend
-            data={summary.daily.map((d) => ({
-              date: d.date,
-              value: d.revenue,
-              hint: `${formatShortDay(d.date)} — ${formatMoney(d.revenue, summary.currencyCode)} · ${d.orders} order${d.orders === 1 ? '' : 's'}`,
-            }))}
-            maxLabel={formatMoney(
-              Math.max(...summary.daily.map((d) => d.revenue)),
-              summary.currencyCode,
-            )}
-            tone="dark"
-            height={150}
-          />
-        )}
+        <p className="text-sm leading-6 text-white/70">
+          Pedidos em conferência, com link a enviar ou em análise manual. É a
+          fila que trava o pagamento do responsável se ninguém tocar.
+        </p>
       </BiHero>
 
-      <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <KpiCard
-          title="Orders"
-          value={String(summary.orderCount)}
-          sub={
-            typeof summary.ordersDelta === 'number'
-              ? `${summary.ordersDelta >= 0 ? '+' : '−'}${formatPercent(Math.abs(summary.ordersDelta))} vs previous`
-              : undefined
-          }
-          spark={summary.daily.map((d) => d.orders)}
+          title="Pedidos (30 dias)"
+          value={String(totais.ordersLast30Days)}
+          sub={`${totais.ordersTotal} desde o início`}
+          spark={serie.map((ponto) => ponto.total)}
           href="/admin/orders"
         />
         <KpiCard
-          title="Average order"
-          value={formatMoney(summary.averageOrderValue, summary.currencyCode)}
-          sub="last 30 days"
+          title="Receita confirmada"
+          value={formatBRL(totais.paidRevenueInCents)}
+          sub="Pedidos pagos em diante"
         />
         <KpiCard
-          title="Visits (30d)"
-          value={funnelConfigured ? String(funnelTotals.session) : '—'}
-          sub={funnelConfigured ? 'unique sessions' : 'connect storage'}
-          spark={funnelConfigured ? funnelRows.map((row) => row.counts.session) : undefined}
-          href="/admin/funnel"
+          title="Ticket médio"
+          value={formatBRL(totais.averageTicketInCents)}
+          sub="Somente pedidos pagos"
         />
         <KpiCard
-          title="Visit → order"
-          value={
-            funnelConfigured && funnelTop > 0 ? formatPercent(summary.orderCount / funnelTop) : '—'
-          }
-          sub="overall conversion"
-          href="/admin/funnel"
+          title="Catálogo ativo"
+          value={String(catalogo.activeProducts)}
+          sub={`${catalogo.outOfStock} sem disponibilidade`}
+          href="/admin/products"
         />
       </div>
 
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
-        <Panel title="Conversion funnel (30d)" className="xl:col-span-2">
-          {!funnelConfigured || funnelTop === 0 ? (
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Panel title="Últimos pedidos">
+          {recentes.length === 0 ? (
             <p className="text-sm text-[rgb(var(--muted))]">
-              {funnelConfigured
-                ? 'No traffic recorded yet.'
-                : 'Connect the event storage to see the funnel.'}
+              Nenhum pedido ainda. Os pedidos enviados pela loja aparecem aqui.
             </p>
           ) : (
-            <ol className="space-y-3">
-              {funnelStages.map((stage, index) => {
-                const previous = index === 0 ? null : funnelStages[index - 1].value;
-                const stepRate = previous && previous > 0 ? stage.value / previous : null;
-                const width = Math.max((stage.value / funnelTop) * 100, 2);
-                return (
-                  <li key={stage.key}>
-                    <div className="flex items-baseline justify-between gap-3 text-sm">
-                      <span className="font-semibold">{FUNNEL_STEP_LABEL[stage.key]}</span>
-                      <span className="tabular-nums">
-                        <span className="font-bold">{stage.value}</span>
-                        {stepRate === null ? null : (
-                          <span className="ml-2 text-xs text-[rgb(var(--muted))]">
-                            {formatPercent(stepRate)}
-                          </span>
-                        )}
-                      </span>
-                    </div>
-                    <div className="mt-1.5 h-6 overflow-hidden rounded-lg bg-[rgb(var(--surface-muted))]">
-                      <div
-                        className="h-full rounded-lg bg-[#6f8352]/80"
-                        style={{ width: `${width}%` }}
-                      />
-                    </div>
-                  </li>
-                );
-              })}
-            </ol>
-          )}
-        </Panel>
-
-        <div className="space-y-4">
-          <Panel title="Traffic sources (30d)">
-            {sources.length === 0 ? (
-              <p className="text-sm text-[rgb(var(--muted))]">Fills in as visits arrive.</p>
-            ) : (
-              <HBar
-                rows={sources.map((entry) => ({
-                  label: TRAFFIC_SOURCE_LABEL[entry.label as TrafficSource] ?? entry.label,
-                  value: entry.count,
-                }))}
-              />
-            )}
-          </Panel>
-          <Panel title="Payment status">
-            <Donut
-              segments={summary.byStatus.map((entry, index) => ({
-                label: financialStatusLabel(entry.status),
-                value: entry.count,
-                color: STATUS_COLORS[entry.status] ?? CHART_PALETTE[index % CHART_PALETTE.length],
-                hint: formatMoney(entry.revenue, summary.currencyCode),
-              }))}
-              centerLabel={{ value: String(summary.orderCount), label: 'orders' }}
-              size={120}
-            />
-          </Panel>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
-        <Panel
-          title="Best sellers (30d)"
-          action={
-            <Link
-              href="/admin/sales"
-              className="text-xs font-semibold text-[rgb(var(--sage-ink))] hover:underline"
-            >
-              See sales
-            </Link>
-          }
-        >
-          <HBar
-            rows={summary.bestSellers.slice(0, 6).map((item) => ({
-              label: item.title,
-              value: item.quantity,
-              hint: formatMoney(item.revenue, summary.currencyCode),
-              imageUrl: item.imageUrl,
-            }))}
-          />
-        </Panel>
-
-        <Panel
-          title={`Low stock (≤ ${LOW_STOCK_THRESHOLD} units)`}
-          action={
-            <Link
-              href="/admin/products?stock=low"
-              className="text-xs font-semibold text-[rgb(var(--sage-ink))] hover:underline"
-            >
-              See all
-            </Link>
-          }
-        >
-          {catalog.lowStock.length === 0 ? (
-            <p className="text-sm text-[rgb(var(--muted))]">
-              Every active product has stock above the threshold.
-            </p>
-          ) : (
-            <ul className="space-y-2.5">
-              {catalog.lowStock.map((entry) => (
-                <li
-                  key={`${entry.productId}-${entry.variantTitle ?? 'default'}`}
-                  className="flex items-center gap-3"
-                >
-                  <span className="relative size-10 shrink-0 overflow-hidden rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--surface-muted))]">
-                    {entry.imageUrl ? (
-                      <Image
-                        src={entry.imageUrl}
-                        alt=""
-                        fill
-                        sizes="40px"
-                        className="object-cover"
-                      />
-                    ) : null}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-semibold">{entry.title}</p>
-                    {entry.variantTitle ? (
-                      <p className="truncate text-xs text-[rgb(var(--muted))]">
-                        {entry.variantTitle}
-                      </p>
-                    ) : null}
-                  </div>
-                  <span
-                    className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-bold ${
-                      entry.quantity <= 0 ? 'bg-red-50 text-red-700' : 'bg-amber-50 text-amber-700'
-                    }`}
+            <ul className="divide-y divide-[rgb(var(--border))]">
+              {recentes.map((pedido) => (
+                <li key={pedido.code} className="flex flex-wrap items-center gap-3 py-3">
+                  <Link
+                    href={`/admin/orders/${pedido.code}`}
+                    className="font-mono text-sm font-bold hover:underline"
                   >
-                    <AlertTriangle aria-hidden="true" className="size-3" />
-                    {entry.quantity} left
+                    {pedido.code}
+                  </Link>
+                  <OrderStatusPill status={pedido.status as OrderStatus} />
+                  <span className="min-w-0 flex-1 truncate text-xs text-[rgb(var(--muted))]">
+                    {pedido.customerName} · {dataCurta.format(new Date(pedido.createdAt))}
+                  </span>
+                  <span className="text-sm font-bold tabular-nums">
+                    {formatBRL(pedido.totalInCents)}
                   </span>
                 </li>
               ))}
             </ul>
           )}
         </Panel>
+
+        <Panel title="Estoque no limite">
+          {estoqueBaixo.length === 0 ? (
+            <p className="text-sm text-[rgb(var(--muted))]">
+              Nenhum item abaixo do ponto de reposição.
+            </p>
+          ) : (
+            <ul className="divide-y divide-[rgb(var(--border))]">
+              {estoqueBaixo.map((item) => (
+                <li key={item.slug} className="flex items-center gap-3 py-3">
+                  <span
+                    aria-hidden="true"
+                    className={`flex size-8 shrink-0 items-center justify-center rounded-xl ${
+                      item.available <= 0
+                        ? 'bg-red-50 text-red-700'
+                        : 'bg-amber-50 text-amber-700'
+                    }`}
+                  >
+                    {item.available <= 0 ? (
+                      <PackageX className="size-4" />
+                    ) : (
+                      <AlertTriangle className="size-4" />
+                    )}
+                  </span>
+                  <Link
+                    href={`/products/${item.slug}`}
+                    target="_blank"
+                    className="min-w-0 flex-1 truncate text-sm font-semibold hover:underline"
+                  >
+                    {item.name}
+                  </Link>
+                  <span className="text-xs font-bold tabular-nums">
+                    {item.available <= 0 ? 'esgotado' : `${item.available} un.`}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+          <p className="mt-3 text-[11px] leading-4 text-[rgb(var(--muted))]">
+            Disponível é o que sobra depois das reservas dos pedidos abertos.
+          </p>
+        </Panel>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
-        <KpiCard title="Products" value={String(catalog.total)} href="/admin/products" />
-        <KpiCard
-          title="Active"
-          value={String(catalog.active)}
-          href="/admin/products?status=ACTIVE"
-        />
-        <KpiCard title="Drafts" value={String(catalog.draft)} href="/admin/products?status=DRAFT" />
-        <KpiCard
-          title="Out of stock"
-          value={String(catalog.outOfStock)}
-          sub="active products"
-          href="/admin/products?stock=out"
-        />
-      </div>
-
-      <Panel title="Management">
-        <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-6">
-          {SHORTCUTS.map((shortcut) => {
-            const inner = (
-              <>
-                <span className="flex size-9 items-center justify-center rounded-lg bg-[rgb(var(--surface-muted))] text-[rgb(var(--muted))] ring-1 ring-[rgb(var(--border))] transition ring-inset group-hover:bg-[rgb(var(--sage-soft))] group-hover:text-[rgb(var(--sage-ink))]">
-                  <shortcut.icon aria-hidden="true" className="size-[18px]" />
-                </span>
-                {shortcut.label}
-              </>
-            );
-            const className =
-              'group flex flex-col items-center gap-2 rounded-2xl border border-[rgb(var(--border))] bg-white px-3 py-4 text-center text-sm font-semibold transition hover:-translate-y-0.5 hover:border-[rgb(var(--sage-ink))]/40 hover:shadow-md';
-            return shortcut.external ? (
-              <a key={shortcut.href} href={shortcut.href} className={className}>
-                {inner}
-              </a>
-            ) : (
-              <Link key={shortcut.href} href={shortcut.href} className={className}>
-                {inner}
-              </Link>
-            );
-          })}
-        </div>
+      <Panel title="Materiais mais pedidos">
+        {topProdutos.length === 0 ? (
+          <p className="text-sm text-[rgb(var(--muted))]">
+            Ainda não há pedidos suficientes para montar este ranking.
+          </p>
+        ) : (
+          <ul className="space-y-2.5">
+            {topProdutos.map((produto) => {
+              const maximo = topProdutos[0]?.quantity || 1;
+              const proporcao = Math.max(4, Math.round((produto.quantity / maximo) * 100));
+              return (
+                <li key={produto.slug}>
+                  <div className="flex items-baseline justify-between gap-4 text-sm">
+                    <Link
+                      href={`/products/${produto.slug}`}
+                      target="_blank"
+                      className="min-w-0 truncate font-semibold hover:underline"
+                    >
+                      {produto.name}
+                    </Link>
+                    <span className="shrink-0 text-xs text-[rgb(var(--muted))] tabular-nums">
+                      {produto.quantity} un. · {formatBRL(produto.revenueInCents)}
+                    </span>
+                  </div>
+                  <div
+                    aria-hidden="true"
+                    className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-[rgb(var(--surface-muted))]"
+                  >
+                    <div
+                      className="h-full rounded-full bg-[rgb(var(--accent))]"
+                      style={{ width: `${proporcao}%` }}
+                    />
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        )}
       </Panel>
     </div>
   );

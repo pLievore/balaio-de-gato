@@ -26,6 +26,6 @@ O reaproveitamento é de engenharia: composição de páginas, componentes acess
 
 ## Situação do legado
 
-O código Shopify/Square/Supabase ainda existe em áreas antigas do repositório e será removido incrementalmente. As rotas novas e o sitemap já não dependem de Shopify. O app separado `801-outlet-admin` não será convertido; o painel novo será construído neste projeto.
+O código Shopify, Square e Supabase foi removido por completo do repositório, junto com as rotas, scripts, dependências e variáveis de ambiente que dependiam dele. O app separado `801-outlet-admin` não será convertido; o painel deste projeto roda sobre o PostgreSQL, em `/admin`.
 
 Detalhes e decisões: [`../docs/README.md`](../docs/README.md).

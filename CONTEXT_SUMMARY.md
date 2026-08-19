@@ -11,7 +11,7 @@
 - **Arquitetura alvo:** storefront, APIs internas e painel `/admin` no mesmo app; PostgreSQL como sistema de registro. O painel novo ainda não foi migrado.
 - **Pagamento:** link DUEPAY assistido no MVP. O PDF de 2022 é manual operacional, não documentação de API.
 - **Regra de segurança:** código do cartão virtual e senha nunca entram no site da Balaio de Gato.
-- **Legado:** Shopify, Square, Supabase, móveis, USD, Utah, showroom e conteúdo da 801 Outlet saíram do storefront; ainda sustentam o painel `/admin`.
+- **Legado:** Shopify, Square, Supabase, móveis, USD, Utah, showroom e conteúdo da 801 Outlet foram **removidos do repositório**. Storefront e painel rodam apenas sobre o PostgreSQL do projeto.
 - **Fonte canônica:** `C:\dev\Renei-ecommerce\docs`.
 
 ## Como o storefront está montado
@@ -63,6 +63,13 @@ consentimento, reserva estoque, registra movimento, cria a tentativa
 `duepay_manual` e anexa eventos/auditoria. O CPF é cifrado e recebe índice cego
 para consulta; `ORDER_DATA_ENCRYPTION_KEY` é obrigatório em deploy. A duração
 inicial da reserva vem de `ORDER_RESERVATION_TTL_MINUTES`.
+
+**A coleta de eventos vive no PostgreSQL.** `funnel_counters` guarda contagem
+agregada por dia — etapa do funil, origem do tráfego, cidade aproximada e funil
+por produto. Sem cookie, identificador ou registro por visitante, então a loja
+não precisa de banner de consentimento. O incremento é atômico
+(`insert … on conflict do update`), e uma falha na medição nunca derruba a
+navegação. Fuso de referência: `America/Sao_Paulo`.
 
 **Ilustrações no lugar de fotos.** Cada produto aponta para um dos 22
 arquétipos vetoriais de `app/components/product-illustration.tsx`, coloridos a

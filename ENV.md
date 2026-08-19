@@ -62,4 +62,32 @@ O fluxo inicial não requer credencial de API porque é assistido no portal auto
 
 ## Legado em remoção
 
-Variáveis `SHOPIFY_*`, `SQUARE_*`, `SUPABASE_*`, contatos e endereços da 801 Outlet não pertencem ao ambiente alvo. Elas podem continuar presentes localmente enquanto módulos antigos ainda compilam, mas não devem ser copiadas para a nova infraestrutura nem usadas nas rotas públicas novas.
+As variáveis `SHOPIFY_*`, `SQUARE_*`, `SUPABASE_*`, `RESEND_API_KEY`, `EMAIL_FROM` e `NEXT_PUBLIC_PHONE_E164` foram removidas do projeto e do ambiente da Vercel junto com o código que as lia. Não recrie nenhuma delas.
+
+## Ambiente atual
+
+O deploy usa exatamente estas variáveis:
+
+```dotenv
+DATABASE_URL=postgresql://...        # Neon, pooled, usado no runtime
+DATABASE_URL_UNPOOLED=postgresql://...# conexão direta, para migrations e seed
+NEXT_PUBLIC_SITE_URL=https://...
+NEXT_PUBLIC_ALLOW_INDEXING=false     # `true` só no domínio público final
+ORDER_DATA_ENCRYPTION_KEY=...        # ≥32 bytes; cifra o CPF do responsável
+ORDER_RESERVATION_TTL_MINUTES=...
+ADMIN_PANEL_PASSWORD=...             # acesso ao painel
+ADMIN_PANEL_SESSION_SECRET=...       # ≥32 bytes, assina o cookie de sessão
+ALLOW_DEVELOPMENT_CATALOG=true       # temporária: serve o catálogo de seed
+```
+
+`ORDER_DATA_ENCRYPTION_KEY` é obrigatória em produção — sem ela o envio do
+pedido lança exceção, e trocá-la torna ilegíveis os CPFs já cifrados.
+
+A coleta de eventos do funil **não tem variável**: ela grava na tabela
+`funnel_counters` do próprio PostgreSQL. Antes dependia de um Redis Upstash
+(`KV_REST_API_*` / `UPSTASH_REDIS_REST_*`) que nunca foi provisionado, e por
+isso ficava inerte. Não recrie essas variáveis.
+
+`ALLOW_DEVELOPMENT_CATALOG` é um andaime: enquanto o catálogo do banco for o
+seed `draft`, sem ela a loja mostra zero produtos. Ela sai quando o catálogo
+oficial for publicado.

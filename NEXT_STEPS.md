@@ -21,6 +21,29 @@ Ordem recomendada, alinhada a `../docs/09-plano-de-desenvolvimento.md`.
    estoque, tentativa manual de pagamento, eventos e auditoria;
 10. proteção do CPF persistido e smoke concorrente de pedido.
 
+## Painel `/admin` — estado da migração
+
+Migrado para o PostgreSQL do projeto, em pt-BR:
+
+- **Visão geral** (`/admin`) — fila de ação, receita confirmada, ticket médio,
+  últimos pedidos, estoque no limite e materiais mais pedidos;
+- **Pedidos** (`/admin/orders`) — lista com abas por situação, busca por
+  código/nome/e-mail e CPF mascarado; ficha com dados do responsável, endereço,
+  itens e as transições permitidas;
+- **Produtos** (`/admin/products`) — catálogo e saldo disponível, somente
+  leitura.
+
+O ciclo de vida do pedido agora vai até o fim: `ORDER_TRANSITIONS`
+(`lib/orders/order.ts`) declara as transições legais, e confirmar o pagamento
+**baixa o estoque de verdade** (`on_hand` e `reserved` caem juntos, a reserva
+vira `consumed` e sai um movimento `consume`). Cobertura em
+`npm run db:smoke-fulfillment`.
+
+Removidos junto com a integração antiga: autoria de catálogo pelo painel
+(`novo produto`, `edição`, `importar CSV`) e a tela de vendas. Voltam escritos
+sobre o PostgreSQL — a autoria só faz sentido depois que o catálogo oficial
+substituir o seed.
+
 ## Em aberto
 
 1. substituir o seed provisório pelo catálogo oficial revisado, com SKUs,
@@ -42,14 +65,6 @@ Ordem recomendada, alinhada a `../docs/09-plano-de-desenvolvimento.md`.
    testes E2E e acessibilidade do fluxo completo;
 10. avaliar automação Personal Net somente após documentação vigente,
    credenciais e homologação.
-
-## Legado ainda presente
-
-O painel `/admin` atual e as rotas `/api/auth/*`, `/api/search/predictive`,
-`/api/internal/shopify/*` e `/api/webhooks/square` continuam sobre Shopify,
-Square e Supabase. Nada disso é alcançável pelo storefront público, mas o
-painel funciona e depende dessas peças — elas saem junto com a migração do
-painel, não antes.
 
 ## Dependências externas abertas
 

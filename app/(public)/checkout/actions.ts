@@ -14,7 +14,12 @@ import { buildCartSummary, canSubmitOrder } from '../../../src/lib/cart/summary'
 import type { CartLine } from '../../../src/lib/cart/types';
 import { describeIssue } from '../../../src/lib/cart/types';
 import { buildOrderItems, generateOrderCode, type Order } from '../../../src/lib/orders/order';
-import { orderCodeExists, saveOrder } from '../../../src/lib/orders/repository';
+import {
+  CheckoutChangedError,
+  getOrderByCheckoutIdempotencyKey,
+  orderCodeExists,
+  saveOrder,
+} from '../../../src/lib/orders/repository';
 import {
   collectFieldErrors,
   orderFormSchema,
@@ -69,7 +74,8 @@ export async function submitOrder(
   formData: FormData,
 ): Promise<SubmitOrderState> {
   const idempotencyEntry = formData.get('checkoutIdempotencyKey');
-  const idempotencyKey = typeof idempotencyEntry === 'string' ? idempotencyEntry.trim() : '';
+  const idempotencyKey =
+    typeof idempotencyEntry === 'string' ? idempotencyEntry.trim().toLowerCase() : '';
   if (!UUID_PATTERN.test(idempotencyKey)) {
     return {
       status: 'cart-changed',
@@ -77,6 +83,12 @@ export async function submitOrder(
       issues: [],
     };
   }
+
+  // A gravação anterior pode ter sido confirmada no banco e a resposta ter se
+  // perdido. Nesse caso, devolvemos o mesmo pedido antes de revalidar o estoque
+  // que ele próprio já reservou.
+  const existingOrder = await getOrderByCheckoutIdempotencyKey(idempotencyKey);
+  if (existingOrder) return { status: 'success', order: existingOrder };
 
   const lines = parseLines(formData.get('linhas'));
   if (!lines) {
@@ -92,7 +104,6 @@ export async function submitOrder(
     responsavelCpf: formData.get('responsavelCpf'),
     email: formData.get('email'),
     telefone: formData.get('telefone'),
-    estudanteNome: formData.get('estudanteNome'),
     etapa: formData.get('etapa'),
     cep: formData.get('cep'),
     logradouro: formData.get('logradouro'),
@@ -115,6 +126,19 @@ export async function submitOrder(
   // não com a que estava guardada no navegador.
   const products = await getCartProducts();
   const summary = buildCartSummary(lines, products, data.etapa);
+
+  if (summary.missingSlugs.length > 0) {
+    const count = summary.missingSlugs.length;
+    return {
+      status: 'cart-changed',
+      formError: 'Alguns materiais do carrinho não estão mais disponíveis.',
+      issues: [
+        count === 1
+          ? '1 material precisa ser removido antes de continuar.'
+          : `${count} materiais precisam ser removidos antes de continuar.`,
+      ],
+    };
+  }
 
   if (summary.items.length === 0) {
     return {
@@ -147,7 +171,6 @@ export async function submitOrder(
       responsavelCpf: data.responsavelCpf,
       email: data.email,
       telefone: data.telefone,
-      estudanteNome: data.estudanteNome,
       etapa: data.etapa,
     },
     address: {
@@ -169,7 +192,19 @@ export async function submitOrder(
     observacoes: data.observacoes || undefined,
   };
 
-  const persistedOrder = await saveOrder(order, { idempotencyKey });
+  let persistedOrder: Order;
+  try {
+    persistedOrder = await saveOrder(order, { idempotencyKey });
+  } catch (error) {
+    if (error instanceof CheckoutChangedError) {
+      return {
+        status: 'cart-changed',
+        formError: error.message,
+        issues: error.issues,
+      };
+    }
+    throw error;
+  }
 
   return { status: 'success', order: persistedOrder };
 }

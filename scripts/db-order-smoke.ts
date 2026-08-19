@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 
 import { and, count, eq, sql } from 'drizzle-orm';
 
+import { submitOrder } from '../app/(public)/checkout/actions';
 import { db, pool } from '../src/db/client';
 import {
   auditEvents,
@@ -27,6 +28,31 @@ function assertEqual(label: string, actual: unknown, expected: unknown): void {
   if (actual !== expected) {
     throw new Error(`${label}: esperado ${String(expected)}, encontrado ${String(actual)}.`);
   }
+}
+
+function checkoutForm(
+  idempotencyKey: string,
+  stage: string,
+  lines: { slug: string; quantity: number }[],
+): FormData {
+  const form = new FormData();
+  form.set('checkoutIdempotencyKey', idempotencyKey);
+  form.set('linhas', JSON.stringify(lines));
+  form.set('responsavelNome', TEST_NAME);
+  form.set('responsavelCpf', '52998224725');
+  form.set('email', TEST_EMAIL);
+  form.set('telefone', '11999999999');
+  form.set('etapa', stage);
+  form.set('cep', '01310100');
+  form.set('logradouro', 'Avenida Paulista');
+  form.set('numero', '1000');
+  form.set('complemento', 'Teste interno');
+  form.set('bairro', 'Bela Vista');
+  form.set('cidade', 'São Paulo');
+  form.set('uf', 'SP');
+  form.set('observacoes', 'Registro temporário criado pelo smoke do banco.');
+  form.set('aceiteRegras', 'on');
+  return form;
 }
 
 async function assertDevelopmentDatabase(): Promise<void> {
@@ -109,6 +135,16 @@ async function main(): Promise<void> {
 
   const baselineReserved = await reservedForProduct(product.slug);
   const idempotencyKey = randomUUID();
+
+  const missingItemResult = await submitOrder(
+    { status: 'idle' },
+    checkoutForm(randomUUID(), product.stages[0], [
+      { slug: product.slug, quantity: 1 },
+      { slug: 'material-removido-no-smoke', quantity: 1 },
+    ]),
+  );
+  assertEqual('item removido bloqueia o checkout', missingItemResult.status, 'cart-changed');
+
   const order: Order = {
     code: generateOrderCode(),
     status: 'awaiting_payment_link',
@@ -118,7 +154,6 @@ async function main(): Promise<void> {
       responsavelCpf: '52998224725',
       email: TEST_EMAIL,
       telefone: '11999999999',
-      estudanteNome: 'Não deve ser persistido',
       etapa: product.stages[0],
     },
     address: {
@@ -157,6 +192,18 @@ async function main(): Promise<void> {
     ]);
     createdCode = first.code;
     assertEqual('código devolvido no retry', retry.code, first.code);
+
+    // Simula a resposta perdida no navegador. Somente a chave chega de novo:
+    // o Server Action precisa devolver o pedido já gravado antes de reler
+    // formulário, catálogo ou o estoque que esse próprio pedido reservou.
+    const actionRetryForm = new FormData();
+    actionRetryForm.set('checkoutIdempotencyKey', idempotencyKey);
+    const actionRetry = await submitOrder({ status: 'idle' }, actionRetryForm);
+    assertEqual('status do retry no Server Action', actionRetry.status, 'success');
+    if (actionRetry.status !== 'success') {
+      throw new Error('O Server Action não recuperou o checkout idempotente.');
+    }
+    assertEqual('código do retry no Server Action', actionRetry.order.code, first.code);
 
     const [record] = await db
       .select({ id: orders.id })
@@ -201,8 +248,6 @@ async function main(): Promise<void> {
 
     const hydrated = await getOrderByCode(first.code);
     if (!hydrated) throw new Error('Pedido do smoke não pôde ser reidratado.');
-    assertEqual('nome do estudante não persistido', hydrated.customer.estudanteNome, undefined);
-
     const cancelled = await updateOrderStatus(first.code, 'cancelled');
     assertEqual('status após cancelamento', cancelled?.status, 'cancelled');
     const repeatedCancellation = await updateOrderStatus(first.code, 'cancelled');
@@ -227,7 +272,7 @@ async function main(): Promise<void> {
     assertEqual('movimentos após cancelamento', movementsAfterCancel.value, 2);
 
     console.log(
-      'Smoke de pedido passou: idempotência concorrente, reserva, pagamento, auditoria, cancelamento e liberação de estoque.',
+      'Smoke de pedido passou: retry do Server Action, idempotência concorrente, reserva, pagamento, auditoria, cancelamento e liberação de estoque.',
     );
   } finally {
     if (createdCode) {

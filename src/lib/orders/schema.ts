@@ -52,12 +52,6 @@ export const orderFormSchema = z.object({
 
   telefone: z.string().transform(stripPhone).refine(isValidPhone, 'Informe um telefone com DDD.'),
 
-  estudanteNome: z
-    .string()
-    .trim()
-    .min(3, 'Informe o nome do estudante.')
-    .max(120, 'Nome muito longo.'),
-
   etapa: z.enum(stageSlugs, { message: 'Escolha o ano ou a etapa do estudante.' }),
 
   cep: z.string().transform(stripCEP).refine(isValidCEP, 'O CEP precisa ter 8 dígitos.'),

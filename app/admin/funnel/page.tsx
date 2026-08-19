@@ -1,15 +1,14 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { Filter, Info } from 'lucide-react';
+import { Filter } from 'lucide-react';
 
-import { getSalesSummary } from '../../../src/lib/panel/analytics';
+import { countOrdersInPeriod } from '../../../src/lib/panel/overview';
 import {
   FUNNEL_STEPS,
   FUNNEL_STEP_LABEL,
   TRAFFIC_SOURCE_LABEL,
   getFunnelBreakdown,
   getFunnelCounts,
-  isFunnelStorageConfigured,
   type BreakdownEntry,
   type FunnelStep,
   type TrafficSource,
@@ -18,34 +17,11 @@ import { formatPercent, formatShortDay } from '../_components/format';
 import { BiHero, KpiCard, PageHeader, Panel } from '../_components/ui';
 import { AreaTrend } from '../_components/charts';
 
-export const metadata: Metadata = { title: 'Funnel — 801 Outlet Panel' };
+export const metadata: Metadata = { title: 'Funil — Painel Balaio de Gato' };
 export const dynamic = 'force-dynamic';
 
 const PERIODS = [7, 30] as const;
 
-function SetupNotice() {
-  return (
-    <Panel title="Event collection is not connected yet">
-      <div className="flex gap-3">
-        <Info aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-[rgb(var(--sage-ink))]" />
-        <div className="text-sm leading-6 text-[rgb(var(--muted))]">
-          <p>
-            The storefront is already sending funnel events, but they need a place to be counted. In
-            the Vercel dashboard open{' '}
-            <span className="font-semibold text-[rgb(var(--fg))]">
-              Storage → Create Database → Upstash for Redis
-            </span>
-            , connect it to this project and redeploy. Nothing else is needed — the panel picks the
-            credentials up automatically.
-          </p>
-          <p className="mt-3">
-            Only daily totals are stored: no cookies, no visitor identifiers, no personal data.
-          </p>
-        </div>
-      </div>
-    </Panel>
-  );
-}
 
 function BreakdownList({ entries, emptyText }: { entries: BreakdownEntry[]; emptyText: string }) {
   if (entries.length === 0) {
@@ -80,13 +56,12 @@ export default async function FunnelPage({
 }) {
   const { period } = await searchParams;
   const days = PERIODS.find((value) => String(value) === period) ?? 30;
-  const configured = isFunnelStorageConfigured();
 
-  const [rows, summary, sources, locations] = await Promise.all([
-    configured ? getFunnelCounts(days) : Promise.resolve([]),
-    getSalesSummary(days === 7 ? 7 : 30),
-    configured ? getFunnelBreakdown(days, 'src') : Promise.resolve([] as BreakdownEntry[]),
-    configured ? getFunnelBreakdown(days, 'geo') : Promise.resolve([] as BreakdownEntry[]),
+  const [rows, orderCount, sources, locations] = await Promise.all([
+    getFunnelCounts(days),
+    countOrdersInPeriod(days === 7 ? 7 : 30),
+    getFunnelBreakdown(days, 'src'),
+    getFunnelBreakdown(days, 'geo'),
   ]);
 
   const totals = FUNNEL_STEPS.reduce(
@@ -97,26 +72,26 @@ export default async function FunnelPage({
     {} as Record<FunnelStep, number>,
   );
 
-  // Orders come from Shopify, which is the authoritative source for purchases.
+  // O pedido vem do PostgreSQL, que é o sistema de registro da loja.
   const stages: Array<{ key: FunnelStep | 'purchase'; value: number }> = [
     ...FUNNEL_STEPS.map((step) => ({ key: step, value: totals[step] })),
-    { key: 'purchase' as const, value: summary.orderCount },
+    { key: 'purchase' as const, value: orderCount },
   ];
 
   const top = stages[0].value;
-  const overallRate = top > 0 ? summary.orderCount / top : 0;
+  const overallRate = top > 0 ? orderCount / top : 0;
 
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="ANALYTICS"
-        title="Site"
-        titleAccent="funnel"
-        subtitle="From visit to order, measured on the storefront and closed with Shopify order data."
+        eyebrow="ANÁLISE"
+        title="Funil"
+        titleAccent="do site"
+        subtitle="Da visita ao pedido: as etapas vêm do site e o fecho vem do banco."
         actions={
           <nav
             className="flex rounded-full border border-[rgb(var(--border))] bg-white p-1"
-            aria-label="Period"
+            aria-label="Período"
           >
             {PERIODS.map((value) => (
               <Link
@@ -135,34 +110,31 @@ export default async function FunnelPage({
         }
       />
 
-      {configured ? null : <SetupNotice />}
 
       <BiHero
-        eyebrow={`Visits · last ${days} days`}
+        eyebrow={`Visitas · últimos ${days} dias`}
         value={String(totals.session)}
         side={
           <>
             <span className="inline-flex items-center rounded-full bg-white/15 px-2.5 py-1 text-[11px] font-bold text-[#c9dbb2]">
-              {formatPercent(overallRate)} visit → order
+              {formatPercent(overallRate)} visita → pedido
             </span>
             <p className="text-xs text-white/50">
-              {summary.orderCount} order{summary.orderCount === 1 ? '' : 's'} in the period
+              {orderCount} {orderCount === 1 ? 'pedido' : 'pedidos'} no período
             </p>
           </>
         }
       >
-        {!configured || totals.session === 0 ? (
+        {totals.session === 0 ? (
           <p className="text-sm text-white/60">
-            {configured
-              ? 'No visits recorded in this period yet.'
-              : 'Connect the event storage to start counting visits.'}
+            Nenhuma visita registrada neste período ainda.
           </p>
         ) : (
           <AreaTrend
             data={rows.map((row) => ({
               date: row.date,
               value: row.counts.session,
-              hint: `${formatShortDay(row.date)} — ${row.counts.session} visit${row.counts.session === 1 ? '' : 's'}`,
+              hint: `${formatShortDay(row.date)} — ${row.counts.session} ${row.counts.session === 1 ? 'visita' : 'visitas'}`,
             }))}
             maxLabel={String(Math.max(...rows.map((row) => row.counts.session)))}
             tone="dark"
@@ -173,31 +145,31 @@ export default async function FunnelPage({
 
       <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
         <KpiCard
-          title="Product views"
+          title="Visualizações de produto"
           value={String(totals.product_view)}
           spark={rows.map((row) => row.counts.product_view)}
         />
         <KpiCard
-          title="Added to cart"
+          title="Adições ao carrinho"
           value={String(totals.add_to_cart)}
           spark={rows.map((row) => row.counts.add_to_cart)}
         />
         <KpiCard
-          title="Checkout started"
+          title="Envios de pedido iniciados"
           value={String(totals.checkout_start)}
           spark={rows.map((row) => row.counts.checkout_start)}
         />
         <KpiCard
-          title="Visit → order"
+          title="Visita → pedido"
           value={formatPercent(overallRate)}
-          sub={`${summary.orderCount} order${summary.orderCount === 1 ? '' : 's'}`}
+          sub={`${orderCount} ${orderCount === 1 ? 'pedido' : 'pedidos'}`}
         />
       </div>
 
       <Panel title="Funnel">
         {top === 0 ? (
           <p className="text-sm text-[rgb(var(--muted))]">
-            No traffic recorded in this period yet.
+            Nenhum acesso registrado neste período ainda.
           </p>
         ) : (
           <ol className="space-y-3">
@@ -233,24 +205,24 @@ export default async function FunnelPage({
       </Panel>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <Panel title="Where visitors come from">
+        <Panel title="De onde vêm os visitantes">
           <BreakdownList
             entries={sources.map((entry) => ({
               ...entry,
               label: TRAFFIC_SOURCE_LABEL[entry.label as TrafficSource] ?? entry.label,
             }))}
-            emptyText="No visits recorded in this period yet."
+            emptyText="Nenhuma visita registrada neste período ainda."
           />
         </Panel>
-        <Panel title="Top visitor locations">
+        <Panel title="Cidades com mais visitas">
           <BreakdownList
             entries={locations}
-            emptyText="No location data yet — it fills in as new visits arrive."
+            emptyText="Ainda sem dados de cidade — preenche conforme novas visitas chegam."
           />
         </Panel>
       </div>
 
-      <Panel title="By day">
+      <Panel title="Por dia">
         {rows.length === 0 ? (
           <p className="text-sm text-[rgb(var(--muted))]">Nothing recorded yet.</p>
         ) : (
@@ -258,7 +230,7 @@ export default async function FunnelPage({
             <table className="w-full min-w-[520px] text-sm">
               <thead>
                 <tr className="text-left text-xs tracking-wide text-[rgb(var(--muted))] uppercase">
-                  <th className="py-2 pr-4 font-semibold">Day</th>
+                  <th className="py-2 pr-4 font-semibold">Dia</th>
                   {FUNNEL_STEPS.map((step) => (
                     <th key={step} className="py-2 pr-4 font-semibold">
                       {FUNNEL_STEP_LABEL[step]}
@@ -285,7 +257,7 @@ export default async function FunnelPage({
 
       <p className="flex items-center gap-2 text-xs text-[rgb(var(--muted))]">
         <Filter aria-hidden="true" className="size-3.5" />
-        Visits count one per browser session. Orders come from Shopify, so the last stage stays
+        Visitas contam uma por sessão do navegador. Os pedidos vêm do banco, então a última etapa segue
         accurate even if a visitor finishes the purchase later.
       </p>
     </div>

@@ -1,24 +1,29 @@
 import 'server-only';
 
 /**
- * Site funnel counters (D-017).
+ * Contadores do funil do site (D-017).
  *
- * Storage is a Redis instance provisioned through Vercel (Upstash). Only
- * aggregate counts are kept — one integer per day per step, never an
- * identifier, IP or anything tied to a person, so the storefront needs no
- * tracking cookie and no consent banner.
+ * Guardados no PostgreSQL do projeto, em `funnel_counters`. Só existe contagem
+ * agregada — um inteiro por dia, por dimensão —, nunca um identificador, IP ou
+ * qualquer coisa ligada a uma pessoa. Por isso a loja não precisa de cookie de
+ * rastreio nem de banner de consentimento.
  */
+
+import { and, eq, gte, sql } from 'drizzle-orm';
+
+import { db } from '../../db/client';
+import { funnelCounters } from '../../db/schema';
 
 export const FUNNEL_STEPS = ['session', 'product_view', 'add_to_cart', 'checkout_start'] as const;
 
 export type FunnelStep = (typeof FUNNEL_STEPS)[number];
 
 export const FUNNEL_STEP_LABEL: Record<FunnelStep | 'purchase', string> = {
-  session: 'Visits',
-  product_view: 'Product views',
-  add_to_cart: 'Added to cart',
-  checkout_start: 'Checkout started',
-  purchase: 'Orders placed',
+  session: 'Visitas',
+  product_view: 'Visualizações de produto',
+  add_to_cart: 'Adições ao carrinho',
+  checkout_start: 'Envios iniciados',
+  purchase: 'Pedidos enviados',
 };
 
 export const TRAFFIC_SOURCES = [
@@ -69,69 +74,83 @@ export function classifyTrafficSource(referrer: string, utmSource: string): Traf
 }
 
 /** Counters expire after ~13 months so the store never grows unbounded. */
-const COUNTER_TTL_SECONDS = 400 * 24 * 60 * 60;
+/**
+ * Armazenamento dos contadores, no PostgreSQL do projeto.
+ *
+ * Antes isto vivia num Redis Upstash que nunca foi provisionado — e por isso a
+ * coleta ficava inerte: sem as variáveis, `/api/events` respondia 204 sem
+ * gravar nada. Como o volume é de contadores diários e o banco já está de pé,
+ * a tabela `funnel_counters` remove a dependência inteira.
+ *
+ * Nada aqui identifica o visitante: só existe "quantas vezes isto aconteceu
+ * naquele dia".
+ */
 
-type RedisConfig = { url: string; token: string };
+type Metric = 'step' | 'source' | 'location' | 'product';
 
-function redisConfig(): RedisConfig | null {
-  // Vercel's Upstash integration exposes KV_*; a direct Upstash project uses
-  // UPSTASH_*. Accept either so provisioning either way just works.
-  const url = process.env.KV_REST_API_URL ?? process.env.UPSTASH_REDIS_REST_URL ?? '';
-  const token = process.env.KV_REST_API_TOKEN ?? process.env.UPSTASH_REDIS_REST_TOKEN ?? '';
-  if (!url || !token) return null;
-  return { url, token };
-}
+/**
+ * Soma 1 (ou mais) a vários contadores de uma vez.
+ *
+ * Um único INSERT com `on conflict` faz o incremento ser atômico e dispensa
+ * ler antes de escrever, então dois beacons simultâneos não se perdem.
+ */
+async function bumpCounters(
+  entries: readonly { metric: Metric; key: string; amount?: number }[],
+): Promise<void> {
+  if (entries.length === 0) return;
 
-export function isFunnelStorageConfigured(): boolean {
-  return redisConfig() !== null;
-}
+  const day = funnelDateKey();
 
-async function redisCommand<T>(command: string[]): Promise<T | null> {
-  const config = redisConfig();
-  if (!config) return null;
-
-  const response = await fetch(config.url, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${config.token}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(command),
-    cache: 'no-store',
-    signal: AbortSignal.timeout(4000),
-  });
-
-  if (!response.ok) {
-    throw new Error(`Redis command failed with status ${response.status}`);
+  try {
+    await db
+      .insert(funnelCounters)
+      .values(
+        entries.map((entry) => ({
+          day,
+          metric: entry.metric,
+          key: entry.key.slice(0, 140),
+          total: entry.amount ?? 1,
+        })),
+      )
+      .onConflictDoUpdate({
+        target: [funnelCounters.day, funnelCounters.metric, funnelCounters.key],
+        set: {
+          total: sql`${funnelCounters.total} + excluded.total`,
+          updatedAt: new Date(),
+        },
+      });
+  } catch {
+    // A medição é acessória: uma falha aqui não pode derrubar a navegação
+    // nem o envio de um pedido. O beacon já responde 204 de qualquer forma.
   }
-  const payload = (await response.json()) as { result: T };
-  return payload.result;
 }
 
-async function redisPipeline<T>(commands: string[][]): Promise<T[] | null> {
-  const config = redisConfig();
-  if (!config) return null;
+/** Datas do período, da mais antiga para a mais recente. */
+function periodDates(days: number): string[] {
+  return Array.from({ length: days }, (_, index) =>
+    funnelDateKey(new Date(Date.now() - (days - 1 - index) * 86_400_000)),
+  );
+}
 
-  const response = await fetch(`${config.url}/pipeline`, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${config.token}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(commands),
-    cache: 'no-store',
-    signal: AbortSignal.timeout(6000),
-  });
+async function readCounters(
+  metric: Metric,
+  days: number,
+): Promise<{ day: string; key: string; total: number }[]> {
+  const dates = periodDates(days);
+  const first = dates[0];
+  if (!first) return [];
 
-  if (!response.ok) {
-    throw new Error(`Redis pipeline failed with status ${response.status}`);
+  try {
+    return await db
+      .select({ day: funnelCounters.day, key: funnelCounters.key, total: funnelCounters.total })
+      .from(funnelCounters)
+      .where(and(eq(funnelCounters.metric, metric), gte(funnelCounters.day, first)));
+  } catch {
+    return [];
   }
-  const payload = (await response.json()) as Array<{ result: T }>;
-  return payload.map((entry) => entry.result);
 }
 
-/** YYYY-MM-DD in the store's timezone, matching the sales dashboards. */
-export function funnelDateKey(instant: Date = new Date(), timeZone = 'America/Denver'): string {
+export function funnelDateKey(instant: Date = new Date(), timeZone = 'America/Sao_Paulo'): string {
   return new Intl.DateTimeFormat('en-CA', {
     timeZone,
     year: 'numeric',
@@ -140,16 +159,8 @@ export function funnelDateKey(instant: Date = new Date(), timeZone = 'America/De
   }).format(instant);
 }
 
-function counterKey(step: FunnelStep, date: string): string {
-  return `funnel:${date}:${step}`;
-}
-
 export async function recordFunnelStep(step: FunnelStep): Promise<void> {
-  const key = counterKey(step, funnelDateKey());
-  await redisPipeline([
-    ['INCR', key],
-    ['EXPIRE', key, String(COUNTER_TTL_SECONDS)],
-  ]);
+  await bumpCounters([{ metric: 'step', key: step }]);
 }
 
 /**
@@ -161,20 +172,10 @@ export async function recordSessionContext(context: {
   source: TrafficSource;
   location: string | null;
 }): Promise<void> {
-  const date = funnelDateKey();
-  const sourceKey = `funnel:src:${date}`;
-  const commands: string[][] = [
-    ['HINCRBY', sourceKey, context.source, '1'],
-    ['EXPIRE', sourceKey, String(COUNTER_TTL_SECONDS)],
-  ];
-  if (context.location) {
-    const geoKey = `funnel:geo:${date}`;
-    commands.push(
-      ['HINCRBY', geoKey, context.location, '1'],
-      ['EXPIRE', geoKey, String(COUNTER_TTL_SECONDS)],
-    );
-  }
-  await redisPipeline(commands);
+  await bumpCounters([
+    { metric: 'source', key: context.source },
+    ...(context.location ? [{ metric: 'location' as const, key: context.location }] : []),
+  ]);
 }
 
 /**
@@ -189,7 +190,7 @@ export function isProductFunnelStep(step: string): step is ProductFunnelStep {
   return (PRODUCT_FUNNEL_STEPS as readonly string[]).includes(step);
 }
 
-/** Shopify handles are lowercase, digits and dashes. Anything else is junk. */
+/** O slug do produto é minúsculo, com dígitos e hífens. O resto é lixo. */
 const HANDLE_PATTERN = /^[a-z0-9][a-z0-9-]{0,79}$/;
 
 /** One beacon never carries more handles than a cart plausibly holds. */
@@ -197,7 +198,7 @@ const MAX_HANDLES_PER_EVENT = 20;
 
 /**
  * Keeps the counters honest: only well-formed handles are stored, so a
- * crafted beacon cannot fill Redis with arbitrary field names.
+ * crafted beacon cannot fill the table with arbitrary keys.
  */
 export function sanitizeHandles(input: unknown): string[] {
   const list = Array.isArray(input) ? input : [input];
@@ -220,10 +221,8 @@ export function sanitizeHandles(input: unknown): string[] {
 export async function recordProductStep(step: ProductFunnelStep, handles: string[]): Promise<void> {
   if (handles.length === 0) return;
 
-  const key = `funnel:prod:${step}:${funnelDateKey()}`;
-  const commands: string[][] = handles.map((handle) => ['HINCRBY', key, handle, '1']);
-  commands.push(['EXPIRE', key, String(COUNTER_TTL_SECONDS)]);
-  await redisPipeline(commands);
+  // A chave junta produto e etapa, para uma linha só servir as três colunas.
+  await bumpCounters(handles.map((handle) => ({ metric: 'product', key: `${handle}:${step}` })));
 }
 
 export type ProductFunnelRow = {
@@ -237,37 +236,25 @@ export type ProductFunnelRow = {
  * which lose people on the way to checkout.
  */
 export async function getProductFunnel(days: number, limit = 50): Promise<ProductFunnelRow[]> {
-  const dates = Array.from({ length: days }, (_, index) =>
-    funnelDateKey(new Date(Date.now() - (days - 1 - index) * 86400000)),
-  );
-
-  const commands = PRODUCT_FUNNEL_STEPS.flatMap((step) =>
-    dates.map((date) => ['HGETALL', `funnel:prod:${step}:${date}`]),
-  );
-  const results = await redisPipeline<string[] | null>(commands);
-  if (!results) return [];
-
   const rows = new Map<string, ProductFunnelRow>();
 
-  results.forEach((flat, index) => {
-    if (!Array.isArray(flat)) return;
-    const step = PRODUCT_FUNNEL_STEPS[Math.floor(index / dates.length)];
+  for (const counter of await readCounters('product', days)) {
+    // A chave é `<slug>:<etapa>`; a etapa é o trecho após o último dois-pontos.
+    const separator = counter.key.lastIndexOf(':');
+    if (separator <= 0) continue;
+    const handle = counter.key.slice(0, separator);
+    const step = counter.key.slice(separator + 1);
+    if (!isProductFunnelStep(step)) continue;
 
-    for (let cursor = 0; cursor + 1 < flat.length; cursor += 2) {
-      const handle = flat[cursor];
-      const count = Number(flat[cursor + 1]);
-      if (!handle || !Number.isFinite(count)) continue;
-
-      const row =
-        rows.get(handle) ??
-        ({
-          handle,
-          counts: { product_view: 0, add_to_cart: 0, checkout_start: 0 },
-        } satisfies ProductFunnelRow);
-      row.counts[step] += count;
-      rows.set(handle, row);
-    }
-  });
+    const row =
+      rows.get(handle) ??
+      ({
+        handle,
+        counts: { product_view: 0, add_to_cart: 0, checkout_start: 0 },
+      } satisfies ProductFunnelRow);
+    row.counts[step] += counter.total;
+    rows.set(handle, row);
+  }
 
   return [...rows.values()]
     .sort((a, b) => b.counts.product_view - a.counts.product_view)
@@ -278,30 +265,17 @@ export type BreakdownEntry = { label: string; count: number };
 
 /**
  * Merged hash counters (sources or locations) for the last N days, sorted by
- * count. Upstash returns HGETALL as a flat [field, value, ...] array.
+ * count, maior primeiro.
  */
 export async function getFunnelBreakdown(
   days: number,
   kind: 'src' | 'geo',
   limit = 8,
 ): Promise<BreakdownEntry[]> {
-  const dates = Array.from({ length: days }, (_, index) =>
-    funnelDateKey(new Date(Date.now() - (days - 1 - index) * 86400000)),
-  );
-  const results = await redisPipeline<string[] | null>(
-    dates.map((date) => ['HGETALL', `funnel:${kind}:${date}`]),
-  );
-  if (!results) return [];
-
   const totals = new Map<string, number>();
-  for (const flat of results) {
-    if (!Array.isArray(flat)) continue;
-    for (let index = 0; index + 1 < flat.length; index += 2) {
-      const label = flat[index];
-      const count = Number(flat[index + 1]);
-      if (!label || !Number.isFinite(count)) continue;
-      totals.set(label, (totals.get(label) ?? 0) + count);
-    }
+
+  for (const counter of await readCounters(kind === 'src' ? 'source' : 'location', days)) {
+    totals.set(counter.key, (totals.get(counter.key) ?? 0) + counter.total);
   }
 
   return [...totals.entries()]
@@ -317,22 +291,21 @@ export type FunnelDailyRow = {
 
 /** Daily counters for the last N days, oldest first. */
 export async function getFunnelCounts(days: number): Promise<FunnelDailyRow[]> {
-  const dates = Array.from({ length: days }, (_, index) =>
-    funnelDateKey(new Date(Date.now() - (days - 1 - index) * 86400000)),
-  );
+  const dates = periodDates(days);
+  const counters = await readCounters('step', days);
 
-  const keys = dates.flatMap((date) => FUNNEL_STEPS.map((step) => counterKey(step, date)));
-  if (keys.length === 0) return [];
+  const byDay = new Map<string, Map<string, number>>();
+  for (const counter of counters) {
+    const day = byDay.get(counter.day) ?? new Map<string, number>();
+    day.set(counter.key, (day.get(counter.key) ?? 0) + counter.total);
+    byDay.set(counter.day, day);
+  }
 
-  const values = await redisCommand<Array<string | null>>(['MGET', ...keys]);
-  if (!values) return [];
-
-  return dates.map((date, dayIndex) => {
+  // Todo dia do período aparece, mesmo zerado: o gráfico precisa da lacuna.
+  return dates.map((date) => {
+    const day = byDay.get(date);
     const counts = {} as Record<FunnelStep, number>;
-    FUNNEL_STEPS.forEach((step, stepIndex) => {
-      const raw = values[dayIndex * FUNNEL_STEPS.length + stepIndex];
-      counts[step] = raw ? Number(raw) : 0;
-    });
+    for (const step of FUNNEL_STEPS) counts[step] = day?.get(step) ?? 0;
     return { date, counts };
   });
 }

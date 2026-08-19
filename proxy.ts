@@ -54,48 +54,11 @@ function maintenanceGate(request: NextRequest, requestHeaders: Headers): NextRes
   });
 }
 
-const LEGACY_API_PATHS = [
-  '/api/auth',
-  '/api/events',
-  '/api/internal/shopify',
-  '/api/search/predictive',
-  '/api/webhooks/square',
-] as const;
-
-/**
- * O painel e as APIs abaixo pertencem à 801 Outlet. Eles permanecem no
- * repositório somente como material de migração e não podem responder no
- * runtime da Balaio de Gato.
- */
-function legacyRuntimeGate(request: NextRequest): NextResponse | null {
-  const { pathname } = request.nextUrl;
-
-  if (pathname === '/admin' || pathname.startsWith('/admin/')) {
-    return NextResponse.redirect(new URL('/', request.url));
-  }
-
-  const isLegacyApi = LEGACY_API_PATHS.some(
-    (path) => pathname === path || pathname.startsWith(`${path}/`),
-  );
-
-  if (isLegacyApi) {
-    return NextResponse.json(
-      { error: 'Not found' },
-      { status: 404, headers: { 'Cache-Control': 'no-store' } },
-    );
-  }
-
-  return null;
-}
-
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set('x-pathname', pathname);
-
-  const legacyResponse = legacyRuntimeGate(request);
-  if (legacyResponse) return legacyResponse;
 
   const gated = maintenanceGate(request, requestHeaders);
   if (gated) return gated;

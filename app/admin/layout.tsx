@@ -8,7 +8,7 @@ import { logoutAction } from './login/actions';
 import { AdminShell } from './_components/admin-shell';
 
 export const metadata: Metadata = {
-  title: '801 Outlet — Panel',
+  title: 'Painel — Balaio de Gato',
   robots: { index: false, follow: false },
 };
 

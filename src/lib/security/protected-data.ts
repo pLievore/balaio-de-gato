@@ -7,13 +7,28 @@ const ALGORITHM = 'aes-256-gcm';
 
 function masterSecret(): string {
   const explicit = process.env.ORDER_DATA_ENCRYPTION_KEY?.trim();
-  if (explicit) return explicit;
+  if (explicit) {
+    if (Buffer.byteLength(explicit, 'utf8') < 32) {
+      throw new Error('ORDER_DATA_ENCRYPTION_KEY precisa ter ao menos 32 bytes.');
+    }
+    return explicit;
+  }
 
   // Compatibilidade temporária para o ambiente local enquanto o segredo
   // dedicado ainda não foi criado. A implantação pública deve sempre definir
   // ORDER_DATA_ENCRYPTION_KEY separadamente.
   const localFallback = process.env.ADMIN_PANEL_SESSION_SECRET?.trim();
-  if (localFallback && !process.env.VERCEL_ENV) return localFallback;
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
+  let localSite = process.env.NODE_ENV !== 'production';
+  if (siteUrl) {
+    try {
+      const hostname = new URL(siteUrl).hostname;
+      localSite ||= hostname === 'localhost' || hostname === '127.0.0.1';
+    } catch {
+      localSite = false;
+    }
+  }
+  if (localFallback && localSite && !process.env.VERCEL_ENV) return localFallback;
 
   throw new Error('ORDER_DATA_ENCRYPTION_KEY não está configurada.');
 }

@@ -26,13 +26,11 @@ export const MAINTENANCE_BYPASS_PARAM = 'preview';
 export const MAINTENANCE_BYPASS_COOKIE = 'maintenance_bypass';
 
 /**
- * Paths that stay reachable while the gate is on:
- * - the admin panel, so the store can be worked on;
- * - Shopify webhooks and the revalidation endpoint, so the catalog stays in
- *   sync and Shopify does not disable the subscriptions after repeated 503s;
- * - the maintenance page itself, to avoid a rewrite loop.
+ * Caminhos que continuam acessíveis com o portão ligado:
+ * - o painel, para a loja seguir sendo operada durante a manutenção;
+ * - a própria página de manutenção, senão a reescrita entraria em laço.
  */
-const ALWAYS_ALLOWED_PREFIXES = ['/admin', '/api/webhooks', '/api/internal', MAINTENANCE_PATH];
+const ALWAYS_ALLOWED_PREFIXES = ['/admin', MAINTENANCE_PATH];
 
 /**
  * Read at build time and inlined into the edge bundle, so flipping this in

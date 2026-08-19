@@ -8,14 +8,12 @@ import { AnimatePresence, motion } from 'framer-motion';
 import {
   ChevronRight,
   ExternalLink,
-  FileUp,
   Filter,
   LayoutDashboard,
   LineChart,
   LogOut,
   Menu,
   Package,
-  Plus,
   ReceiptText,
   Store,
   X,
@@ -27,28 +25,29 @@ type NavGroup = { title: string; items: NavItem[] };
 
 const NAV: NavGroup[] = [
   {
-    title: 'Operation',
+    title: 'Operação',
     items: [
-      { href: '/admin', label: 'Overview', icon: LayoutDashboard },
-      { href: '/admin/sales', label: 'Sales', icon: LineChart },
-      { href: '/admin/orders', label: 'Orders', icon: ReceiptText },
-      { href: '/admin/funnel', label: 'Funnel', icon: Filter },
+      { href: '/admin', label: 'Visão geral', icon: LayoutDashboard },
+      { href: '/admin/orders', label: 'Pedidos', icon: ReceiptText },
+      { href: '/admin/funnel', label: 'Funil', icon: Filter },
+      { href: '/admin/sales', label: 'Vendas', icon: LineChart },
     ],
   },
   {
-    title: 'Catalog',
-    items: [
-      { href: '/admin/products', label: 'Products', icon: Package },
-      { href: '/admin/products/new', label: 'New product', icon: Plus },
-      { href: '/admin/products/import', label: 'Import CSV', icon: FileUp },
-    ],
+    title: 'Catálogo',
+    items: [{ href: '/admin/products', label: 'Produtos', icon: Package }],
   },
 ];
 
+/*
+ * A autoria de catálogo (novo produto, edição, importação) saiu junto com a
+ * integração antiga. Ela volta escrita sobre o PostgreSQL, depois que o
+ * catálogo oficial substituir o seed de desenvolvimento.
+ */
+
 const ALL_ITEMS = NAV.flatMap((group) => group.items);
 
-const STOREFRONT_URL = 'https://801outlet.com';
-const SHOPIFY_ADMIN_URL = 'https://admin.shopify.com/store/xwn9c1-m8';
+const STOREFRONT_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://balaio-de-gato.vercel.app';
 
 function bestMatch(pathname: string): string | null {
   let winner: string | null = null;
@@ -84,22 +83,16 @@ export function AdminShell({
   const sidebarBody = (
     <>
       <Link href="/admin" className="flex items-center gap-3 px-5 py-6">
-        <span className="relative size-10 overflow-hidden rounded-xl bg-white/10 ring-1 ring-white/15 ring-inset">
-          <Image
-            src="/brand/icon-512x512.png"
-            alt=""
-            fill
-            sizes="40px"
-            className="object-contain p-1"
-          />
+        <span className="relative size-10 overflow-hidden rounded-xl ring-1 ring-white/15 ring-inset">
+          <Image src="/brand/balaio-mark.svg" alt="" fill sizes="40px" priority />
         </span>
         <div className="leading-tight">
-          <p className="text-sm font-bold tracking-tight text-white">801 Outlet</p>
-          <p className="text-[11px] text-white/50">Admin panel</p>
+          <p className="text-sm font-bold tracking-tight text-white">Balaio de Gato</p>
+          <p className="text-[11px] text-white/50">Painel da loja</p>
         </div>
       </Link>
 
-      <nav className="flex-1 space-y-6 overflow-y-auto px-3 pb-4" aria-label="Panel navigation">
+      <nav className="flex-1 space-y-6 overflow-y-auto px-3 pb-4" aria-label="Navegação do painel">
         {NAV.map((group) => (
           <div key={group.title}>
             <p className="px-3 pb-1.5 text-[10px] font-semibold tracking-[0.14em] text-white/40 uppercase">
@@ -154,20 +147,8 @@ export function AdminShell({
                 aria-hidden="true"
                 className="size-[18px] shrink-0 text-white/40 transition group-hover:text-white/80"
               />
-              View storefront
+              Ver a loja
               <ExternalLink aria-hidden="true" className="ml-auto size-3.5 text-white/30" />
-            </a>
-            <a
-              href={SHOPIFY_ADMIN_URL}
-              target="_blank"
-              rel="noreferrer"
-              className="group flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold text-white/55 transition hover:bg-white/5 hover:text-white"
-            >
-              <ExternalLink
-                aria-hidden="true"
-                className="size-[18px] shrink-0 text-white/40 transition group-hover:text-white/80"
-              />
-              Shopify Admin
             </a>
           </div>
         </div>
@@ -179,17 +160,17 @@ export function AdminShell({
             OP
           </span>
           <div className="min-w-0 flex-1 leading-tight">
-            <p className="truncate text-xs font-semibold text-white">Store operator</p>
-            <p className="text-[10px] text-white/45">Signed in</p>
+            <p className="truncate text-xs font-semibold text-white">Operação da loja</p>
+            <p className="text-[10px] text-white/45">Sessão ativa</p>
           </div>
           <form action={signOut}>
             <button
               type="submit"
-              title="Sign out"
+              title="Sair"
               className="flex size-8 items-center justify-center rounded-lg text-white/45 transition hover:bg-white/10 hover:text-white"
             >
               <LogOut aria-hidden="true" className="size-4" />
-              <span className="sr-only">Sign out</span>
+              <span className="sr-only">Sair</span>
             </button>
           </form>
         </div>
@@ -223,7 +204,7 @@ export function AdminShell({
               <button
                 type="button"
                 onClick={() => setDrawer(false)}
-                aria-label="Close menu"
+                aria-label="Fechar menu"
                 className="absolute top-4 right-3 flex size-8 items-center justify-center rounded-lg text-white/50 hover:bg-white/10 hover:text-white"
               >
                 <X aria-hidden="true" className="size-[18px]" />
@@ -240,13 +221,13 @@ export function AdminShell({
             <button
               type="button"
               onClick={() => setDrawer(true)}
-              aria-label="Open menu"
+              aria-label="Abrir menu"
               className="flex size-9 items-center justify-center rounded-lg border border-[rgb(var(--border-strong))] transition hover:bg-[rgb(var(--surface-muted))] lg:hidden"
             >
               <Menu aria-hidden="true" className="size-[18px]" />
             </button>
             <div className="flex items-center gap-1.5 text-sm">
-              <span className="text-[rgb(var(--muted))]">Panel</span>
+              <span className="text-[rgb(var(--muted))]">Painel</span>
               <ChevronRight aria-hidden="true" className="size-3.5 text-[rgb(var(--muted))]/60" />
               <span className="font-semibold">{currentLabel}</span>
             </div>

@@ -1088,3 +1088,40 @@ export type OrderItemRecord = typeof orderItems.$inferSelect;
 export type InventoryItemRecord = typeof inventoryItems.$inferSelect;
 export type PaymentAttemptRecord = typeof paymentAttempts.$inferSelect;
 export type AuditEventRecord = typeof auditEvents.$inferSelect;
+
+/**
+ * Contadores do funil do site.
+ *
+ * Agregado por dia, sem cookie, identificador nem registro por visitante — a
+ * tabela guarda apenas "quantas vezes isto aconteceu naquele dia". Mora no
+ * PostgreSQL, e não num Redis à parte, porque o volume é de contadores diários
+ * e o banco já está provisionado: uma dependência a menos para operar.
+ *
+ * `metric` diz qual é a dimensão e `key` o valor dentro dela:
+ *
+ * | metric     | key                                    |
+ * | ---------- | -------------------------------------- |
+ * | `step`     | etapa do funil (`session`, `add_to_cart`…) |
+ * | `source`   | origem do tráfego (`instagram`, `direct`…) |
+ * | `location` | cidade aproximada (`São Paulo, BR`)    |
+ * | `product`  | `<slug-do-produto>:<etapa>`            |
+ */
+export const funnelCounters = pgTable(
+  'funnel_counters',
+  {
+    day: date('day').notNull(),
+    metric: varchar('metric', { length: 16 }).notNull(),
+    key: varchar('key', { length: 140 }).notNull(),
+    total: integer('total').default(0).notNull(),
+    updatedAt: updatedAt(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.day, table.metric, table.key] }),
+    index('funnel_counters_metric_day_idx').on(table.metric, table.day),
+    check('funnel_counters_total_chk', sql`${table.total} >= 0`),
+    check(
+      'funnel_counters_metric_chk',
+      sql`${table.metric} in ('step', 'source', 'location', 'product')`,
+    ),
+  ],
+);

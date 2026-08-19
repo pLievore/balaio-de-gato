@@ -14,6 +14,10 @@ import { ToastViewport } from '../components/shop/toast';
 import { ButtonLink } from '../components/ui/button';
 import { Container } from '../components/ui/container';
 
+// O layout entrega preço e estoque ao carrinho. Esses dados não podem ficar
+// congelados no HTML gerado durante o build.
+export const dynamic = 'force-dynamic';
+
 const NAVIGATION: NavigationLink[] = [
   { id: 'materiais', label: 'Materiais', href: '/products', external: false, children: [] },
   { id: 'etapas', label: 'Ano ou etapa', href: '/#etapas', external: false, children: [] },
@@ -157,17 +161,26 @@ function SiteFooter() {
             <h2 className="text-sm font-extrabold">Explore</h2>
             <ul className="mt-2 text-sm font-semibold text-[rgb(var(--muted))]">
               <li>
-                <Link className="inline-flex min-h-11 items-center transition hover:text-[rgb(var(--fg))]" href="/products">
+                <Link
+                  className="inline-flex min-h-11 items-center transition hover:text-[rgb(var(--fg))]"
+                  href="/products"
+                >
                   Materiais
                 </Link>
               </li>
               <li>
-                <Link className="inline-flex min-h-11 items-center transition hover:text-[rgb(var(--fg))]" href="/#etapas">
+                <Link
+                  className="inline-flex min-h-11 items-center transition hover:text-[rgb(var(--fg))]"
+                  href="/#etapas"
+                >
                   Ano ou etapa
                 </Link>
               </li>
               <li>
-                <Link className="inline-flex min-h-11 items-center transition hover:text-[rgb(var(--fg))]" href="/programa">
+                <Link
+                  className="inline-flex min-h-11 items-center transition hover:text-[rgb(var(--fg))]"
+                  href="/programa"
+                >
                   Como funciona
                 </Link>
               </li>
@@ -194,10 +207,16 @@ function SiteFooter() {
         <div className="mt-12 flex flex-col gap-5 border-t border-[rgb(var(--border))] pt-8 text-xs text-[rgb(var(--muted))] sm:flex-row sm:items-center sm:justify-between">
           <p>© {new Date().getFullYear()} Balaio de Gato.</p>
           <div className="flex flex-wrap items-center gap-x-5">
-            <Link className="inline-flex min-h-11 items-center transition hover:text-[rgb(var(--fg))]" href="/privacy">
+            <Link
+              className="inline-flex min-h-11 items-center transition hover:text-[rgb(var(--fg))]"
+              href="/privacy"
+            >
               Privacidade
             </Link>
-            <Link className="inline-flex min-h-11 items-center transition hover:text-[rgb(var(--fg))]" href="/terms">
+            <Link
+              className="inline-flex min-h-11 items-center transition hover:text-[rgb(var(--fg))]"
+              href="/terms"
+            >
               Termos
             </Link>
           </div>

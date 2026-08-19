@@ -39,6 +39,12 @@ import { type CatalogQuery, scoreProduct } from './query';
 
 const DEVELOPMENT_CATALOG_VERSION = 'development-seed';
 
+function developmentCatalogAllowed(): boolean {
+  return (
+    process.env.NODE_ENV !== 'production' || process.env.ALLOW_DEVELOPMENT_CATALOG === 'true'
+  );
+}
+
 const ILLUSTRATION_KEYS = new Set<IllustrationKey>([
   'caderno',
   'bloco',
@@ -114,6 +120,8 @@ async function getEffectiveProgramCatalog(): Promise<EffectiveProgramCatalog | n
     .limit(1);
 
   if (published) return { id: published.id, developmentSeed: false };
+
+  if (!developmentCatalogAllowed()) return null;
 
   /*
    * Transitional development data. It is deliberately selected by both
@@ -222,12 +230,17 @@ async function loadCatalog(): Promise<Product[]> {
 
   const stagesByVariant = await getStagesByVariant(effectiveCatalog);
 
-  return rows.map((row): Product => {
+  if (!effectiveCatalog) return [];
+
+  return rows.flatMap((row): Product[] => {
     if (!isCategorySlug(row.category)) {
       throw new Error(`Produto ativo com categoria inválida: ${row.slug}.`);
     }
 
-    return {
+    const stages = stagesByVariant.get(row.variantId) ?? [];
+    if (stages.length === 0) return [];
+
+    return [{
       slug: row.slug,
       sku: row.sku,
       name: row.name,
@@ -240,12 +253,12 @@ async function loadCatalog(): Promise<Product[]> {
       ...(row.compareAtPriceInCents === null
         ? {}
         : { compareAtPriceInCents: row.compareAtPriceInCents }),
-      stages: stagesByVariant.get(row.variantId) ?? [],
+      stages,
       stock: Math.max(0, (row.onHand ?? 0) - (row.reserved ?? 0)),
       maxPerOrder: row.maxPerOrder,
       specs: productSpecifications(row.specifications, row.slug),
       keywords: [...row.keywords],
-    };
+    }];
   });
 }
 

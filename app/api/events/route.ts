@@ -3,7 +3,6 @@ import { NextResponse } from 'next/server';
 import {
   FUNNEL_STEPS,
   classifyTrafficSource,
-  isFunnelStorageConfigured,
   recordFunnelStep,
   recordSessionContext,
   type FunnelStep,
@@ -53,10 +52,6 @@ function visitorLocation(headers: Headers): string | null {
  * storage outage never surfaces in the UI.
  */
 export async function POST(request: Request) {
-  if (!isFunnelStorageConfigured()) {
-    return new NextResponse(null, { status: 204 });
-  }
-
   try {
     const body = (await request.json()) as {
       step?: unknown;

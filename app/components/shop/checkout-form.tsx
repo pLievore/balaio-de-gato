@@ -176,17 +176,6 @@ export function CheckoutForm() {
           title="Estudante"
           description="O ano ou a etapa define o crédito e os itens autorizados."
         >
-          <Field label="Nome do estudante" required error={fieldErrors.estudanteNome}>
-            {(props) => (
-              <TextInput
-                {...props}
-                name="estudanteNome"
-                invalid={Boolean(fieldErrors.estudanteNome)}
-                placeholder="Nome completo"
-              />
-            )}
-          </Field>
-
           <Field label="Ano ou etapa" required error={fieldErrors.etapa}>
             {(props) => (
               <select

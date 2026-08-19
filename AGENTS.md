@@ -14,7 +14,7 @@ Antes de alterar arquitetura, domínio, pagamento, conteúdo público ou painel:
 - Mercado: Brasil, conteúdo `pt-BR` e valores em BRL.
 - Empresa, site, catálogo lógico e operação são únicos. Não criar filial, seletor de unidade ou roteamento de estoque.
 - O programa é municipal: Programa Material Escolar da Secretaria Municipal de Educação da Prefeitura de São Paulo.
-- Shopify, Square e a infraestrutura comercial da 801 Outlet não fazem parte da arquitetura alvo.
+- Shopify, Square, Supabase e a infraestrutura comercial da 801 Outlet foram removidos do repositório. Não reintroduza nenhum deles.
 - O Neon PostgreSQL é a autoridade implementada para catálogo, estoque,
   pedidos e auditoria. O carrinho ainda é local ao navegador.
 - O painel novo pertence a este app, sob `/admin`; `C:\dev\Renei-ecommerce\801-outlet-admin` é apenas legado.
@@ -64,9 +64,19 @@ npm run build
 npm run db:check
 ```
 
-`npm test` roda tudo. Os testes Shopify permanecem apenas como proteção temporária durante a desmontagem do legado e serão removidos junto com essa integração — hoje eles cobrem o que ainda sustenta o painel `/admin`.
+`npm test` roda tudo. Contra o banco, há ainda `npm run db:check`, `npm run db:smoke-order` e `npm run db:smoke-fulfillment` — este último cobre a baixa de estoque no pagamento.
 
 `npm run db:smoke-order` cria e limpa dados próprios; use somente em banco de
 desenvolvimento. O painel `/admin` atual continua legado e não deve ser
 considerado conectado ao novo esquema só porque as tabelas administrativas já
 existem.
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->

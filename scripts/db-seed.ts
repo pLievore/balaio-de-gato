@@ -33,6 +33,15 @@ type SeedSummary = {
 };
 
 async function seedDatabase(): Promise<SeedSummary> {
+  if (
+    process.env.NODE_ENV === 'production' &&
+    process.env.ALLOW_DEVELOPMENT_CATALOG !== 'true'
+  ) {
+    throw new Error(
+      'Seed provisório bloqueado em produção sem ALLOW_DEVELOPMENT_CATALOG=true.',
+    );
+  }
+
   return db.transaction(async (tx) => {
     const [publishedCatalog] = await tx
       .select({ id: programCatalogs.id })
@@ -261,31 +270,56 @@ async function seedDatabase(): Promise<SeedSummary> {
             })
             .returning({ id: productVariants.id });
 
-      const [programItem] = await tx
-        .insert(programItems)
-        .values({
-          catalogId: developmentCatalog.id,
-          code: `DEV-${product.sku}`,
-          officialName: product.name,
-          officialDescription: product.description,
-          specifications: { productSpecs: product.specs.map((spec) => ({ ...spec })) },
-          unitOfMeasure: 'un',
-          maxUnitPriceCents: null,
-          sourceReference: `src/data/catalog.ts#${product.slug}`,
-        })
-        .onConflictDoUpdate({
-          target: [programItems.catalogId, programItems.code],
-          set: {
-            officialName: product.name,
-            officialDescription: product.description,
-            specifications: { productSpecs: product.specs.map((spec) => ({ ...spec })) },
-            unitOfMeasure: 'un',
-            maxUnitPriceCents: null,
-            sourceReference: `src/data/catalog.ts#${product.slug}`,
-            updatedAt: now,
-          },
-        })
-        .returning({ id: programItems.id });
+      const stableProgramCode = `DEV-${product.slug}`;
+      if (stableProgramCode.length > 120) {
+        throw new Error(`Código provisório muito longo para ${product.slug}.`);
+      }
+
+      const linkedProgramItems = await tx
+        .select({ id: programItems.id })
+        .from(programItems)
+        .innerJoin(
+          variantProgramItems,
+          eq(variantProgramItems.programItemId, programItems.id),
+        )
+        .where(
+          and(
+            eq(programItems.catalogId, developmentCatalog.id),
+            eq(variantProgramItems.variantId, variantRow.id),
+          ),
+        );
+      if (linkedProgramItems.length > 1) {
+        throw new Error(`Vínculos provisórios ambíguos para ${product.slug}.`);
+      }
+
+      const programItemValues = {
+        code: stableProgramCode,
+        officialName: product.name,
+        officialDescription: product.description,
+        specifications: { productSpecs: product.specs.map((spec) => ({ ...spec })) },
+        unitOfMeasure: 'un',
+        maxUnitPriceCents: null,
+        sourceReference: `src/data/catalog.ts#${product.slug}`,
+        updatedAt: now,
+      } as const;
+
+      let programItem: { id: string };
+      if (linkedProgramItems[0]) {
+        [programItem] = await tx
+          .update(programItems)
+          .set(programItemValues)
+          .where(eq(programItems.id, linkedProgramItems[0].id))
+          .returning({ id: programItems.id });
+      } else {
+        [programItem] = await tx
+          .insert(programItems)
+          .values({ catalogId: developmentCatalog.id, ...programItemValues })
+          .onConflictDoUpdate({
+            target: [programItems.catalogId, programItems.code],
+            set: programItemValues,
+          })
+          .returning({ id: programItems.id });
+      }
 
       // Reconcile only relations owned by this development catalog item.
       await tx.delete(programItemStages).where(eq(programItemStages.programItemId, programItem.id));

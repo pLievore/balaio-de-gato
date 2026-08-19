@@ -34,7 +34,7 @@ Pagamento:
 ## Requisitos não negociáveis
 
 - nenhum produto, preço, avaliação ou disponibilidade fictícia em produção;
-- nenhum checkout Shopify;
+- nenhum checkout de terceiro: o pedido nasce e vive no PostgreSQL do projeto;
 - nenhuma escolha de unidade;
 - nenhuma credencial DUEPAY coletada pela aplicação;
 - transições financeiras idempotentes e auditáveis;

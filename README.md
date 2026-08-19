@@ -17,7 +17,7 @@ A jornada pública e a primeira fatia de persistência já contêm:
 - idempotência do checkout, proteção do CPF e acompanhamento por código;
 - fluxo DUEPAY representado como processo assistido, sem simular API;
 - máquina de estados inicial de pagamento e referências públicas sem dados pessoais;
-- sitemap e páginas institucionais desacoplados do Shopify.
+- sitemap e páginas institucionais gerados a partir do catálogo no PostgreSQL.
 
 O catálogo atual é **provisório para desenvolvimento**: `src/data/catalog.ts`
 alimenta somente o seed `development_seed`, mantido em `draft` e com vínculos
