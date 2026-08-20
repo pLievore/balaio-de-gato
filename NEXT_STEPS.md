@@ -64,6 +64,21 @@ A tela de vendas segue removida.
 
 ## Em aberto
 
+0. **bloqueador de lançamento: nada aprova um vínculo item-etapa.**
+   `isApproved` é escrito como `false` em `panel/catalog-write.ts` e no seed, e
+   é filtro obrigatório sempre que o catálogo **não** é o seed de
+   desenvolvimento (`catalog/repository.ts`, `orders/repository.ts`). No dia em
+   que um catálogo `official`/`published` entrar, `getStagesByVariant` volta
+   vazio, todo produto é descartado por não ter etapa e a vitrine fica **vazia**
+   — com todo checkout morrendo em "material não disponível para a etapa". Não
+   existe tela, script nem migration que aprove. Falta decidir quem aprova e
+   onde, e então implementar;
+0b. **reservas de estoque nunca expiram.** `expiresAt` é gravado e nunca lido;
+   o status `'expired'` existe no esquema e nada o produz. Como a vitrine mostra
+   `on_hand - reserved`, todo checkout abandonado em `awaiting_payment_link`
+   tira a peça da prateleira para sempre, e `ORDER_RESERVATION_TTL_MINUTES` —
+   obrigatório em produção — não faz nada. Precisa de quem libere: rotina
+   agendada ou liberação preguiçosa na leitura;
 1. substituir o seed provisório pelo catálogo oficial revisado, com SKUs,
    preços, fotos, estoque e vínculos de elegibilidade aprovados;
 2. implementar publicação/versionamento operacional do catálogo e o montador
@@ -96,6 +111,90 @@ A tela de vendas segue removida.
    serviço com migration e seed no workflow;
 12. avaliar automação Personal Net somente após documentação vigente,
    credenciais e homologação.
+
+## Achados de revisão ainda abertos
+
+Levantados nas revisões de frontend, QA, usabilidade/acessibilidade e
+performance/SEO. O que era pequeno e verificável já foi corrigido; estes
+sobraram por exigirem decisão, banco ou navegador.
+
+**Correção de conteúdo e regra**
+
+- a regra de endereço institucional (`orders/schema.ts`) casa `escola`,
+  `creche` e `ceu` em qualquer posição do logradouro, e barra endereços
+  residenciais legítimos — "Rua Escola Politécnica" existe em São Paulo, e
+  "Rua Ceu Azul" digitada sem acento também casa. A pessoa é acusada de
+  tentar entregar na escola e não tem saída: o campo é obrigatório e não há
+  exceção. Precisa casar prefixo/destinatário, e oferecer um caminho de
+  exceção;
+- três nomes para o mesmo benefício: a loja inteira diz "Kit Escolar", só a
+  caixa de aceite do checkout diz "Programa Material Escolar" — a frase
+  juridicamente relevante usa um nome que a pessoa não viu antes. E a página
+  do programa expõe "DUEPAY", que é jargão do processador;
+- o crédito da etapa aparece como saldo do estudante. A ressalva ("valor
+  publicado pela Prefeitura; consulte o saldo no aplicativo") existe no
+  `BenefitMeter`, mas some no modo compacto — que é o usado no carrinho,
+  exatamente onde a pessoa decide se cabe mais um item;
+- navegar por `/products?etapa=X` reescreve a etapa do carrinho sem avisar
+  (`stage-benefit-banner.tsx`): quem clica num chip por curiosidade volta com
+  outro crédito e itens "fora da etapa";
+- o painel promete que "a primeira imagem abre a ficha do produto", mas o
+  catálogo público não expõe mídia: a ficha sempre mostra a ilustração.
+
+**Correção técnica**
+
+- **duas fontes de verdade para o crédito da etapa**: a tela usa a constante
+  `EDUCATION_STAGES`, o pedido grava `program_catalog_stages`. Concordam hoje
+  só porque o seed copia uma da outra;
+- **limite por pedido divergente**: o carrinho mostra `maxPerOrder` da
+  variante; o pedido exige `min(maxPerOrder, programItemStages.maxQuantity)`.
+  Se o programa apertar a quantidade, a família só descobre no envio;
+- o guarda de hidratação do carrinho não guarda: com `localStorage`, o
+  `persist` do zustand hidrata na avaliação do módulo, então `hydrated` já é
+  `true` na primeira renderização do cliente e o servidor discorda;
+- conteúdo acima da dobra sai do servidor com `opacity: 0` (`motion.tsx`):
+  home e catálogo só aparecem depois de hidratar. É o item mais caro de
+  performance e pede troca por animação em CSS;
+- reencodar `public/brand/hero.mp4`: 2,4 MB, 720p, com faixa de áudio que
+  nunca toca, para ocupar ~380 px no celular. O gate já barra 2G e 3G;
+- `loadCatalog()` não tem memoização por requisição: a ficha de produto o roda
+  três vezes, e cada vez são ~3 idas ao Neon;
+- `emailSent` mente na repetição idempotente do checkout: devolve
+  "configurado", não "enviado" — e emite uma chave de acompanhamento nova a
+  cada repetição, sem teto;
+- `updatePanelProduct` escreve na variante mais antiga, não na `isDefault`;
+  latente enquanto houver uma variante por produto;
+- `applyImportRows` não é atômico por linha: o produto entra numa transação e
+  o estoque noutra, então o relatório pode contradizer o banco;
+- código do pedido sorteado com `Math.random`; `access-token.ts` já usa
+  `randomInt` e é o mesmo conserto;
+- sessão do painel sem revogação: o cookie é `expiresAt.HMAC(expiresAt)`, e
+  sair só apaga do navegador — uma cópia vale sete dias;
+- `hydrateOrders` lança se `shippingCents !== 0`: um pedido inconsistente
+  derruba a listagem inteira do painel, não só a ficha dele.
+
+**Acessibilidade**
+
+- a confirmação do pedido troca a tela sem mover o foco nem anunciar nada —
+  o momento mais crítico da jornada, para quem usa leitor de tela;
+- `Field` não repassa `required` ao controle: o `*` é `aria-hidden`, então
+  quem não enxerga só descobre o obrigatório depois de falhar;
+- o resumo de erro diz "confira os campos destacados" — "destacado" é
+  informação visual, e não há âncora para os campos;
+- a gaveta de filtros no celular não prende o `Tab` (o `ui/dialog.tsx` já tem
+  a implementação certa para reaproveitar);
+- controles desabilitados são `<span>` sem papel nem foco, então um produto
+  esgotado é indistinguível na navegação por teclado;
+- mudanças no carrinho não são anunciadas: falta uma região `aria-live`;
+- alvos de toque abaixo de 24px em ações de texto, e informação decisiva a
+  11px (aviso de estouro do crédito, aceite das regras, aviso de segurança).
+
+**Plano de teste sugerido pela revisão de QA**
+
+Os três de maior retorno: reenviar o checkout depois de um erro não pode
+criar um segundo pedido (E2E); produto só aparece na loja depois de aprovado
+no programa (integração, e é o item 0 acima); reserva vencida devolve o saldo
+à prateleira (integração, item 0b).
 
 ## Dependências externas abertas
 
