@@ -120,6 +120,16 @@ export async function saveProductAction(
   revalidatePath(`/admin/products/${data.slug}`);
   revalidatePath('/products');
   revalidatePath(`/products/${data.slug}`);
+  // A home mostra produtos em destaque com preço e estoque.
+  revalidatePath('/');
+
+  // Renomear o endereço deixa a URL antiga em cache servindo um produto que
+  // não mora mais ali, com preço e estoque congelados. Invalidar o slug novo
+  // não alcança a página antiga: ela é outra rota.
+  if (originalSlug && originalSlug !== data.slug) {
+    revalidatePath(`/admin/products/${originalSlug}`);
+    revalidatePath(`/products/${originalSlug}`);
+  }
 
   return {
     status: 'success',
@@ -169,6 +179,10 @@ export async function adjustStockAction(
   revalidatePath('/admin/products');
   revalidatePath(`/admin/products/${slug}`);
   revalidatePath(`/products/${slug}`);
+  // A grade do catálogo e a home carregam os selos "Sem estoque" e
+  // "Últimas N unidades"; sem estas duas, continuariam com o saldo antigo.
+  revalidatePath('/products');
+  revalidatePath('/');
   return { status: 'success', message: 'Estoque ajustado e movimento registrado.' };
 }
 

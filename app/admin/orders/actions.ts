@@ -89,6 +89,8 @@ export async function advanceOrder(
     // catálogo enxuto que o carrinho consulta. Sem invalidar a etiqueta, a
     // loja seguiria oferecendo unidades que já saíram.
     revalidateTag(CATALOG_CACHE_TAG, 'max');
+    revalidatePath('/products');
+    revalidatePath('/');
     revalidatePath('/admin/orders');
     revalidatePath(`/admin/orders/${code}`);
     revalidatePath(`/pedido/${code}`);

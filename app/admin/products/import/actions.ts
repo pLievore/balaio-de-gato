@@ -102,6 +102,7 @@ export async function applyImportAction(
   revalidateTag(CATALOG_CACHE_TAG, 'max');
   revalidatePath('/admin/products');
   revalidatePath('/products');
+  revalidatePath('/');
 
   return {
     status: 'applied',
