@@ -75,6 +75,30 @@ export function CheckoutForm() {
   const [values, setValues] = useState<CheckoutValues>(VALORES_INICIAIS);
   const [aceite, setAceite] = useState(false);
 
+  /**
+   * Chave de idempotência do envio.
+   *
+   * É ela que impede o segundo clique de virar um segundo pedido — com uma
+   * segunda reserva de estoque. Precisa, portanto, sobreviver a um envio
+   * recusado, que é justamente quando alguém reenvia.
+   *
+   * Era um campo oculto não controlado, preenchido por um `ref`. O reset do
+   * React 19 apagava o valor e o `ref` sorteava **outra** chave: o servidor
+   * não reconhecia a repetição e criava o pedido de novo. Mesma armadilha dos
+   * campos de texto, só que num campo que ninguém vê.
+   *
+   * A chave agora não mora no DOM: fica aqui e é anexada ao `FormData` no
+   * envio. O que não está no formulário nenhum reset alcança — e some junto
+   * o risco de servidor e cliente sortearem valores diferentes na hidratação.
+   */
+  const idempotencyKeyRef = useRef('');
+
+  const enviar = (formData: FormData) => {
+    if (!idempotencyKeyRef.current) idempotencyKeyRef.current = crypto.randomUUID();
+    formData.set('checkoutIdempotencyKey', idempotencyKeyRef.current);
+    return formAction(formData);
+  };
+
   // CPF, telefone e CEP a pessoa vê formatados enquanto digita. O servidor
   // recebe o texto formatado e tira a máscara — nunca o contrário.
   const set = (campo: keyof CheckoutValues, valor: string) =>
@@ -128,15 +152,8 @@ export function CheckoutForm() {
   const fieldErrors = state.status === 'invalid' ? state.fieldErrors : {};
 
   return (
-    <form action={formAction} className="grid gap-8 lg:grid-cols-[1fr_360px] lg:gap-12">
+    <form action={enviar} className="grid gap-8 lg:grid-cols-[1fr_360px] lg:gap-12">
       <input type="hidden" name="linhas" value={JSON.stringify(lines)} />
-      <input
-        type="hidden"
-        name="checkoutIdempotencyKey"
-        ref={(node) => {
-          if (node && !node.value) node.value = crypto.randomUUID();
-        }}
-      />
 
       <div className="min-w-0 space-y-8">
         {bloqueado ? (
