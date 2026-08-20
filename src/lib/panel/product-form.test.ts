@@ -158,3 +158,29 @@ test('coleta um erro por campo', () => {
   const errors = collectProductErrors(result.error);
   assert.ok(errors.name && errors.sku && errors.stageSlugs);
 });
+
+// ─── Piso de preço ───────────────────────────────────────────────────────────
+
+test('recusa preço zero: material de graça é engano, não promoção', () => {
+  const resultado = productFormSchema.safeParse({ ...VALIDO, price: '0' });
+  assert.equal(resultado.success, false);
+  if (!resultado.success) {
+    assert.match(collectProductErrors(resultado.error).price ?? '', /não pode ser zero/i);
+  }
+
+  assert.equal(productFormSchema.safeParse({ ...VALIDO, price: '0,00' }).success, false);
+});
+
+test('recusa notação científica, que virava mil reais sem aviso', () => {
+  // `Number('1e3')` é 1000: o preço saía cem mil centavos, sem erro nenhum.
+  assert.equal(parsePriceToCents('1e3'), null);
+  assert.equal(parsePriceToCents('0x10'), null);
+  assert.equal(parsePriceToCents('Infinity'), null);
+  assert.equal(productFormSchema.safeParse({ ...VALIDO, price: '1e3' }).success, false);
+});
+
+test('o preço normal continua passando', () => {
+  assert.equal(parsePriceToCents('14,90'), 1490);
+  assert.equal(parsePriceToCents('R$ 1.234,56'), 123456);
+  assert.equal(parsePriceToCents('0,01'), 1);
+});

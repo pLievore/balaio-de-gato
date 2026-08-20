@@ -57,9 +57,12 @@ test('o mesmo endereço em escopos diferentes não compartilha contagem', () => 
 
 // ─── identificação ──────────────────────────────────────────────────────────
 
-test('usa o primeiro endereço da cadeia de proxies', () => {
+test('usa o último endereço da cadeia de proxies, não o primeiro', () => {
+  // Este teste afirmava o contrário e documentava uma falha: a primeira
+  // entrada de `x-forwarded-for` é escrita por quem chama, então servia de
+  // limite para ninguém. A última é a que o proxy mais próximo acrescentou.
   const headers = new Headers({ 'x-forwarded-for': '203.0.113.7, 70.41.3.18, 150.172.238.178' });
-  assert.equal(requestIdentifier(headers), '203.0.113.7');
+  assert.equal(requestIdentifier(headers), '150.172.238.178');
 });
 
 test('cai para x-real-ip quando não há cadeia', () => {
@@ -89,4 +92,39 @@ test('toda regra tem limite e janela positivos', () => {
 test('o beacon de eventos é mais folgado que o checkout', () => {
   // Um pedido é raro; um evento de funil acontece a cada clique.
   assert.ok(RATE_LIMITS.events.limit > RATE_LIMITS.checkout.limit);
+});
+
+// ─── Identificação da origem ─────────────────────────────────────────────────
+
+test('ignora o x-forwarded-for forjado pelo cliente e usa o cabeçalho da plataforma', () => {
+  // A primeira entrada de `x-forwarded-for` é escrita por quem chama. Trocá-la
+  // a cada requisição zerava o limite do login do painel e da consulta de
+  // pedido; o balde tem de vir do que só a plataforma escreve.
+  const headers = new Headers({
+    'x-forwarded-for': '1.1.1.1, 203.0.113.7',
+    'x-vercel-forwarded-for': '203.0.113.7',
+  });
+  assert.equal(requestIdentifier(headers), '203.0.113.7');
+});
+
+test('sem cabeçalho da plataforma, fica com a última entrada — a que o proxy pôs', () => {
+  const forjado = new Headers({ 'x-forwarded-for': 'sou-quem-eu-quiser, 203.0.113.7' });
+  assert.equal(requestIdentifier(forjado), '203.0.113.7');
+
+  const outro = new Headers({ 'x-forwarded-for': 'outro-valor-qualquer, 203.0.113.7' });
+  assert.equal(requestIdentifier(outro), requestIdentifier(forjado));
+});
+
+test('x-real-ip vale mais que a lista encaminhada', () => {
+  const headers = new Headers({
+    'x-forwarded-for': '1.1.1.1, 2.2.2.2',
+    'x-real-ip': '203.0.113.9',
+  });
+  assert.equal(requestIdentifier(headers), '203.0.113.9');
+});
+
+test('sem endereço nenhum, agrupa pelo agente e nunca devolve vazio', () => {
+  assert.equal(requestIdentifier(new Headers()), 'anonymous');
+  const comAgente = requestIdentifier(new Headers({ 'user-agent': 'curl/8' }));
+  assert.match(comAgente, /^ua:[0-9a-f]{32}$/);
 });

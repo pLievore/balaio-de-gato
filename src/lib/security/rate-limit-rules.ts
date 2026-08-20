@@ -76,17 +76,29 @@ export function secondsUntilNextWindow(now: Date, windowSeconds: number): number
 /**
  * Quem está pedindo, para efeito de limite.
  *
- * Prefere o endereço que a Vercel coloca em `x-forwarded-for`. Sem ele — em
- * desenvolvimento, por exemplo — cai num balde único, que ainda limita o
- * volume total sem distinguir origem.
+ * A ordem importa e é de confiança, não de conveniência. `x-forwarded-for` é
+ * uma lista onde **quem chama escreve a primeira entrada**: pegar a primeira,
+ * como se fazia aqui, entregava o balde de graça. Bastava mandar um valor
+ * diferente a cada requisição para o limite deixar de existir — inclusive o da
+ * senha do painel e o da varredura de códigos de pedido.
+ *
+ * Então: primeiro os cabeçalhos que só a plataforma escreve; depois, se
+ * restar apenas o `x-forwarded-for`, a **última** entrada, que é a que o proxy
+ * mais próximo acrescentou e o cliente não controla.
  */
 export function requestIdentifier(headers: Headers): string {
-  const forwarded = headers.get('x-forwarded-for');
-  const first = forwarded?.split(',')[0]?.trim();
-  const address = first || headers.get('x-real-ip')?.trim() || '';
+  const platform =
+    headers.get('x-vercel-forwarded-for')?.trim() || headers.get('x-real-ip')?.trim() || '';
+
+  const forwarded = headers.get('x-forwarded-for')?.split(',') ?? [];
+  const closestProxy = forwarded.at(-1)?.trim() ?? '';
+
+  const address = platform || closestProxy;
   if (address) return address;
 
   // Sem endereço, o agente ao menos separa robôs distintos.
   const agent = headers.get('user-agent') ?? '';
-  return agent ? `ua:${createHash('sha256').update(agent).digest('hex').slice(0, 32)}` : 'anonymous';
+  return agent
+    ? `ua:${createHash('sha256').update(agent).digest('hex').slice(0, 32)}`
+    : 'anonymous';
 }

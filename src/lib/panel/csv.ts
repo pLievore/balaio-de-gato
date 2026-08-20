@@ -182,7 +182,11 @@ export function previewImport(text: string): ImportPreview {
     const problems: ImportIssue[] = [];
 
     if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) {
-      problems.push({ line, column: 'slug', message: 'Endereço inválido (use minúsculas e hífens).' });
+      problems.push({
+        line,
+        column: 'slug',
+        message: 'Endereço inválido (use minúsculas e hífens).',
+      });
     } else if (seenSlugs.has(slug)) {
       problems.push({ line, column: 'slug', message: 'Repetido no arquivo.' });
     }
@@ -191,12 +195,20 @@ export function previewImport(text: string): ImportPreview {
 
     const categorySlug = get('categoria').toLowerCase();
     if (!CATEGORY_SLUGS.has(categorySlug)) {
-      problems.push({ line, column: 'categoria', message: `Categoria desconhecida: "${categorySlug}".` });
+      problems.push({
+        line,
+        column: 'categoria',
+        message: `Categoria desconhecida: "${categorySlug}".`,
+      });
     }
 
     const priceCents = parsePriceToCents(get('preco'));
     if (priceCents === null) {
       problems.push({ line, column: 'preco', message: 'Preço inválido.' });
+    } else if (priceCents === 0) {
+      // Uma planilha inteira com a coluna de preço vazia ou zerada publicaria
+      // o catálogo de graça. A conferência barra antes de gravar.
+      problems.push({ line, column: 'preco', message: 'Preço não pode ser zero.' });
     }
 
     const rawCompare = get('preco_anterior');
@@ -245,7 +257,11 @@ export function previewImport(text: string): ImportPreview {
     const rawMax = get('limite_por_pedido');
     const maxPerOrder = rawMax === '' ? 5 : Number(rawMax);
     if (!Number.isInteger(maxPerOrder) || maxPerOrder < 1) {
-      problems.push({ line, column: 'limite_por_pedido', message: 'Use um inteiro a partir de 1.' });
+      problems.push({
+        line,
+        column: 'limite_por_pedido',
+        message: 'Use um inteiro a partir de 1.',
+      });
     }
 
     if (problems.length > 0) {
