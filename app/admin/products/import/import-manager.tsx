@@ -2,7 +2,7 @@
 
 import { CircleAlert, CircleCheck, FileUp, Loader2, TriangleAlert, Upload } from 'lucide-react';
 import Link from 'next/link';
-import { useActionState } from 'react';
+import { useActionState, useState } from 'react';
 
 import { applyImportAction, previewImportAction, type ImportState } from './actions';
 import { CSV_COLUMNS } from '../../../../src/lib/panel/csv';
@@ -14,20 +14,40 @@ export function ImportManager() {
   const [preview, previewAction, analisando] = useActionState(previewImportAction, INICIAL);
   const [aplicacao, applyAction, aplicando] = useActionState(applyImportAction, INICIAL);
 
-  // Depois de aplicar, o resultado manda na tela; antes disso, a prévia.
-  const estado = aplicacao.status === 'idle' ? preview : aplicacao;
+  /**
+   * Qual dos dois resultados manda na tela.
+   *
+   * Não dá para decidir só por `aplicacao.status === 'idle'`: o
+   * `useActionState` nunca volta para `idle`. Depois de uma importação, enviar
+   * uma segunda planilha — o caso normal, corrigir as linhas que falharam e
+   * reenviar — rodava a conferência mas a tela continuava exibindo
+   * "Importação concluída" da rodada anterior. Quem opera conclui que o botão
+   * parou de funcionar e reenvia várias vezes.
+   */
+  const [aplicado, setAplicado] = useState(false);
+  const estado = aplicado ? aplicacao : preview;
+
+  const conferir = (formData: FormData) => {
+    setAplicado(false);
+    return previewAction(formData);
+  };
+
+  const aplicar = (formData: FormData) => {
+    setAplicado(true);
+    return applyAction(formData);
+  };
 
   return (
     <div className="space-y-6">
       <section className="rounded-3xl border border-[rgb(var(--border))] bg-white p-6">
         <h2 className="text-sm font-extrabold">1. Envie a planilha</h2>
         <p className="mt-2 text-xs leading-5 text-[rgb(var(--muted))]">
-          Nada é gravado neste passo. Você confere o que entraria e só então aplica.
-          Aceita vírgula ou ponto e vírgula como separador — o formato que o
-          Excel em português exporta funciona direto.
+          Nada é gravado neste passo. Você confere o que entraria e só então aplica. Aceita vírgula
+          ou ponto e vírgula como separador — o formato que o Excel em português exporta funciona
+          direto.
         </p>
 
-        <form action={previewAction} className="mt-4 flex flex-wrap items-center gap-3">
+        <form action={conferir} className="mt-4 flex flex-wrap items-center gap-3">
           <input
             name="file"
             type="file"
@@ -65,9 +85,8 @@ export function ImportManager() {
             ))}
           </ul>
           <p className="mt-3 text-[11px] leading-4 text-[rgb(var(--muted))]">
-            Obrigatórias: slug, sku, nome, marca, categoria, preco e etapas. As
-            etapas e as palavras-chave vão separadas por barra vertical
-            (<code>alfabetizacao|autoral</code>).
+            Obrigatórias: slug, sku, nome, marca, categoria, preco e etapas. As etapas e as
+            palavras-chave vão separadas por barra vertical (<code>alfabetizacao|autoral</code>).
           </p>
         </details>
       </section>
@@ -141,7 +160,7 @@ export function ImportManager() {
             </table>
           </div>
 
-          <form action={applyAction} className="mt-5">
+          <form action={aplicar} className="mt-5">
             <input type="hidden" name="payload" value={estado.payload} />
             <button
               type="submit"
@@ -153,12 +172,11 @@ export function ImportManager() {
               ) : (
                 <Upload aria-hidden="true" className="size-4" />
               )}
-              Aplicar {estado.rows.length}{' '}
-              {estado.rows.length === 1 ? 'linha' : 'linhas'}
+              Aplicar {estado.rows.length} {estado.rows.length === 1 ? 'linha' : 'linhas'}
             </button>
             <p className="mt-2 text-[11px] leading-4 text-[rgb(var(--muted))]">
-              Produtos com endereço já existente são atualizados; os demais são
-              criados. O estoque entra como movimento registrado.
+              Produtos com endereço já existente são atualizados; os demais são criados. O estoque
+              entra como movimento registrado.
             </p>
           </form>
         </section>

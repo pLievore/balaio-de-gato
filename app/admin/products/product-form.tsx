@@ -14,10 +14,28 @@ const INICIAL: ProductActionState = { status: 'idle' };
 
 /** Arquétipos de ilustração disponíveis enquanto não há foto do produto. */
 const ILLUSTRATIONS = [
-  'caderno', 'bloco', 'papel', 'lapis', 'caneta', 'borracha', 'apontador',
-  'marcador', 'lapis-cor', 'giz-cera', 'canetinha', 'tinta', 'pincel',
-  'massinha', 'tesoura', 'cola', 'regua', 'compasso', 'mochila', 'estojo',
-  'pasta', 'agenda',
+  'caderno',
+  'bloco',
+  'papel',
+  'lapis',
+  'caneta',
+  'borracha',
+  'apontador',
+  'marcador',
+  'lapis-cor',
+  'giz-cera',
+  'canetinha',
+  'tinta',
+  'pincel',
+  'massinha',
+  'tesoura',
+  'cola',
+  'regua',
+  'compasso',
+  'mochila',
+  'estojo',
+  'pasta',
+  'agenda',
 ];
 
 type Spec = { label: string; value: string };
@@ -30,6 +48,37 @@ export function ProductForm({ product }: { product?: PanelProductDetail }) {
 
   const [name, setName] = useState(product?.name ?? '');
   const [slug, setSlug] = useState(product?.slug ?? '');
+
+  /**
+   * Os demais campos, controlados.
+   *
+   * O React 19 limpa os campos não controlados de um `<form action={…}>`
+   * depois da ação. Como a validação é do servidor, uma recusa — SKU
+   * duplicado, endereço já usado, preço mal formatado, sessão expirada —
+   * apagava marca, SKU, descrição, categoria, preço, limite e as etapas
+   * marcadas, deixando na tela "Confira os campos destacados abaixo"
+   * apontando para campos recém-esvaziados. Em cadastro novo, o trabalho
+   * inteiro.
+   */
+  const [campos, setCampos] = useState({
+    brand: product?.brand ?? '',
+    sku: product?.sku ?? '',
+    tagline: product?.tagline ?? '',
+    description: product?.description ?? '',
+    categorySlug: product?.categorySlug ?? '',
+    status: product?.status ?? 'draft',
+    illustrationKey: product?.illustrationKey ?? '',
+    keywords: product?.keywords.join(', ') ?? '',
+    price: product ? (product.priceInCents / 100).toFixed(2).replace('.', ',') : '',
+    compareAtPrice: product?.compareAtPriceInCents
+      ? (product.compareAtPriceInCents / 100).toFixed(2).replace('.', ',')
+      : '',
+    maxPerOrder: String(product?.maxPerOrder ?? 5),
+  });
+  const [etapas, setEtapas] = useState<string[]>(product?.stageSlugs ?? []);
+
+  const mudar = (campo: keyof typeof campos, valor: string) =>
+    setCampos((atual) => ({ ...atual, [campo]: valor }));
   const [slugTocado, setSlugTocado] = useState(editing);
   const [specs, setSpecs] = useState<Spec[]>(
     product?.specifications.length ? product.specifications : [{ label: '', value: '' }],
@@ -74,7 +123,12 @@ export function ProductForm({ product }: { product?: PanelProductDetail }) {
       ) : null}
 
       <Bloco titulo="Identificação">
-        <Campo label="Nome do produto" erro={fieldErrors.name} obrigatorio className="sm:col-span-2">
+        <Campo
+          label="Nome do produto"
+          erro={fieldErrors.name}
+          obrigatorio
+          className="sm:col-span-2"
+        >
           <input
             name="name"
             value={name}
@@ -109,7 +163,8 @@ export function ProductForm({ product }: { product?: PanelProductDetail }) {
         <Campo label="Marca" erro={fieldErrors.brand} obrigatorio>
           <input
             name="brand"
-            defaultValue={product?.brand}
+            value={campos.brand}
+            onChange={(event) => mudar('brand', event.target.value)}
             className={entrada(Boolean(fieldErrors.brand))}
             placeholder="Tilibra"
           />
@@ -118,7 +173,8 @@ export function ProductForm({ product }: { product?: PanelProductDetail }) {
         <Campo label="SKU" erro={fieldErrors.sku} obrigatorio>
           <input
             name="sku"
-            defaultValue={product?.sku}
+            value={campos.sku}
+            onChange={(event) => mudar('sku', event.target.value)}
             className={`${entrada(Boolean(fieldErrors.sku))} font-mono uppercase`}
             placeholder="CAD-BRO-96"
           />
@@ -133,17 +189,24 @@ export function ProductForm({ product }: { product?: PanelProductDetail }) {
         >
           <input
             name="tagline"
-            defaultValue={product?.tagline}
+            value={campos.tagline}
+            onChange={(event) => mudar('tagline', event.target.value)}
             className={entrada(Boolean(fieldErrors.tagline))}
             placeholder="Capa dura, costurado, pauta larga"
           />
         </Campo>
 
-        <Campo label="Descrição" erro={fieldErrors.description} obrigatorio className="sm:col-span-2">
+        <Campo
+          label="Descrição"
+          erro={fieldErrors.description}
+          obrigatorio
+          className="sm:col-span-2"
+        >
           <textarea
             name="description"
             rows={5}
-            defaultValue={product?.description}
+            value={campos.description}
+            onChange={(event) => mudar('description', event.target.value)}
             className={`${entrada(Boolean(fieldErrors.description))} min-h-28 resize-y py-2.5`}
             placeholder="O que o material é e por que ele serve."
           />
@@ -154,7 +217,8 @@ export function ProductForm({ product }: { product?: PanelProductDetail }) {
         <Campo label="Categoria" erro={fieldErrors.categorySlug} obrigatorio>
           <select
             name="categorySlug"
-            defaultValue={product?.categorySlug ?? ''}
+            value={campos.categorySlug}
+            onChange={(event) => mudar('categorySlug', event.target.value)}
             className={`${entrada(Boolean(fieldErrors.categorySlug))} cursor-pointer`}
           >
             <option value="">Selecione…</option>
@@ -169,7 +233,8 @@ export function ProductForm({ product }: { product?: PanelProductDetail }) {
         <Campo label="Situação" obrigatorio>
           <select
             name="status"
-            defaultValue={product?.status ?? 'draft'}
+            value={campos.status}
+            onChange={(event) => mudar('status', event.target.value)}
             className={`${entrada(false)} cursor-pointer`}
           >
             <option value="draft">Rascunho — não aparece na loja</option>
@@ -185,7 +250,8 @@ export function ProductForm({ product }: { product?: PanelProductDetail }) {
         >
           <select
             name="illustrationKey"
-            defaultValue={product?.illustrationKey ?? ''}
+            value={campos.illustrationKey}
+            onChange={(event) => mudar('illustrationKey', event.target.value)}
             className={`${entrada(false)} cursor-pointer`}
           >
             <option value="">Sem ilustração</option>
@@ -204,7 +270,8 @@ export function ProductForm({ product }: { product?: PanelProductDetail }) {
         >
           <input
             name="keywords"
-            defaultValue={product?.keywords.join(', ')}
+            value={campos.keywords}
+            onChange={(event) => mudar('keywords', event.target.value)}
             className={entrada(false)}
             placeholder="brochurão, capa dura, pautado"
           />
@@ -216,7 +283,8 @@ export function ProductForm({ product }: { product?: PanelProductDetail }) {
           <input
             name="price"
             inputMode="decimal"
-            defaultValue={product ? (product.priceInCents / 100).toFixed(2).replace('.', ',') : ''}
+            value={campos.price}
+            onChange={(event) => mudar('price', event.target.value)}
             className={entrada(Boolean(fieldErrors.price))}
             placeholder="14,90"
           />
@@ -230,11 +298,8 @@ export function ProductForm({ product }: { product?: PanelProductDetail }) {
           <input
             name="compareAtPrice"
             inputMode="decimal"
-            defaultValue={
-              product?.compareAtPriceInCents
-                ? (product.compareAtPriceInCents / 100).toFixed(2).replace('.', ',')
-                : ''
-            }
+            value={campos.compareAtPrice}
+            onChange={(event) => mudar('compareAtPrice', event.target.value)}
             className={entrada(Boolean(fieldErrors.compareAtPrice))}
             placeholder="18,90"
           />
@@ -250,7 +315,8 @@ export function ProductForm({ product }: { product?: PanelProductDetail }) {
             name="maxPerOrder"
             type="number"
             min={1}
-            defaultValue={product?.maxPerOrder ?? 5}
+            value={campos.maxPerOrder}
+            onChange={(event) => mudar('maxPerOrder', event.target.value)}
             className={entrada(Boolean(fieldErrors.maxPerOrder))}
           />
         </Campo>
@@ -274,7 +340,14 @@ export function ProductForm({ product }: { product?: PanelProductDetail }) {
                 type="checkbox"
                 name="stageSlugs"
                 value={etapa.slug}
-                defaultChecked={product?.stageSlugs.includes(etapa.slug)}
+                checked={etapas.includes(etapa.slug)}
+                onChange={(event) =>
+                  setEtapas((atual) =>
+                    event.target.checked
+                      ? [...atual, etapa.slug]
+                      : atual.filter((entrada) => entrada !== etapa.slug),
+                  )
+                }
                 className="size-4 shrink-0 accent-[rgb(var(--accent))]"
               />
               <span className="min-w-0 flex-1 text-sm font-semibold">{etapa.shortName}</span>
@@ -362,7 +435,7 @@ export function ProductForm({ product }: { product?: PanelProductDetail }) {
 function entrada(invalido: boolean): string {
   return [
     'min-h-11 w-full rounded-xl border bg-white px-3.5 text-sm font-semibold transition',
-'placeholder:font-medium placeholder:text-[rgb(var(--muted))]',
+    'placeholder:font-medium placeholder:text-[rgb(var(--muted))]',
     invalido
       ? 'border-red-400 focus:border-red-500'
       : 'border-[rgb(var(--border-strong))] focus:border-[rgb(var(--accent))]',
@@ -383,9 +456,7 @@ function Bloco({
   return (
     <fieldset className="rounded-3xl border border-[rgb(var(--border))] bg-white p-6">
       <legend className="px-2 text-sm font-extrabold">{titulo}</legend>
-      {descricao ? (
-        <p className="text-xs leading-5 text-[rgb(var(--muted))]">{descricao}</p>
-      ) : null}
+      {descricao ? <p className="text-xs leading-5 text-[rgb(var(--muted))]">{descricao}</p> : null}
       <div className={`mt-5 grid gap-4 ${colunas === 2 ? 'sm:grid-cols-2' : ''}`}>{children}</div>
     </fieldset>
   );
