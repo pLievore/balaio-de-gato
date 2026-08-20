@@ -132,7 +132,13 @@ da segurança dos dados. Quebrar qualquer uma delas é bug.
 O layout público (`app/(public)/layout.tsx`) desce um catálogo enxuto via
 `getCachedCartProducts()` (`unstable_cache`, etiqueta `CATALOG_CACHE_TAG`), e o
 carrinho no cliente cruza com ele para saber preço, estoque e limite atuais.
-As gravações do painel invalidam por `revalidatePath`.
+
+Quem grava algo que aparece nesse catálogo enxuto — preço, estoque, limite ou
+etapas — precisa chamar `revalidateTag(CATALOG_CACHE_TAG, 'max')` além do
+`revalidatePath`, que não alcança a entrada em cache. Hoje isso acontece ao
+salvar produto, ajustar estoque, importar planilha, confirmar pagamento (baixa
+`on_hand`) e criar pedido (reserva estoque). No Next 16 a forma de um argumento
+está depreciada e nem compila.
 
 ### Ciclo de vida do pedido
 
@@ -192,10 +198,10 @@ npm run build
 npm run lint             # eslint flat config
 npm run typecheck        # tsc --noEmit
 
-npm test                 # design + balaio + loja
-npm run test:design      # contraste, booking, ics
+npm test                 # tudo: src/**/*.test.ts
+npm run test:design      # contraste dos tokens
 npm run test:balaio      # programa municipal, duepay
-npm run test:loja        # catálogo, carrinho, cpf, pedido, transições, painel
+npm run test:loja        # catálogo, carrinho, pedido, painel
 ```
 
 Contra o banco (usam `--env-file=.env.local`, **só em banco de desenvolvimento**):
@@ -214,8 +220,14 @@ npm run db:studio
 
 **Verificação mínima antes de entregar:** rode `npm run typecheck` e `npm run lint`
 sempre; rode a suíte da área alterada (`test:loja` para catálogo/carrinho/pedido/painel,
-`test:balaio` para programa/pagamento); rode `npm run build` quando mexer em
-rotas, `next.config.ts` ou no `proxy.ts`.
+`test:balaio` para programa/pagamento) ou simplesmente `npm test`, que roda tudo
+em dois segundos; rode `npm run build` quando mexer em rotas, `next.config.ts`
+ou no `proxy.ts`.
+
+`.github/workflows/ci.yml` repete typecheck, lint e testes em todo pull request.
+O `build` fica fora do CI porque a coleta de dados de página consulta o
+PostgreSQL — ele só passa com um banco alcançável, então continua sendo
+verificação local.
 
 ## Testes
 
@@ -224,8 +236,10 @@ fica ao lado do módulo (`summary.ts` → `summary.test.ts`) e testa **função
 pura**, sem banco e sem render. Os nomes dos testes são frases em português
 descrevendo a regra ("soma o subtotal e conta as unidades, não as linhas").
 
-**Um arquivo de teste novo não roda sozinho** — os scripts `test:*` listam os
-arquivos explicitamente no `package.json`. Adicione o caminho lá.
+Os scripts `test:*` usam glob (`src/**/*.test.ts`), então um arquivo novo entra
+sozinho — basta nomeá-lo `*.test.ts` dentro de `src/`. Antes eles listavam cada
+caminho à mão, e três arquivos de teste nunca chegaram a rodar: os do token de
+acesso ao pedido, do rate limit e dos templates de e-mail.
 
 ## Banco de dados
 
@@ -252,10 +266,9 @@ Fonte da verdade: [`ENV.md`](./ENV.md). Usadas hoje pelo código:
 
 Nunca versione segredo. `.env*` está no `.gitignore`.
 
-Dois descompassos conhecidos na documentação, para não induzir a erro:
+`env.example` é o modelo para `.env.local` e já reflete essa lista. Um
+descompasso conhecido continua de pé:
 
-- **`env.example` está obsoleto.** Ele ainda descreve a 801 Outlet
-  (`SHOPIFY_*`, `SUPABASE_*`, `SQUARE_*`, domínio errado). Use `ENV.md`.
 - **`ENV.md` lista `RESEND_API_KEY` e `EMAIL_FROM` como legado removido**, mas
   `src/lib/email/client.ts` voltou a usar exatamente essas duas. Sem elas o
   envio devolve `skipped` e a interface deixa de prometer e-mail — o pedido

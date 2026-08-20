@@ -1,0 +1,50 @@
+name: CI
+
+# Verificação de todo pull request e do que entra na branch padrão.
+#
+# `npm run build` está deliberadamente fora: a coleta de dados de página
+# consulta o PostgreSQL (o `generateStaticParams` de /products/[slug] lê o
+# catálogo, e src/db/client.ts lança sem DATABASE_URL), então o build só passa
+# com um banco alcançável. Colocá-lo aqui exigiria subir um Postgres de serviço
+# e rodar migration + seed antes — vale a pena, mas é outra entrega. Até lá,
+# rode `npm run build` localmente ao mexer em rotas, next.config.ts ou proxy.ts.
+
+on:
+  pull_request:
+  push:
+    # Branch padrão do repositório.
+    branches: [feat/shopify-headless]
+
+# Um push novo cancela a verificação do anterior na mesma referência.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: typecheck, lint e testes
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          # A versão vem do .nvmrc para não divergir do ambiente local.
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      # Só função pura: estes testes não tocam banco nem renderizam.
+      - name: Testes
+        run: npm test
