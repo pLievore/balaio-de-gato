@@ -21,10 +21,10 @@
     "db:smoke-fulfillment": "tsx --conditions=react-server --env-file=.env.local scripts/db-fulfillment-smoke.ts",
     "db:smoke-order": "tsx --conditions=react-server --env-file=.env.local scripts/db-order-smoke.ts",
     "db:studio": "drizzle-kit studio",
-    "test": "tsx --test \"src/**/*.test.ts\"",
-    "test:design": "tsx --test \"src/lib/design/**/*.test.ts\"",
-    "test:balaio": "tsx --test \"src/lib/program/**/*.test.ts\" \"src/lib/payments/**/*.test.ts\"",
-    "test:loja": "tsx --test \"src/lib/catalog/**/*.test.ts\" \"src/lib/cart/**/*.test.ts\" \"src/lib/orders/**/*.test.ts\" \"src/lib/panel/**/*.test.ts\""
+    "test": "tsx --conditions=react-server --test \"src/**/*.test.ts\"",
+    "test:design": "tsx --conditions=react-server --test \"src/lib/design/**/*.test.ts\"",
+    "test:balaio": "tsx --conditions=react-server --test \"src/lib/program/**/*.test.ts\" \"src/lib/payments/**/*.test.ts\"",
+    "test:loja": "tsx --conditions=react-server --test \"src/lib/catalog/**/*.test.ts\" \"src/lib/cart/**/*.test.ts\" \"src/lib/orders/**/*.test.ts\" \"src/lib/panel/**/*.test.ts\""
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
