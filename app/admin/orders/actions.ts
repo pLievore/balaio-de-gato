@@ -1,7 +1,8 @@
 'use server';
 
-import { revalidatePath } from 'next/cache';
+import { revalidatePath, revalidateTag } from 'next/cache';
 
+import { CATALOG_CACHE_TAG } from '../../../src/lib/catalog/repository';
 import { hasValidPanelSession } from '../../../src/lib/panel/session';
 import {
   canTransition,
@@ -84,6 +85,10 @@ export async function advanceOrder(
     const updated = await updateOrderStatus(code, nextStatus, { actor: 'painel' });
     if (!updated) return { status: 'error', message: `Pedido ${code} não encontrado.` };
 
+    // Confirmar o pagamento baixa `on_hand` de verdade, e o estoque viaja no
+    // catálogo enxuto que o carrinho consulta. Sem invalidar a etiqueta, a
+    // loja seguiria oferecendo unidades que já saíram.
+    revalidateTag(CATALOG_CACHE_TAG, 'max');
     revalidatePath('/admin/orders');
     revalidatePath(`/admin/orders/${code}`);
     revalidatePath(`/pedido/${code}`);

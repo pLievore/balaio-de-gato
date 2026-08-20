@@ -10,8 +10,9 @@
  */
 
 import { headers } from 'next/headers';
+import { revalidateTag } from 'next/cache';
 
-import { getCartProducts } from '../../../src/lib/catalog/repository';
+import { CATALOG_CACHE_TAG, getCartProducts } from '../../../src/lib/catalog/repository';
 import { buildCartSummary, canSubmitOrder } from '../../../src/lib/cart/summary';
 import type { CartLine } from '../../../src/lib/cart/types';
 import { describeIssue } from '../../../src/lib/cart/types';
@@ -247,6 +248,11 @@ export async function submitOrder(
     }
     throw error;
   }
+
+  // O pedido acabou de reservar estoque, e o catálogo em cache mostra
+  // `on_hand - reserved`. Sem invalidar aqui, a última unidade continuaria
+  // anunciada como disponível até o TTL vencer.
+  revalidateTag(CATALOG_CACHE_TAG, 'max');
 
   const accessToken = await issueOrderAccessToken(persistedOrder.code);
   const emailSent = await sendConfirmation(persistedOrder, accessToken);

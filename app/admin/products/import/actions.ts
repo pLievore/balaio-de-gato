@@ -1,7 +1,8 @@
 'use server';
 
-import { revalidatePath } from 'next/cache';
+import { revalidatePath, revalidateTag } from 'next/cache';
 
+import { CATALOG_CACHE_TAG } from '../../../../src/lib/catalog/repository';
 import { hasValidPanelSession } from '../../../../src/lib/panel/session';
 import { applyImportRows } from '../../../../src/lib/panel/catalog-write';
 import { previewImport, type ImportIssue, type ImportRow } from '../../../../src/lib/panel/csv';
@@ -96,6 +97,9 @@ export async function applyImportAction(
 
   const result = await applyImportRows(rows);
 
+  // Uma planilha mexe em preço e estoque de muitos produtos de uma vez; é o
+  // caso em que o catálogo em cache mais destoa do banco.
+  revalidateTag(CATALOG_CACHE_TAG, 'max');
   revalidatePath('/admin/products');
   revalidatePath('/products');
 

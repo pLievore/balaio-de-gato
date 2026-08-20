@@ -1,8 +1,9 @@
 'use server';
 
 import { del, put } from '@vercel/blob';
-import { revalidatePath } from 'next/cache';
+import { revalidatePath, revalidateTag } from 'next/cache';
 
+import { CATALOG_CACHE_TAG } from '../../../src/lib/catalog/repository';
 import { hasValidPanelSession } from '../../../src/lib/panel/session';
 import {
   adjustStock,
@@ -24,9 +25,7 @@ export type ProductActionState =
   | { status: 'success'; slug: string; message: string };
 
 async function guard(): Promise<string | null> {
-  return (await hasValidPanelSession())
-    ? null
-    : 'Sessão expirada. Entre novamente no painel.';
+  return (await hasValidPanelSession()) ? null : 'Sessão expirada. Entre novamente no painel.';
 }
 
 function readForm(formData: FormData) {
@@ -110,6 +109,13 @@ export async function saveProductAction(
     return { status: 'error', message };
   }
 
+  // O catálogo enxuto do carrinho é servido de `unstable_cache` com etiqueta;
+  // `revalidatePath` não alcança essa entrada, e sem isto preço, estoque,
+  // limite e etapas continuariam defasados no carrinho até o TTL vencer.
+  //
+  // O perfil `'max'` marca a entrada como velha e revalida em segundo plano na
+  // próxima visita. A forma de um argumento só está depreciada no Next 16.
+  revalidateTag(CATALOG_CACHE_TAG, 'max');
   revalidatePath('/admin/products');
   revalidatePath(`/admin/products/${data.slug}`);
   revalidatePath('/products');
@@ -159,6 +165,7 @@ export async function adjustStockAction(
     };
   }
 
+  revalidateTag(CATALOG_CACHE_TAG, 'max');
   revalidatePath('/admin/products');
   revalidatePath(`/admin/products/${slug}`);
   revalidatePath(`/products/${slug}`);
