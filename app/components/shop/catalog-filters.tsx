@@ -371,9 +371,15 @@ export function CatalogFilterDrawer({ query, facets, priceRange, total }: Filter
     return () => document.removeEventListener('keydown', onKeyDown);
   }, [open]);
 
+  // Devolver o foco ao gatilho só faz sentido ao FECHAR. Sem esta guarda o
+  // efeito também roda na montagem, e todo carregamento de /products jogava o
+  // foco no botão "Filtrar" — quem usa teclado perdia o começo da página e o
+  // leitor de tela anunciava o botão antes do título.
+  const estavaAberta = useRef(false);
   useEffect(() => {
     if (open) panelRef.current?.focus();
-    else triggerRef.current?.focus({ preventScroll: true });
+    else if (estavaAberta.current) triggerRef.current?.focus({ preventScroll: true });
+    estavaAberta.current = open;
   }, [open]);
 
   return (

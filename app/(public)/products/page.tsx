@@ -14,18 +14,58 @@ import { StageBenefitBanner } from '../../components/shop/stage-benefit-banner';
 import { Container } from '../../components/ui/container';
 import { buttonStyles } from '../../components/ui/button';
 import { StaggerGrid, StaggerItem } from '../../components/motion';
+import { CATEGORIES } from '../../../src/lib/catalog/categories';
 import { parseCatalogQuery } from '../../../src/lib/catalog/query';
 import { listProducts } from '../../../src/lib/catalog/repository';
 import { getEducationStage } from '../../../src/lib/program/material-escolar';
 
-export const metadata: Metadata = {
-  title: 'Materiais escolares',
-  description:
-    'Cadernos, lápis, mochilas e todo o material da lista escolar, com pagamento pelo crédito do Kit Escolar da Prefeitura de São Paulo.',
-  alternates: { canonical: '/products' },
-};
-
 type SearchParams = Record<string, string | string[] | undefined>;
+
+/**
+ * Metadata da listagem.
+ *
+ * O canonical era fixo em `/products` para qualquer combinação de filtro — e o
+ * sitemap submete as seis categorias como `/products?categoria=<slug>`. O
+ * Google lia as seis como duplicatas e descartava todas: uma loja cujo tráfego
+ * de busca é "caderno" e "mochila escolar" ficava sem essas páginas no índice.
+ *
+ * Agora **uma** categoria sozinha ganha canonical próprio, com título e
+ * descrição da categoria. Qualquer outra combinação — busca, preço, etapa,
+ * duas categorias — continua apontando para `/products`: são recortes de
+ * navegação, não páginas que mereçam índice próprio.
+ */
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams?: Promise<SearchParams>;
+}): Promise<Metadata> {
+  const query = parseCatalogQuery((await searchParams) ?? {});
+  const soUmaCategoria =
+    query.categories.length === 1 &&
+    query.search === '' &&
+    query.stage === null &&
+    query.maxPriceInCents === null &&
+    !query.inStockOnly;
+
+  const categoria = soUmaCategoria
+    ? CATEGORIES.find((entry) => entry.slug === query.categories[0])
+    : undefined;
+
+  if (!categoria) {
+    return {
+      title: 'Materiais escolares',
+      description:
+        'Cadernos, lápis, mochilas e todo o material da lista escolar, com pagamento pelo crédito do Kit Escolar da Prefeitura de São Paulo.',
+      alternates: { canonical: '/products' },
+    };
+  }
+
+  return {
+    title: categoria.name,
+    description: `${categoria.description} Pagamento pelo crédito do Kit Escolar da Prefeitura de São Paulo.`,
+    alternates: { canonical: `/products?categoria=${categoria.slug}` },
+  };
+}
 
 export default async function ProductsPage({
   searchParams,
