@@ -51,7 +51,7 @@ export function StockPanel({ product }: { product: PanelProductDetail }) {
               type="number"
               min={0}
               defaultValue={product.onHand}
-              className="mt-1.5 min-h-11 w-full rounded-xl border border-[rgb(var(--border-strong))] bg-white px-3.5 text-sm font-semibold tabular-nums focus:border-[rgb(var(--accent))] focus:outline-none"
+ className="mt-1.5 min-h-11 w-full rounded-xl border border-[rgb(var(--border-strong))] bg-white px-3.5 text-sm font-semibold tabular-nums focus:border-[rgb(var(--accent))]"
             />
           </label>
           <label className="block">
@@ -60,7 +60,7 @@ export function StockPanel({ product }: { product: PanelProductDetail }) {
               name="reason"
               required
               placeholder="Recebimento da nota 1234, contagem de inventário…"
-              className="mt-1.5 min-h-11 w-full rounded-xl border border-[rgb(var(--border-strong))] bg-white px-3.5 text-sm font-semibold focus:border-[rgb(var(--accent))] focus:outline-none"
+ className="mt-1.5 min-h-11 w-full rounded-xl border border-[rgb(var(--border-strong))] bg-white px-3.5 text-sm font-semibold focus:border-[rgb(var(--accent))]"
             />
           </label>
         </div>
@@ -167,7 +167,7 @@ export function MediaPanel({ product }: { product: PanelProductDetail }) {
             <input
               name="altText"
               placeholder="Descreva a foto para quem não a enxerga"
-              className="mt-1.5 min-h-11 w-full rounded-xl border border-[rgb(var(--border-strong))] bg-white px-3.5 text-sm font-semibold focus:border-[rgb(var(--accent))] focus:outline-none"
+ className="mt-1.5 min-h-11 w-full rounded-xl border border-[rgb(var(--border-strong))] bg-white px-3.5 text-sm font-semibold focus:border-[rgb(var(--accent))]"
             />
           </label>
         </div>

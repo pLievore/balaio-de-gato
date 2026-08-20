@@ -362,7 +362,7 @@ export function ProductForm({ product }: { product?: PanelProductDetail }) {
 function entrada(invalido: boolean): string {
   return [
     'min-h-11 w-full rounded-xl border bg-white px-3.5 text-sm font-semibold transition',
-    'placeholder:font-medium placeholder:text-[rgb(var(--muted))] focus:outline-none',
+'placeholder:font-medium placeholder:text-[rgb(var(--muted))]',
     invalido
       ? 'border-red-400 focus:border-red-500'
       : 'border-[rgb(var(--border-strong))] focus:border-[rgb(var(--accent))]',
