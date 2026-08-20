@@ -11,6 +11,7 @@ import 'server-only';
 
 import { and, eq, gte, sql } from 'drizzle-orm';
 
+import { env } from '../../config/env';
 import { db } from '../../db/client';
 import { funnelCounters } from '../../db/schema';
 
@@ -47,6 +48,28 @@ export const TRAFFIC_SOURCE_LABEL: Record<TrafficSource, string> = {
 };
 
 /**
+ * Se o referenciador é o próprio site.
+ *
+ * O domínio sai de `NEXT_PUBLIC_SITE_URL` em vez de ficar escrito aqui: um
+ * domínio fixo no código envelhece com a primeira mudança de endereço e passa
+ * a contar navegação interna como referência de fora, sujando o funil. O `www`
+ * é ignorado e os subdomínios contam como o mesmo site.
+ */
+function isOwnHost(host: string): boolean {
+  if (!host) return false;
+
+  let site: string;
+  try {
+    site = new URL(env.siteUrl).hostname.toLowerCase();
+  } catch {
+    return false;
+  }
+
+  const base = site.replace(/^www\./, '');
+  return host === base || host.endsWith(`.${base}`);
+}
+
+/**
  * Buckets a referrer/UTM pair into a fixed set of sources. Only the bucket
  * name is ever stored — the raw referrer is discarded.
  */
@@ -68,7 +91,7 @@ export function classifyTrafficSource(referrer: string, utmSource: string): Traf
   if (haystack.includes('google')) return 'google';
 
   // Internal navigation opening in a new tab still counts as direct.
-  if (host.endsWith('801outlet.com')) return 'direct';
+  if (isOwnHost(host)) return 'direct';
   if (!host && !utm) return 'direct';
   return 'other';
 }

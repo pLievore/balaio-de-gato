@@ -28,6 +28,11 @@ const nextConfig: NextConfig = {
       { source: '/pickup', destination: '/programa#entrega', permanent },
       { source: '/returns', destination: '/terms', permanent },
       { source: '/login', destination: '/products', permanent },
+      // A loja não tem área de cliente: o pedido é acompanhado por
+      // /pedido/:codigo com a chave de acesso. As páginas em (public)/account
+      // só faziam `redirect()`, e um redirect aqui custa menos que uma rota.
+      { source: '/account', destination: '/products', permanent },
+      { source: '/account/:path*', destination: '/products', permanent },
     ];
   },
 };
