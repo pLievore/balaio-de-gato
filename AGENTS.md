@@ -25,7 +25,9 @@ Antes de alterar arquitetura, domínio, pagamento, conteúdo público ou painel:
 
 ## Cuidados com o worktree
 
-As alterações preexistentes do usuário em `scripts/shipping-rates.ts`, `src/lib/analytics/funnel.ts` e `src/lib/content/delivery.ts` devem ser preservadas. Não reverta trabalho alheio nem use comandos destrutivos.
+Não reverta trabalho alheio nem use comandos destrutivos. Antes de apagar um arquivo, confira quem o importa.
+
+Este aviso listava `scripts/shipping-rates.ts`, `src/lib/analytics/funnel.ts` e `src/lib/content/delivery.ts` como alterações do usuário a preservar. `scripts/shipping-rates.ts` e `src/lib/content/delivery.ts` não existem mais — saíram com o código da 801 Outlet. `src/lib/analytics/funnel.ts` continua de pé e segue merecendo o cuidado.
 
 ## Onde mexer no storefront
 

@@ -303,8 +303,11 @@ a partir do slug) saem quando as fotos reais chegarem.
 
 Pendências completas em [`NEXT_STEPS.md`](./NEXT_STEPS.md). Em aberto: catálogo
 oficial, publicação/versionamento de catálogo, expiração operacional de reservas,
-revisão dos textos jurídicos, backups/observabilidade, hardening, E2E e
-acessibilidade, e a avaliação de automação Personal Net.
+autenticação por pessoa no painel (hoje é senha única, então a auditoria não
+distingue quem operou), a saída do atalho de desenvolvimento de
+`protected-data.ts`, revisão dos textos jurídicos, backups/observabilidade,
+hardening, E2E e acessibilidade, o `build` no CI e a avaliação de automação
+Personal Net.
 
 ## Mapa da documentação
 

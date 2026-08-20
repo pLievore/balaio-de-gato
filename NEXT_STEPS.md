@@ -19,7 +19,15 @@ Ordem recomendada, alinhada a `../docs/09-plano-de-desenvolvimento.md`.
 8. catálogo público lendo somente o banco, sem fallback para arquivo;
 9. criação atômica e idempotente do pedido com snapshots, reserva/movimento de
    estoque, tentativa manual de pagamento, eventos e auditoria;
-10. proteção do CPF persistido e smoke concorrente de pedido.
+10. proteção do CPF persistido e smoke concorrente de pedido;
+11. acesso público ao pedido por chave longa enviada por e-mail, com validade
+    de 180 dias — sem ela a página do pedido mostra só a situação;
+12. e-mail transacional pela Resend, que nunca derruba o pedido: sem
+    configuração o envio devolve `skipped` e a tela deixa de prometer;
+13. limite de requisições contado no PostgreSQL (checkout, beacon do funil,
+    login do painel e consulta de pedido), que falha aberto de propósito;
+14. verificação automática em pull request (`.github/workflows/ci.yml`) com
+    typecheck, lint e a suíte inteira.
 
 ## Painel `/admin` — estado da migração
 
@@ -63,17 +71,30 @@ A tela de vendas segue removida.
    desenvolvimento;
 3. persistir o carrinho se a recuperação entre dispositivos/sessões entrar no
    escopo; hoje ele continua no navegador e o servidor recalcula o pedido;
-4. notificações transacionais: hoje a confirmação aparece na tela, mas nenhum
-   e-mail sai — a tela promete um e-mail que ainda não existe (`src/lib/email.ts`
-   está pronto para isso);
-5. painel `/admin` do produto novo, lendo os pedidos deste app;
-6. substituir as ilustrações vetoriais pelas fotos reais dos produtos;
-7. expiração/liberação operacional das reservas e acesso público ao pedido por
-   token opaco, além do código, antes do go-live;
-8. revisar textos jurídicos com o catálogo real em mãos;
-9. configurar backups, restauração, observabilidade e executar hardening,
+4. verificar remetente e domínio na Resend e ligar `RESEND_API_KEY` /
+   `EMAIL_FROM` em produção. O envio já existe (`src/lib/email/client.ts`) e a
+   tela só promete e-mail quando ele está configurado; sem as variáveis o
+   envio devolve `skipped`;
+5. substituir as ilustrações vetoriais pelas fotos reais dos produtos;
+6. expiração e liberação operacional das reservas de estoque antes do go-live.
+   O acesso público ao pedido por chave longa já está feito
+   (`src/lib/orders/access-token.ts`): o código `BG-XXXXXX` sozinho mostra só a
+   situação;
+7. autenticação por pessoa no painel. Hoje é uma senha única, então a trilha
+   de auditoria não distingue quem operou — as tabelas `admin_users` e o enum
+   `admin_role` já existem no esquema para isso;
+8. tirar o atalho de desenvolvimento de `src/lib/security/protected-data.ts`,
+   que deriva a chave do CPF de `ADMIN_PANEL_SESSION_SECRET` quando não há
+   `ORDER_DATA_ENCRYPTION_KEY`. Está cercado (fora de produção, só em
+   localhost e sem `VERCEL_ENV`), mas é uma segunda porta para o segredo mais
+   sensível do sistema;
+9. revisar textos jurídicos com o catálogo real em mãos;
+10. configurar backups, restauração, observabilidade e executar hardening,
    testes E2E e acessibilidade do fluxo completo;
-10. avaliar automação Personal Net somente após documentação vigente,
+11. levar o `npm run build` para o CI. Hoje ele fica de fora porque a coleta de
+   dados de página consulta o PostgreSQL, então exigiria um Postgres de
+   serviço com migration e seed no workflow;
+12. avaliar automação Personal Net somente após documentação vigente,
    credenciais e homologação.
 
 ## Dependências externas abertas

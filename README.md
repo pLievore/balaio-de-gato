@@ -25,10 +25,14 @@ não aprovados. O storefront lê exclusivamente o PostgreSQL, sem fallback para 
 arquivo. Catálogo, SKUs, preços, fotos e estoque oficiais ainda precisam ser
 carregados e aprovados antes do go-live.
 
-O carrinho continua no navegador. O novo painel `/admin`, a operação completa
-do link, as comunicações transacionais, a homologação Personal Net, os backups
-e o hardening/E2E de lançamento permanecem pendentes. O painel legado não foi
-migrado para o novo banco.
+O painel `/admin` já roda sobre o PostgreSQL deste app: visão geral, pedidos
+com as transições permitidas, autoria de catálogo (cadastro, edição, estoque,
+fotos, importação de planilha e exportação CSV) e funil. A confirmação de
+pagamento baixa o estoque de verdade. As comunicações transacionais saem pela
+Resend quando `RESEND_API_KEY` e `EMAIL_FROM` estão configuradas.
+
+O carrinho continua no navegador. A operação completa do link, a homologação
+Personal Net, os backups e o hardening/E2E de lançamento permanecem pendentes.
 
 ## Desenvolvimento
 
