@@ -4,6 +4,7 @@ import { test } from 'node:test';
 import type { Product } from './product';
 import {
   buildCatalogHref,
+  catalogPriceSteps,
   countActiveFilters,
   EMPTY_QUERY,
   normalizeForSearch,
@@ -167,4 +168,29 @@ test('encontra pela marca e pelas palavras-chave', () => {
 test('busca vazia não filtra nada', () => {
   assert.equal(scoreProduct(makeProduct(), ''), 1);
   assert.equal(scoreProduct(makeProduct(), '   '), 1);
+});
+
+// ─── Degraus do filtro de preço ──────────────────────────────────────────────
+
+test('oferece só os degraus dentro da faixa de preço do resultado', () => {
+  const steps = catalogPriceSteps({ minInCents: 1500, maxInCents: 6000 });
+  assert.deepEqual(steps, [2000, 3500, 5000]);
+});
+
+test('faixa estreita não oferece degrau nenhum', () => {
+  assert.deepEqual(catalogPriceSteps({ minInCents: 1000, maxInCents: 1200 }), []);
+});
+
+test('o degrau ligado aparece mesmo fora da faixa, senão o filtro fica preso', () => {
+  // Cenário do bug: teto de R$ 35 escolhido no catálogo inteiro e, depois,
+  // uma categoria em que nada passa de R$ 20. Sem esta regra o botão de R$ 35
+  // some, e não sobra como desligar o filtro que está zerando a lista.
+  const steps = catalogPriceSteps({ minInCents: 500, maxInCents: 2000 }, 3500);
+  assert.ok(steps.includes(3500), 'o degrau ligado tem de continuar visível');
+  assert.deepEqual(steps, [1000, 3500]);
+});
+
+test('o degrau ligado não é duplicado quando já está na faixa', () => {
+  const steps = catalogPriceSteps({ minInCents: 500, maxInCents: 6000 }, 2000);
+  assert.deepEqual(steps, [1000, 2000, 3500, 5000]);
 });

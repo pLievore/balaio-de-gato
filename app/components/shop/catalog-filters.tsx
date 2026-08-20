@@ -13,13 +13,14 @@ import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { Search, SlidersHorizontal, X } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useEffect, useId, useRef, useState, useTransition } from 'react';
+import { useEffect, useId, useOptimistic, useRef, useState, useTransition } from 'react';
 
 import type { CategoryFacet } from '../../../src/lib/catalog/repository';
 import { CATEGORIES } from '../../../src/lib/catalog/categories';
 import type { CategorySlug } from '../../../src/lib/catalog/product';
 import {
   buildCatalogHref,
+  catalogPriceSteps,
   countActiveFilters,
   isQueryActive,
   SORT_OPTIONS,
@@ -38,26 +39,45 @@ type FiltersProps = {
   total: number;
 };
 
-function useApplyQuery() {
+/**
+ * Aplica a consulta na URL e devolve o que a interface deve mostrar enquanto
+ * isso.
+ *
+ * A navegação não é instantânea: entre o clique e a resposta do servidor,
+ * a prop `query` ainda é a consulta anterior. Isso causava dois problemas
+ * reais, os dois piores em conexão lenta — que é a do público desta loja:
+ *
+ * 1. o controle não reagia ao clique, porque o que o desenha é a prop. Sem
+ *    nada acontecendo na tela, a pessoa clicava de novo e desmarcava;
+ * 2. o clique seguinte partia da consulta velha, então marcar duas categorias
+ *    em sequência descartava a primeira.
+ *
+ * `useOptimistic` resolve os dois: a consulta devolvida já reflete o clique,
+ * e é dela que o próximo clique parte. Quando o servidor responde, o valor
+ * otimista é substituído pelo real — que, no caminho feliz, é igual.
+ */
+function useApplyQuery(query: CatalogQuery) {
   const router = useRouter();
   const pathname = usePathname();
   const [pending, startTransition] = useTransition();
+  const [optimisticQuery, setOptimisticQuery] = useOptimistic(query);
 
   const apply = (next: CatalogQuery) => {
     startTransition(() => {
+      setOptimisticQuery(next);
       // `scroll: false` mantém o olho onde está: marcar uma categoria não deve
       // jogar a página de volta ao topo e fazer perder a posição na lista.
       router.push(buildCatalogHref(next, pathname), { scroll: false });
     });
   };
 
-  return { apply, pending };
+  return { query: optimisticQuery, apply, pending };
 }
 
 // ─── Busca ───────────────────────────────────────────────────────────────────
 
-export function CatalogSearch({ query }: { query: CatalogQuery }) {
-  const { apply } = useApplyQuery();
+export function CatalogSearch({ query: serverQuery }: { query: CatalogQuery }) {
+  const { query, apply } = useApplyQuery(serverQuery);
   const [value, setValue] = useState(query.search);
   const [lastApplied, setLastApplied] = useState(query.search);
   const inputId = useId();
@@ -122,8 +142,8 @@ export function CatalogSearch({ query }: { query: CatalogQuery }) {
 
 // ─── Ordenação ───────────────────────────────────────────────────────────────
 
-export function SortSelect({ query }: { query: CatalogQuery }) {
-  const { apply } = useApplyQuery();
+export function SortSelect({ query: serverQuery }: { query: CatalogQuery }) {
+  const { query, apply } = useApplyQuery(serverQuery);
   const selectId = useId();
 
   return (
@@ -152,8 +172,8 @@ export function SortSelect({ query }: { query: CatalogQuery }) {
 
 // ─── Painel de filtros ───────────────────────────────────────────────────────
 
-function FilterPanel({ query, facets, priceRange }: Omit<FiltersProps, 'total'>) {
-  const { apply } = useApplyQuery();
+function FilterPanel({ query: serverQuery, facets, priceRange }: Omit<FiltersProps, 'total'>) {
+  const { query, apply, pending } = useApplyQuery(serverQuery);
   const facetBySlug = new Map(facets.map((facet) => [facet.slug, facet.count]));
 
   const toggleCategory = (slug: CategorySlug) => {
@@ -163,14 +183,15 @@ function FilterPanel({ query, facets, priceRange }: Omit<FiltersProps, 'total'>)
     apply({ ...query, categories: next });
   };
 
-  // Degraus de preço redondos dentro da faixa real do catálogo. Um controle
-  // deslizante seria mais bonito e muito pior de acertar no toque.
-  const priceSteps = [1000, 2000, 3500, 5000, 10000].filter(
-    (step) => step > priceRange.minInCents && step < priceRange.maxInCents,
-  );
+  const priceSteps = catalogPriceSteps(priceRange, query.maxPriceInCents);
 
   return (
-    <div className="space-y-8">
+    // `aria-busy` avisa o leitor de tela que o resultado está sendo
+    // recalculado; a opacidade dá o mesmo recado a quem enxerga.
+    <div
+      aria-busy={pending}
+      className={cn('space-y-8 transition-opacity', pending && 'opacity-60')}
+    >
       <fieldset>
         <legend className="text-xs font-extrabold tracking-[0.14em] uppercase">Categoria</legend>
         <div className="mt-4 space-y-1">
@@ -439,8 +460,8 @@ export function CatalogFilterDrawer({ query, facets, priceRange, total }: Filter
 
 // ─── Resumo dos filtros ligados ──────────────────────────────────────────────
 
-export function ActiveFilterChips({ query }: { query: CatalogQuery }) {
-  const { apply } = useApplyQuery();
+export function ActiveFilterChips({ query: serverQuery }: { query: CatalogQuery }) {
+  const { query, apply } = useApplyQuery(serverQuery);
   if (!isQueryActive(query)) return null;
 
   const chips: { key: string; label: string; next: CatalogQuery }[] = [];
