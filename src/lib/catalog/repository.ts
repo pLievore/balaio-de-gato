@@ -510,7 +510,7 @@ export async function getCartProducts(): Promise<CartProduct[]> {
  * Quem grava algo que aparece aqui — o painel ao salvar produto, ajustar
  * estoque ou importar planilha, o painel ao confirmar pagamento (que baixa
  * `on_hand`) e o checkout ao reservar — precisa chamar
- * `revalidateTag(CATALOG_CACHE_TAG, 'max')`. `revalidatePath` sozinho não
+ * `updateTag(CATALOG_CACHE_TAG)`. `revalidatePath` sozinho não
  * alcança esta entrada.
  */
 export const CATALOG_CACHE_TAG = 'catalog';

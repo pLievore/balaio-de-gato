@@ -1,6 +1,6 @@
 'use server';
 
-import { revalidatePath, revalidateTag } from 'next/cache';
+import { revalidatePath, updateTag } from 'next/cache';
 
 import { CATALOG_CACHE_TAG } from '../../../src/lib/catalog/repository';
 import { hasValidPanelSession } from '../../../src/lib/panel/session';
@@ -88,7 +88,7 @@ export async function advanceOrder(
     // Confirmar o pagamento baixa `on_hand` de verdade, e o estoque viaja no
     // catálogo enxuto que o carrinho consulta. Sem invalidar a etiqueta, a
     // loja seguiria oferecendo unidades que já saíram.
-    revalidateTag(CATALOG_CACHE_TAG, 'max');
+    updateTag(CATALOG_CACHE_TAG);
     revalidatePath('/products');
     revalidatePath('/');
     revalidatePath('/admin/orders');

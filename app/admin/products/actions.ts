@@ -1,7 +1,7 @@
 'use server';
 
 import { del, put } from '@vercel/blob';
-import { revalidatePath, revalidateTag } from 'next/cache';
+import { revalidatePath, updateTag } from 'next/cache';
 
 import { CATALOG_CACHE_TAG } from '../../../src/lib/catalog/repository';
 import { hasValidPanelSession } from '../../../src/lib/panel/session';
@@ -113,9 +113,12 @@ export async function saveProductAction(
   // `revalidatePath` não alcança essa entrada, e sem isto preço, estoque,
   // limite e etapas continuariam defasados no carrinho até o TTL vencer.
   //
-  // O perfil `'max'` marca a entrada como velha e revalida em segundo plano na
-  // próxima visita. A forma de um argumento só está depreciada no Next 16.
-  revalidateTag(CATALOG_CACHE_TAG, 'max');
+  // `updateTag` e `revalidateTag` chamam a mesma invalidação por dentro, mas
+  // `updateTag` expira na hora, enquanto `revalidateTag(tag, 'max')` serviria
+  // o valor anterior mais uma vez. Quem grava no painel precisa ver a própria
+  // gravação refletida — e `updateTag` ainda exige Server Action, o que vale
+  // como trava.
+  updateTag(CATALOG_CACHE_TAG);
   revalidatePath('/admin/products');
   revalidatePath(`/admin/products/${data.slug}`);
   revalidatePath('/products');
@@ -175,7 +178,7 @@ export async function adjustStockAction(
     };
   }
 
-  revalidateTag(CATALOG_CACHE_TAG, 'max');
+  updateTag(CATALOG_CACHE_TAG);
   revalidatePath('/admin/products');
   revalidatePath(`/admin/products/${slug}`);
   revalidatePath(`/products/${slug}`);
@@ -242,6 +245,7 @@ export async function uploadProductImageAction(
     return { status: 'error', message };
   }
 
+  updateTag(CATALOG_CACHE_TAG);
   revalidatePath(`/admin/products/${slug}`);
   revalidatePath(`/products/${slug}`);
   return { status: 'success', message: 'Imagem enviada.' };
@@ -270,6 +274,7 @@ export async function removeProductImageAction(
     };
   }
 
+  updateTag(CATALOG_CACHE_TAG);
   revalidatePath(`/admin/products/${slug}`);
   revalidatePath(`/products/${slug}`);
   return { status: 'success', message: 'Imagem removida.' };
