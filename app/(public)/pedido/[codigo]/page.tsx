@@ -66,7 +66,8 @@ export default async function OrderPage({
   const verdict = await consumeRateLimit('orderLookup', requestIdentifier(await headers()));
   if (!verdict.allowed) return <TooManyLookups retryAfterSeconds={verdict.retryAfterSeconds} />;
 
-  const hasFullAccess = typeof rawToken === 'string' && (await verifyOrderAccessToken(code, rawToken));
+  const hasFullAccess =
+    typeof rawToken === 'string' && (await verifyOrderAccessToken(code, rawToken));
 
   if (!hasFullAccess) {
     const summary = await getOrderStatusByCode(code);
@@ -204,6 +205,16 @@ function OrderSummaryView({
               sozinho não abre nome, telefone nem endereço. Use o link que enviamos por e-mail na
               confirmação do pedido — ou fale com a loja, que confere sua identidade antes.
             </p>
+            {/*
+              Quem tem a chave no e-mail mas abriu a página sem ela ficava sem
+              saída: a mensagem mandava usar o link e não oferecia onde colá-la.
+            */}
+            <Link
+              href={`/pedido?codigo=${encodeURIComponent(summary.code)}`}
+              className="mt-3 inline-flex min-h-11 items-center text-xs font-extrabold text-[rgb(var(--accent))] underline decoration-current/25 underline-offset-4"
+            >
+              Tenho a chave de acompanhamento
+            </Link>
           </div>
         </section>
 
@@ -300,8 +311,8 @@ function TooManyLookups({ retryAfterSeconds }: { retryAfterSeconds: number }) {
           </span>
           <h1 className="font-display mt-5 text-2xl font-extrabold">Consultas demais.</h1>
           <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-[rgb(var(--muted))]">
-            Espere {minutos === 1 ? 'um minuto' : `${minutos} minutos`} e tente de novo. Se
-            precisar do pedido agora, fale com a loja.
+            Espere {minutos === 1 ? 'um minuto' : `${minutos} minutos`} e tente de novo. Se precisar
+            do pedido agora, fale com a loja.
           </p>
         </div>
       </Container>
