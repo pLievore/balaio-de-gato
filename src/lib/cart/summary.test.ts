@@ -162,3 +162,22 @@ test('carrinho vazio não pode ser enviado', () => {
   assert.equal(canSubmitOrder(summary), false);
   assert.equal(summary.subtotalInCents, 0);
 });
+
+test('linhas repetidas do mesmo material somam antes de conferir estoque e limite', () => {
+  // Com as linhas conferidas isoladamente, duas de 2 passavam por um limite de
+  // 3 por pedido — e o total de 4 só esbarrava no banco, com a mensagem errada.
+  const produto = makeProduct({ slug: 'caderno', stock: 3, maxPerOrder: 3 });
+  const summary = buildCartSummary(
+    [
+      { slug: 'caderno', quantity: 2 },
+      { slug: 'caderno', quantity: 2 },
+    ],
+    [produto],
+    'alfabetizacao',
+  );
+
+  assert.equal(summary.items.length, 1, 'as duas linhas viram uma');
+  assert.equal(summary.items[0]?.quantity, 4);
+  assert.equal(summary.itemCount, 4);
+  assert.equal(canSubmitOrder(summary), false, 'passa do limite por pedido, tem de bloquear');
+});

@@ -10,7 +10,6 @@ import {
   ExternalLink,
   Filter,
   LayoutDashboard,
-  LineChart,
   LogOut,
   Menu,
   Package,
@@ -32,7 +31,6 @@ const NAV: NavGroup[] = [
       { href: '/admin', label: 'Visão geral', icon: LayoutDashboard },
       { href: '/admin/orders', label: 'Pedidos', icon: ReceiptText },
       { href: '/admin/funnel', label: 'Funil', icon: Filter },
-      { href: '/admin/sales', label: 'Vendas', icon: LineChart },
     ],
   },
   {
@@ -44,7 +42,6 @@ const NAV: NavGroup[] = [
     ],
   },
 ];
-
 
 const ALL_ITEMS = NAV.flatMap((group) => group.items);
 
@@ -79,9 +76,9 @@ export function AdminShell({
   }
 
   const activeHref = bestMatch(pathname);
-  const currentLabel = ALL_ITEMS.find((item) => item.href === activeHref)?.label ?? 'Panel';
+  const currentLabel = ALL_ITEMS.find((item) => item.href === activeHref)?.label ?? 'Painel';
 
-  const sidebarBody = (
+  const sidebarBody = (contexto: 'lateral' | 'gaveta') => (
     <>
       <Link href="/admin" className="flex items-center gap-3 px-5 py-6">
         <span className="relative size-10 overflow-hidden rounded-xl ring-1 ring-white/15 ring-inset">
@@ -115,7 +112,7 @@ export function AdminShell({
                   >
                     {active ? (
                       <motion.span
-                        layoutId="panel-nav-active"
+                        layoutId={`panel-nav-active-${contexto}`}
                         className="absolute top-1.5 bottom-1.5 left-0 w-0.5 rounded-full bg-[#a9bd95]"
                       />
                     ) : null}
@@ -182,7 +179,7 @@ export function AdminShell({
   return (
     <div className="flex min-h-dvh bg-[rgb(var(--bg))]">
       <aside className="sticky top-0 hidden h-dvh w-64 shrink-0 flex-col bg-[#171c17] lg:flex">
-        {sidebarBody}
+        {sidebarBody('lateral')}
       </aside>
 
       <AnimatePresence>
@@ -210,7 +207,7 @@ export function AdminShell({
               >
                 <X aria-hidden="true" className="size-[18px]" />
               </button>
-              {sidebarBody}
+              {sidebarBody('lateral')}
             </motion.aside>
           </>
         ) : null}
@@ -239,7 +236,7 @@ export function AdminShell({
             rel="noreferrer"
             className="hidden items-center gap-1.5 rounded-full border border-[rgb(var(--border-strong))] px-3.5 py-1.5 text-xs font-semibold text-[rgb(var(--muted))] transition hover:border-[rgb(var(--fg))] hover:text-[rgb(var(--fg))] sm:inline-flex"
           >
-            View store
+            Ver a loja
             <ExternalLink aria-hidden="true" className="size-3.5" />
           </a>
         </header>

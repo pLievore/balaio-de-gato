@@ -70,7 +70,24 @@ export function buildCartSummary(
   const items: CartItemView[] = [];
   const missingSlugs: string[] = [];
 
+  /*
+   * Duas linhas do mesmo material viram uma antes de qualquer conta.
+   *
+   * O carrinho do navegador já funde por slug, então isto só acontece com uma
+   * requisição forjada — que é exatamente o que a validação do servidor existe
+   * para tratar. Sem a fusão, `[{caderno,2},{caderno,2}]` passava por um limite
+   * de 3 por pedido: cada linha era conferida sozinha, e o total de 4 só
+   * esbarrava no banco, com a mensagem errada ("o estoque mudou") em vez de
+   * falar em limite.
+   */
+  const consolidadas = new Map<string, number>();
   for (const line of lines) {
+    if (line.quantity <= 0) continue;
+    consolidadas.set(line.slug, (consolidadas.get(line.slug) ?? 0) + line.quantity);
+  }
+
+  for (const [slug, quantity] of consolidadas) {
+    const line = { slug, quantity };
     const product = bySlug.get(line.slug);
     if (!product) {
       missingSlugs.push(line.slug);

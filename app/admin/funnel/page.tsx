@@ -22,7 +22,6 @@ export const dynamic = 'force-dynamic';
 
 const PERIODS = [7, 30] as const;
 
-
 function BreakdownList({ entries, emptyText }: { entries: BreakdownEntry[]; emptyText: string }) {
   if (entries.length === 0) {
     return <p className="text-sm text-[rgb(var(--muted))]">{emptyText}</p>;
@@ -110,7 +109,6 @@ export default async function FunnelPage({
         }
       />
 
-
       <BiHero
         eyebrow={`Visitas · últimos ${days} dias`}
         value={String(totals.session)}
@@ -126,9 +124,7 @@ export default async function FunnelPage({
         }
       >
         {totals.session === 0 ? (
-          <p className="text-sm text-white/60">
-            Nenhuma visita registrada neste período ainda.
-          </p>
+          <p className="text-sm text-white/60">Nenhuma visita registrada neste período ainda.</p>
         ) : (
           <AreaTrend
             data={rows.map((row) => ({
@@ -224,7 +220,7 @@ export default async function FunnelPage({
 
       <Panel title="Por dia">
         {rows.length === 0 ? (
-          <p className="text-sm text-[rgb(var(--muted))]">Nothing recorded yet.</p>
+          <p className="text-sm text-[rgb(var(--muted))]">Nada registrado ainda.</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[520px] text-sm">
@@ -257,8 +253,8 @@ export default async function FunnelPage({
 
       <p className="flex items-center gap-2 text-xs text-[rgb(var(--muted))]">
         <Filter aria-hidden="true" className="size-3.5" />
-        Visitas contam uma por sessão do navegador. Os pedidos vêm do banco, então a última etapa segue
-        accurate even if a visitor finishes the purchase later.
+        Visitas contam uma por sessão do navegador. Os pedidos vêm do banco, então a última etapa
+        continua correta mesmo quando a compra é concluída depois.
       </p>
     </div>
   );

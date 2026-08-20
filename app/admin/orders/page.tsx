@@ -106,7 +106,7 @@ export default async function PanelOrdersPage({
           type="search"
           defaultValue={busca}
           placeholder="BG-XXXXXX, nome ou e-mail"
-          className="min-h-11 w-full rounded-full border border-[rgb(var(--border))] bg-white pr-4 pl-11 text-sm font-semibold focus:border-[rgb(var(--accent))] focus:outline-none"
+ className="min-h-11 w-full rounded-full border border-[rgb(var(--border))] bg-white pr-4 pl-11 text-sm font-semibold focus:border-[rgb(var(--accent))]"
         />
         {situacao !== 'todos' ? (
           <input type="hidden" name="situacao" value={situacao} />

@@ -14,6 +14,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: base, lastModified: now, priority: 1, changeFrequency: 'weekly' },
     { url: `${base}/products`, lastModified: now, priority: 0.9, changeFrequency: 'daily' },
     { url: `${base}/programa`, lastModified: now, priority: 0.8, changeFrequency: 'monthly' },
+    // A consulta de pedido é pública e útil de achar na busca. Os pedidos em
+    // si (`/pedido/BG-XXXXXX`) continuam fora do índice, pelo robots e pelo
+    // `robots: { index: false }` da própria página.
+    { url: `${base}/pedido`, lastModified: now, priority: 0.5, changeFrequency: 'yearly' },
 
     // As categorias são filtros do catálogo, não rotas próprias — entram como
     // URLs canônicas de listagem porque é assim que as pessoas chegam nelas.

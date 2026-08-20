@@ -115,7 +115,7 @@ export function CatalogSearch({ query: serverQuery }: { query: CatalogQuery }) {
         className={cn(
           'min-h-12 w-full rounded-full border border-[rgb(var(--border))] bg-white pr-24 pl-11',
           'text-sm font-semibold placeholder:font-medium placeholder:text-[rgb(var(--muted))]',
-          'transition focus:border-[rgb(var(--accent))]/50 focus:outline-none',
+          'transition focus:border-[rgb(var(--accent))]/50',
         )}
       />
       <div className="absolute top-1/2 right-2 flex -translate-y-1/2 items-center gap-1">
@@ -157,7 +157,7 @@ export function SortSelect({ query: serverQuery }: { query: CatalogQuery }) {
         onChange={(event) => apply({ ...query, sort: event.target.value as ProductSort })}
         className={cn(
           'min-h-11 min-w-0 flex-1 rounded-full border border-[rgb(var(--border))] bg-white px-4 pr-8 text-sm font-bold min-[360px]:flex-none',
-          'cursor-pointer transition focus:border-[rgb(var(--accent))]/50 focus:outline-none',
+          'cursor-pointer transition focus:border-[rgb(var(--accent))]/50',
         )}
       >
         {SORT_OPTIONS.map((option) => (
@@ -371,9 +371,15 @@ export function CatalogFilterDrawer({ query, facets, priceRange, total }: Filter
     return () => document.removeEventListener('keydown', onKeyDown);
   }, [open]);
 
+  // Devolver o foco ao gatilho só faz sentido ao FECHAR. Sem esta guarda o
+  // efeito também roda na montagem, e todo carregamento de /products jogava o
+  // foco no botão "Filtrar" — quem usa teclado perdia o começo da página e o
+  // leitor de tela anunciava o botão antes do título.
+  const estavaAberta = useRef(false);
   useEffect(() => {
     if (open) panelRef.current?.focus();
-    else triggerRef.current?.focus({ preventScroll: true });
+    else if (estavaAberta.current) triggerRef.current?.focus({ preventScroll: true });
+    estavaAberta.current = open;
   }, [open]);
 
   return (

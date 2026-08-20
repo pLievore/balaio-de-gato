@@ -79,7 +79,7 @@ export function inputStyles({ invalid }: { invalid?: boolean } = {}) {
   return cn(
     'min-h-11 w-full rounded-xl border bg-white px-3.5 text-sm font-semibold',
     'transition placeholder:font-medium placeholder:text-[rgb(var(--muted))]',
-    'focus:outline-none',
+    '',
     invalid
       ? 'border-[rgb(var(--accent))] focus:border-[rgb(var(--accent))]'
       : 'border-[rgb(var(--border-strong))] focus:border-[rgb(var(--accent))]',
