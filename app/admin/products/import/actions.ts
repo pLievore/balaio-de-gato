@@ -1,6 +1,8 @@
 'use server';
 
-import { revalidatePath } from 'next/cache';
+import { revalidatePath, updateTag } from 'next/cache';
+
+import { CATALOG_CACHE_TAG } from '../../../../src/lib/catalog/repository';
 
 import { hasValidPanelSession } from '../../../../src/lib/panel/session';
 import { applyImportRows } from '../../../../src/lib/panel/catalog-write';
@@ -96,6 +98,9 @@ export async function applyImportAction(
 
   const result = await applyImportRows(rows);
 
+  // O catálogo enxuto do layout vem de cache com etiqueta; sem invalidar
+  // aqui, a loja continuaria servindo os preços anteriores por até um minuto.
+  updateTag(CATALOG_CACHE_TAG);
   revalidatePath('/admin/products');
   revalidatePath('/products');
 

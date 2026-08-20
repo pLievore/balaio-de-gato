@@ -1,8 +1,9 @@
 'use server';
 
 import { del, put } from '@vercel/blob';
-import { revalidatePath } from 'next/cache';
+import { revalidatePath, updateTag } from 'next/cache';
 
+import { CATALOG_CACHE_TAG } from '../../../src/lib/catalog/repository';
 import { hasValidPanelSession } from '../../../src/lib/panel/session';
 import {
   adjustStock,
@@ -110,6 +111,7 @@ export async function saveProductAction(
     return { status: 'error', message };
   }
 
+  updateTag(CATALOG_CACHE_TAG);
   revalidatePath('/admin/products');
   revalidatePath(`/admin/products/${data.slug}`);
   revalidatePath('/products');
@@ -159,6 +161,7 @@ export async function adjustStockAction(
     };
   }
 
+  updateTag(CATALOG_CACHE_TAG);
   revalidatePath('/admin/products');
   revalidatePath(`/admin/products/${slug}`);
   revalidatePath(`/products/${slug}`);
@@ -221,6 +224,7 @@ export async function uploadProductImageAction(
     return { status: 'error', message };
   }
 
+  updateTag(CATALOG_CACHE_TAG);
   revalidatePath(`/admin/products/${slug}`);
   revalidatePath(`/products/${slug}`);
   return { status: 'success', message: 'Imagem enviada.' };
@@ -249,6 +253,7 @@ export async function removeProductImageAction(
     };
   }
 
+  updateTag(CATALOG_CACHE_TAG);
   revalidatePath(`/admin/products/${slug}`);
   revalidatePath(`/products/${slug}`);
   return { status: 'success', message: 'Imagem removida.' };
