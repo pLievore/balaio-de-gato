@@ -21,6 +21,7 @@ import {
   getOrderByCheckoutIdempotencyKey,
   issueOrderAccessToken,
   orderCodeExists,
+  releaseExpiredReservations,
   saveOrder,
 } from '../../../src/lib/orders/repository';
 import {
@@ -87,6 +88,23 @@ async function nextOrderCode(): Promise<string> {
   throw new Error('Não foi possível gerar um código de pedido único.');
 }
 
+/**
+ * Limite de envio para esta requisição, ou `null` quando não há requisição.
+ *
+ * `headers()` lança fora de um ciclo de requisição, e é o que quebrava os
+ * smokes de banco — eles chamam esta action direto, sem servidor. O limite já
+ * falha aberto quando o banco está fora; falhar aberto aqui é a mesma decisão,
+ * e devolve a única forma de exercitar o checkout de ponta a ponta sem
+ * navegador.
+ */
+async function limiteDoEnvio() {
+  try {
+    return await consumeRateLimit('checkout', requestIdentifier(await headers()));
+  } catch {
+    return null;
+  }
+}
+
 export async function submitOrder(
   _previous: SubmitOrderState,
   formData: FormData,
@@ -94,8 +112,8 @@ export async function submitOrder(
   // Antes de ler o formulário: cada pedido reserva estoque e grava em cinco
   // tabelas, então um envio repetido em massa custa caro e trava o catálogo
   // para quem está comprando de verdade.
-  const verdict = await consumeRateLimit('checkout', requestIdentifier(await headers()));
-  if (!verdict.allowed) {
+  const verdict = await limiteDoEnvio();
+  if (verdict && !verdict.allowed) {
     const minutos = Math.ceil(verdict.retryAfterSeconds / 60);
     return {
       status: 'cart-changed',
@@ -233,6 +251,16 @@ export async function submitOrder(
     overBudgetInCents: summary.overBudgetInCents,
     observacoes: data.observacoes || undefined,
   };
+
+  // Devolve à prateleira o que venceu antes de disputar o saldo. Um carrinho
+  // abandonado ontem não pode custar a venda de hoje. Falha aberto de
+  // propósito: um problema na varredura não pode derrubar um pedido — o pior
+  // que acontece é o saldo seguir apertado até a próxima passagem.
+  try {
+    await releaseExpiredReservations();
+  } catch {
+    // Silêncio deliberado; a validação de estoque abaixo continua valendo.
+  }
 
   let persistedOrder: Order;
   try {

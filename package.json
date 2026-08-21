@@ -19,6 +19,7 @@
     "db:smoke-catalog": "tsx --conditions=react-server --env-file=.env.local scripts/db-catalog-smoke.ts",
     "db:smoke-funnel": "tsx --conditions=react-server --env-file=.env.local scripts/db-funnel-smoke.ts",
     "db:smoke-fulfillment": "tsx --conditions=react-server --env-file=.env.local scripts/db-fulfillment-smoke.ts",
+    "db:smoke-expiry": "tsx --conditions=react-server --env-file=.env.local scripts/db-expiry-smoke.ts",
     "db:smoke-order": "tsx --conditions=react-server --env-file=.env.local scripts/db-order-smoke.ts",
     "db:studio": "drizzle-kit studio",
     "test": "npm run test:design && npm run test:balaio && npm run test:loja",

@@ -3,6 +3,7 @@ import 'server-only';
 import { asc, count, eq, ilike, or, sql } from 'drizzle-orm';
 
 import { db } from '../../db/client';
+import { releaseExpiredReservations } from '../orders/repository';
 import {
   categories,
   inventoryItems,
@@ -42,9 +43,26 @@ export type PanelCatalogFilters = {
   status?: string;
 };
 
+/**
+ * Antes de mostrar saldo a quem opera a loja, devolve o que venceu.
+ *
+ * O painel é onde alguém decide repor ou não repor: mostrar uma peça como
+ * reservada quando a reserva venceu ontem leva a comprar estoque que já existe.
+ * Falha aberto — a listagem é mais importante que a varredura.
+ */
+async function liberarVencidasSilenciosamente(): Promise<void> {
+  try {
+    await releaseExpiredReservations();
+  } catch {
+    // Deliberado: o saldo exibido pode ficar conservador, nunca em branco.
+  }
+}
+
 export async function listPanelProducts(
   filters: PanelCatalogFilters = {},
 ): Promise<PanelProductRow[]> {
+  await liberarVencidasSilenciosamente();
+
   const conditions = [];
 
   const search = filters.search?.trim();
@@ -72,7 +90,9 @@ export async function listPanelProducts(
     .leftJoin(inventoryItems, eq(inventoryItems.variantId, productVariants.id))
     .leftJoin(productCategories, eq(productCategories.productId, products.id))
     .leftJoin(categories, eq(categories.id, productCategories.categoryId))
-    .where(conditions.length > 0 ? sql`${conditions.reduce((a, b) => sql`${a} and ${b}`)}` : undefined)
+    .where(
+      conditions.length > 0 ? sql`${conditions.reduce((a, b) => sql`${a} and ${b}`)}` : undefined,
+    )
     .orderBy(asc(products.name))
     .limit(300);
 
