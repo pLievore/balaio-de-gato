@@ -157,7 +157,16 @@ async function main(): Promise<void> {
     }
 
     const depois = await readInventory(target.slug);
-    assertEqual('reserved após o vencimento', depois.reserved, antes.reserved);
+    // A varredura é global de propósito: outras reservas vencidas do mesmo
+    // item também voltam para a prateleira. Por isso a asserção é "voltou ao
+    // menos o que este pedido segurava", e não uma igualdade exata.
+    if (depois.reserved > reservado.reserved - QUANTIDADE) {
+      throw new Error(
+        `reserved após o vencimento: esperado no máximo ${reservado.reserved - QUANTIDADE}, ` +
+          `encontrado ${depois.reserved}.`,
+      );
+    }
+    // Vencer solta a reserva; não pode tirar peça da prateleira.
     assertEqual('on_hand não pode mudar ao vencer', depois.onHand, antes.onHand);
 
     const [reserva] = await db
@@ -190,7 +199,7 @@ async function main(): Promise<void> {
     const repetido = await releaseExpiredReservations(futuro);
     assertEqual('segunda varredura', repetido.releasedReservations, 0);
     const estavel = await readInventory(target.slug);
-    assertEqual('reserved após varrer de novo', estavel.reserved, antes.reserved);
+    assertEqual('reserved após varrer de novo', estavel.reserved, depois.reserved);
 
     console.log(`OK: reserva do pedido ${code} venceu, devolveu o saldo e caiu em manual_review.`);
   } finally {

@@ -280,7 +280,16 @@ export async function submitOrder(
   // O pedido acabou de reservar estoque, e o catálogo em cache mostra
   // `on_hand - reserved`. Sem invalidar aqui, a última unidade continuaria
   // anunciada como disponível até o TTL vencer.
-  updateTag(CATALOG_CACHE_TAG);
+  //
+  // Falha aberto: `updateTag` exige contexto de Server Action e lança fora
+  // dele. Como isto roda DEPOIS de o pedido estar gravado, deixar a exceção
+  // subir transformaria uma invalidação de cache perdida num erro na tela
+  // para um pedido que já existe. Cache defasado é problema menor.
+  try {
+    updateTag(CATALOG_CACHE_TAG);
+  } catch {
+    // O TTL de 60s do catálogo em cache cobre o atraso.
+  }
 
   const accessToken = await issueOrderAccessToken(persistedOrder.code);
   const emailSent = await sendConfirmation(persistedOrder, accessToken);
