@@ -18,6 +18,50 @@ import { OrderConfirmation } from './order-confirmation';
 
 const INITIAL: SubmitOrderState = { status: 'idle' };
 
+/**
+ * Os campos do formulário, todos controlados.
+ *
+ * Não é preferência de estilo: o React 19 chama `requestFormReset` junto com a
+ * ação de um `<form action={…}>`, e ao terminar limpa os campos **não
+ * controlados**. Como a validação acontece no servidor, qualquer recusa —
+ * dígito verificador do CPF, CEP inválido, um obrigatório em branco — devolvia
+ * a pessoa a um formulário vazio, com mensagens de erro apontando para campos
+ * que ela acabara de ver preenchidos. Num formulário de doze campos, digitado
+ * no celular, isso é motivo de desistir da compra.
+ *
+ * Com o valor em estado do React, o reset não tem o que apagar.
+ */
+type CheckoutValues = {
+  responsavelNome: string;
+  responsavelCpf: string;
+  email: string;
+  telefone: string;
+  cep: string;
+  logradouro: string;
+  numero: string;
+  complemento: string;
+  bairro: string;
+  cidade: string;
+  uf: string;
+  observacoes: string;
+};
+
+const VALORES_INICIAIS: CheckoutValues = {
+  responsavelNome: '',
+  responsavelCpf: '',
+  email: '',
+  telefone: '',
+  cep: '',
+  logradouro: '',
+  numero: '',
+  complemento: '',
+  bairro: '',
+  // A loja entrega em São Paulo; deixar preenchido poupa dois campos.
+  cidade: 'São Paulo',
+  uf: 'SP',
+  observacoes: '',
+};
+
 export function CheckoutForm() {
   const [state, formAction, pending] = useActionState(submitOrder, INITIAL);
   const summary = useCartSummary();
@@ -28,11 +72,37 @@ export function CheckoutForm() {
 
   const errorRef = useRef<HTMLDivElement>(null);
 
-  // Campos que a pessoa vê formatados enquanto digita. O servidor recebe o
-  // texto formatado e tira a máscara — nunca o contrário.
-  const [cpf, setCpf] = useState('');
-  const [telefone, setTelefone] = useState('');
-  const [cep, setCep] = useState('');
+  const [values, setValues] = useState<CheckoutValues>(VALORES_INICIAIS);
+  const [aceite, setAceite] = useState(false);
+
+  /**
+   * Chave de idempotência do envio.
+   *
+   * É ela que impede o segundo clique de virar um segundo pedido — com uma
+   * segunda reserva de estoque. Precisa, portanto, sobreviver a um envio
+   * recusado, que é justamente quando alguém reenvia.
+   *
+   * Era um campo oculto não controlado, preenchido por um `ref`. O reset do
+   * React 19 apagava o valor e o `ref` sorteava **outra** chave: o servidor
+   * não reconhecia a repetição e criava o pedido de novo. Mesma armadilha dos
+   * campos de texto, só que num campo que ninguém vê.
+   *
+   * A chave agora não mora no DOM: fica aqui e é anexada ao `FormData` no
+   * envio. O que não está no formulário nenhum reset alcança — e some junto
+   * o risco de servidor e cliente sortearem valores diferentes na hidratação.
+   */
+  const idempotencyKeyRef = useRef('');
+
+  const enviar = (formData: FormData) => {
+    if (!idempotencyKeyRef.current) idempotencyKeyRef.current = crypto.randomUUID();
+    formData.set('checkoutIdempotencyKey', idempotencyKeyRef.current);
+    return formAction(formData);
+  };
+
+  // CPF, telefone e CEP a pessoa vê formatados enquanto digita. O servidor
+  // recebe o texto formatado e tira a máscara — nunca o contrário.
+  const set = (campo: keyof CheckoutValues, valor: string) =>
+    setValues((atual) => ({ ...atual, [campo]: valor }));
 
   const succeeded = state.status === 'success';
 
@@ -64,24 +134,50 @@ export function CheckoutForm() {
     return <div className="skeleton-shimmer h-96 rounded-3xl" />;
   }
 
-  if (summary.items.length === 0 || !canSubmitOrder(summary)) {
-    return <CheckoutBlocked empty={summary.items.length === 0} />;
+  // Carrinho vazio não tem formulário que salvar — não há pedido possível.
+  if (summary.items.length === 0) {
+    return <CheckoutBlocked empty />;
   }
 
+  /**
+   * Itens que impedem o envio (fora da etapa, sem estoque, acima do limite).
+   *
+   * Antes isto também devolvia `<CheckoutBlocked />` e **desmontava o
+   * formulário inteiro**. O gatilho mais comum é o próprio seletor de etapa
+   * logo abaixo: trocar o ano do estudante podia deixar um item fora da
+   * elegibilidade e apagar tudo o que já tinha sido digitado. Agora o aviso
+   * aparece dentro do formulário e só o envio fica bloqueado.
+   */
+  const bloqueado = !canSubmitOrder(summary);
   const fieldErrors = state.status === 'invalid' ? state.fieldErrors : {};
 
   return (
-    <form action={formAction} className="grid gap-8 lg:grid-cols-[1fr_360px] lg:gap-12">
+    <form action={enviar} className="grid gap-8 lg:grid-cols-[1fr_360px] lg:gap-12">
       <input type="hidden" name="linhas" value={JSON.stringify(lines)} />
-      <input
-        type="hidden"
-        name="checkoutIdempotencyKey"
-        ref={(node) => {
-          if (node && !node.value) node.value = crypto.randomUUID();
-        }}
-      />
 
       <div className="min-w-0 space-y-8">
+        {bloqueado ? (
+          <div
+            role="alert"
+            className="rounded-2xl border border-[rgb(var(--sun))]/50 bg-[rgb(var(--sun-soft))] p-4"
+          >
+            <p className="flex items-start gap-2 text-sm font-extrabold">
+              <CircleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
+              Alguns itens precisam de ajuste antes do envio.
+            </p>
+            <p className="mt-1.5 ml-6 text-xs leading-5 font-semibold">
+              Pode ser estoque, limite por pedido ou item fora da etapa escolhida. Seus dados
+              continuam preenchidos aqui.
+            </p>
+            <Link
+              href="/cart"
+              className="mt-3 ml-6 inline-block text-xs font-extrabold underline underline-offset-4"
+            >
+              Revisar o carrinho
+            </Link>
+          </div>
+        ) : null}
+
         {state.status === 'invalid' || state.status === 'cart-changed' ? (
           <div
             ref={errorRef}
@@ -122,6 +218,8 @@ export function CheckoutForm() {
               <TextInput
                 {...props}
                 name="responsavelNome"
+                value={values.responsavelNome}
+                onChange={(event) => set('responsavelNome', event.target.value)}
                 autoComplete="name"
                 invalid={Boolean(fieldErrors.responsavelNome)}
                 placeholder="Como está no documento"
@@ -136,8 +234,8 @@ export function CheckoutForm() {
                 name="responsavelCpf"
                 inputMode="numeric"
                 autoComplete="off"
-                value={cpf}
-                onChange={(event) => setCpf(formatCPF(event.target.value))}
+                value={values.responsavelCpf}
+                onChange={(event) => set('responsavelCpf', formatCPF(event.target.value))}
                 invalid={Boolean(fieldErrors.responsavelCpf)}
                 placeholder="000.000.000-00"
               />
@@ -154,6 +252,8 @@ export function CheckoutForm() {
               <TextInput
                 {...props}
                 name="email"
+                value={values.email}
+                onChange={(event) => set('email', event.target.value)}
                 type="email"
                 autoComplete="email"
                 invalid={Boolean(fieldErrors.email)}
@@ -169,8 +269,8 @@ export function CheckoutForm() {
                 name="telefone"
                 inputMode="tel"
                 autoComplete="tel"
-                value={telefone}
-                onChange={(event) => setTelefone(formatPhone(event.target.value))}
+                value={values.telefone}
+                onChange={(event) => set('telefone', formatPhone(event.target.value))}
                 invalid={Boolean(fieldErrors.telefone)}
                 placeholder="(11) 90000-0000"
               />
@@ -216,8 +316,8 @@ export function CheckoutForm() {
                 name="cep"
                 inputMode="numeric"
                 autoComplete="postal-code"
-                value={cep}
-                onChange={(event) => setCep(formatCEP(event.target.value))}
+                value={values.cep}
+                onChange={(event) => set('cep', formatCEP(event.target.value))}
                 invalid={Boolean(fieldErrors.cep)}
                 placeholder="00000-000"
               />
@@ -236,6 +336,8 @@ export function CheckoutForm() {
               <TextInput
                 {...props}
                 name="logradouro"
+                value={values.logradouro}
+                onChange={(event) => set('logradouro', event.target.value)}
                 autoComplete="address-line1"
                 invalid={Boolean(fieldErrors.logradouro)}
               />
@@ -247,6 +349,8 @@ export function CheckoutForm() {
               <TextInput
                 {...props}
                 name="numero"
+                value={values.numero}
+                onChange={(event) => set('numero', event.target.value)}
                 inputMode="numeric"
                 invalid={Boolean(fieldErrors.numero)}
               />
@@ -258,6 +362,8 @@ export function CheckoutForm() {
               <TextInput
                 {...props}
                 name="complemento"
+                value={values.complemento}
+                onChange={(event) => set('complemento', event.target.value)}
                 autoComplete="address-line2"
                 placeholder="Apto, bloco, fundos…"
               />
@@ -266,7 +372,13 @@ export function CheckoutForm() {
 
           <Field label="Bairro" required error={fieldErrors.bairro}>
             {(props) => (
-              <TextInput {...props} name="bairro" invalid={Boolean(fieldErrors.bairro)} />
+              <TextInput
+                {...props}
+                name="bairro"
+                value={values.bairro}
+                onChange={(event) => set('bairro', event.target.value)}
+                invalid={Boolean(fieldErrors.bairro)}
+              />
             )}
           </Field>
 
@@ -275,8 +387,9 @@ export function CheckoutForm() {
               <TextInput
                 {...props}
                 name="cidade"
+                value={values.cidade}
+                onChange={(event) => set('cidade', event.target.value)}
                 autoComplete="address-level2"
-                defaultValue="São Paulo"
                 invalid={Boolean(fieldErrors.cidade)}
               />
             )}
@@ -287,9 +400,10 @@ export function CheckoutForm() {
               <TextInput
                 {...props}
                 name="uf"
+                value={values.uf}
+                onChange={(event) => set('uf', event.target.value)}
                 maxLength={2}
                 autoComplete="address-level1"
-                defaultValue="SP"
                 invalid={Boolean(fieldErrors.uf)}
                 className="uppercase"
               />
@@ -305,6 +419,8 @@ export function CheckoutForm() {
               <textarea
                 {...props}
                 name="observacoes"
+                value={values.observacoes}
+                onChange={(event) => set('observacoes', event.target.value)}
                 rows={3}
                 maxLength={500}
                 placeholder="Ponto de referência, melhor horário…"
@@ -315,7 +431,14 @@ export function CheckoutForm() {
         </Fieldset>
       </div>
 
-      <CheckoutAside summary={summary} pending={pending} error={fieldErrors.aceiteRegras} />
+      <CheckoutAside
+        summary={summary}
+        pending={pending}
+        error={fieldErrors.aceiteRegras}
+        aceite={aceite}
+        onAceiteChange={setAceite}
+        bloqueado={bloqueado}
+      />
     </form>
   );
 }
@@ -342,10 +465,16 @@ function CheckoutAside({
   summary,
   pending,
   error,
+  aceite,
+  onAceiteChange,
+  bloqueado,
 }: {
   summary: NonNullable<ReturnType<typeof useCartSummary>>;
   pending: boolean;
   error?: string;
+  aceite: boolean;
+  onAceiteChange: (valor: boolean) => void;
+  bloqueado: boolean;
 }) {
   return (
     <div className="lg:sticky lg:top-28 lg:self-start">
@@ -398,6 +527,8 @@ function CheckoutAside({
           <input
             type="checkbox"
             name="aceiteRegras"
+            checked={aceite}
+            onChange={(event) => onAceiteChange(event.target.checked)}
             className="mt-0.5 size-4 shrink-0 accent-[rgb(var(--accent))]"
             aria-describedby={error ? 'aceite-erro' : undefined}
           />
@@ -414,7 +545,8 @@ function CheckoutAside({
 
         <button
           type="submit"
-          disabled={pending}
+          disabled={pending || bloqueado}
+          aria-describedby={bloqueado ? 'envio-bloqueado' : undefined}
           className={buttonStyles({ size: 'lg', className: 'mt-5 w-full' })}
         >
           {pending ? (
@@ -429,6 +561,11 @@ function CheckoutAside({
             </>
           )}
         </button>
+        {bloqueado ? (
+          <p id="envio-bloqueado" className="mt-2 text-center text-[11px] font-bold">
+            Ajuste os itens do carrinho para liberar o envio.
+          </p>
+        ) : null}
 
         <p className="mt-4 flex items-start gap-2 text-[11px] leading-4 font-semibold text-[rgb(var(--sage-ink))]">
           <LockKeyhole aria-hidden="true" className="mt-0.5 size-3.5 shrink-0" />

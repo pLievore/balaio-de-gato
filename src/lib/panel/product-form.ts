@@ -14,15 +14,23 @@ import { EDUCATION_STAGES } from '../program/material-escolar';
 const categorySlugs = CATEGORIES.map((category) => category.slug) as [string, ...string[]];
 const stageSlugs = EDUCATION_STAGES.map((stage) => stage.slug) as [string, ...string[]];
 
-/** Converte "R$ 14,90", "14,90" ou "14.90" em centavos. */
+/**
+ * Converte "R$ 14,90", "14,90" ou "14.90" em centavos.
+ *
+ * O formato é conferido antes do `Number`, e não depois: `Number` aceita
+ * notação científica, hexadecimal e `Infinity`. Digitar "1e3" no preço criava
+ * um produto de R$ 1.000,00 sem nenhum aviso.
+ */
+const FORMATO_PRECO = /^\d+(\.\d+)?$/;
+
 export function parsePriceToCents(input: string): number | null {
   const cleaned = input
     .replace(/[R$\s]/g, '')
     .replace(/\.(?=\d{3}\b)/g, '')
     .replace(',', '.');
-  if (cleaned === '') return null;
+  if (!FORMATO_PRECO.test(cleaned)) return null;
   const value = Number(cleaned);
-  if (!Number.isFinite(value) || value < 0) return null;
+  if (!Number.isFinite(value)) return null;
   return Math.round(value * 100);
 }
 
@@ -45,6 +53,12 @@ const priceField = (label: string) =>
       const cents = parsePriceToCents(value);
       if (cents === null) {
         ctx.addIssue({ code: 'custom', message: `${label} inválido. Use, por exemplo, 14,90.` });
+        return z.NEVER;
+      }
+      // Um dedo escorregando de "10" para "0" entregava material de graça: o
+      // pedido de R$ 0,00 nascia normal, porque o servidor só recusa negativo.
+      if (cents === 0) {
+        ctx.addIssue({ code: 'custom', message: `${label} não pode ser zero.` });
         return z.NEVER;
       }
       return cents;
@@ -146,16 +160,16 @@ export const productFormSchema = z
       .pipe(
         z
           .array(z.enum(stageSlugs))
-          .min(1, 'Escolha ao menos uma etapa: sem etapa, o item não pode ser comprado com o crédito.'),
+          .min(
+            1,
+            'Escolha ao menos uma etapa: sem etapa, o item não pode ser comprado com o crédito.',
+          ),
       ),
   })
-  .refine(
-    (data) => data.compareAtPrice === null || data.compareAtPrice > data.price,
-    {
-      message: 'O preço anterior precisa ser maior que o preço atual.',
-      path: ['compareAtPrice'],
-    },
-  );
+  .refine((data) => data.compareAtPrice === null || data.compareAtPrice > data.price, {
+    message: 'O preço anterior precisa ser maior que o preço atual.',
+    path: ['compareAtPrice'],
+  });
 
 export type ProductFormData = z.output<typeof productFormSchema>;
 export type ProductFieldErrors = Partial<Record<keyof ProductFormData, string>>;

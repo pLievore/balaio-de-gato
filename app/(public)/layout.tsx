@@ -209,6 +209,12 @@ function SiteFooter() {
           <div className="flex flex-wrap items-center gap-x-5">
             <Link
               className="inline-flex min-h-11 items-center transition hover:text-[rgb(var(--fg))]"
+              href="/pedido"
+            >
+              Acompanhar pedido
+            </Link>
+            <Link
+              className="inline-flex min-h-11 items-center transition hover:text-[rgb(var(--fg))]"
               href="/privacy"
             >
               Privacidade

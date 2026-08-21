@@ -72,7 +72,9 @@ export function ProductPurchase({ product }: { product: Product }) {
               <QuantityStepper
                 value={quantity}
                 onChange={setQuantity}
-                max={Math.max(1, remaining || limit)}
+                // `remaining || limit` caía no limite cheio quando restava zero, e a
+                // pessoa conseguia subir de novo para descobrir no clique que não dava.
+                max={Math.max(1, remaining)}
                 label={`Quantidade de ${product.name}`}
               />
               <AddToCartButton

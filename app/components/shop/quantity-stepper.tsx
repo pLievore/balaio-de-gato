@@ -79,7 +79,7 @@ export function QuantityStepper({
           fieldWidth,
           textSize,
           'tabular-nums-tight [appearance:textfield] border-0 bg-transparent text-center font-extrabold',
-          'focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none',
+          '[&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none',
         )}
       />
 

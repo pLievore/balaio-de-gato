@@ -29,9 +29,7 @@ export function CartView() {
   return (
     <div className="grid gap-8 lg:grid-cols-[1fr_380px] lg:gap-12">
       <div className="min-w-0">
-        {summary.missingSlugs.length > 0 ? (
-          <MissingNotice count={summary.missingSlugs.length} />
-        ) : null}
+        {summary.missingSlugs.length > 0 ? <MissingNotice slugs={summary.missingSlugs} /> : null}
 
         <ul className="space-y-3">
           <AnimatePresence initial={false}>
@@ -256,7 +254,7 @@ function StagePicker() {
         id="etapa-carrinho"
         value={stage ?? ''}
         onChange={(event) => setStage(event.target.value || null)}
-        className="mt-3 min-h-11 w-full cursor-pointer rounded-full border border-[rgb(var(--border-strong))] bg-white px-4 text-sm font-bold transition focus:border-[rgb(var(--accent))] focus:outline-none"
+        className="mt-3 min-h-11 w-full cursor-pointer rounded-full border border-[rgb(var(--border-strong))] bg-white px-4 text-sm font-bold transition focus:border-[rgb(var(--accent))]"
       >
         <option value="">Selecione o ano ou a etapa…</option>
         {EDUCATION_STAGES.map((option) => (
@@ -306,8 +304,17 @@ function EmptyCart() {
   );
 }
 
-function MissingNotice({ count }: { count: number }) {
-  const clearMissing = useCartStore((state) => state.clear);
+/**
+ * Aviso dos itens que saíram do catálogo.
+ *
+ * O botão retira só os itens que sumiram. Antes ele chamava `clear()` e
+ * apagava o carrinho inteiro: a pessoa perdia a lista escolar completa ao
+ * tentar resolver um aviso sobre um único item.
+ */
+function MissingNotice({ slugs }: { slugs: string[] }) {
+  const removeLine = useCartStore((state) => state.removeLine);
+  const count = slugs.length;
+
   return (
     <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[rgb(var(--sun))]/40 bg-[rgb(var(--sun-soft))] p-4">
       <p className="text-xs leading-5 font-bold">
@@ -317,10 +324,10 @@ function MissingNotice({ count }: { count: number }) {
       </p>
       <button
         type="button"
-        onClick={() => clearMissing()}
-        className="text-xs font-extrabold underline underline-offset-4"
+        onClick={() => slugs.forEach((slug) => removeLine(slug))}
+        className="inline-flex min-h-11 items-center text-xs font-extrabold underline underline-offset-4"
       >
-        Começar um carrinho novo
+        {count === 1 ? 'Retirar o item do carrinho' : 'Retirar os itens do carrinho'}
       </button>
     </div>
   );

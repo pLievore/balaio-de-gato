@@ -51,7 +51,7 @@ export function StockPanel({ product }: { product: PanelProductDetail }) {
               type="number"
               min={0}
               defaultValue={product.onHand}
-              className="mt-1.5 min-h-11 w-full rounded-xl border border-[rgb(var(--border-strong))] bg-white px-3.5 text-sm font-semibold tabular-nums focus:border-[rgb(var(--accent))] focus:outline-none"
+              className="mt-1.5 min-h-11 w-full rounded-xl border border-[rgb(var(--border-strong))] bg-white px-3.5 text-sm font-semibold tabular-nums focus:border-[rgb(var(--accent))]"
             />
           </label>
           <label className="block">
@@ -60,7 +60,7 @@ export function StockPanel({ product }: { product: PanelProductDetail }) {
               name="reason"
               required
               placeholder="Recebimento da nota 1234, contagem de inventário…"
-              className="mt-1.5 min-h-11 w-full rounded-xl border border-[rgb(var(--border-strong))] bg-white px-3.5 text-sm font-semibold focus:border-[rgb(var(--accent))] focus:outline-none"
+              className="mt-1.5 min-h-11 w-full rounded-xl border border-[rgb(var(--border-strong))] bg-white px-3.5 text-sm font-semibold focus:border-[rgb(var(--accent))]"
             />
           </label>
         </div>
@@ -77,8 +77,8 @@ export function StockPanel({ product }: { product: PanelProductDetail }) {
         <Aviso state={state} />
 
         <p className="text-[11px] leading-4 text-[rgb(var(--muted))]">
-          O que está reservado pertence a pedidos abertos e não pode ser retirado:
-          o novo total nunca fica abaixo de {product.reserved}.
+          O que está reservado pertence a pedidos abertos e não pode ser retirado: o novo total
+          nunca fica abaixo de {product.reserved}.
         </p>
       </form>
     </div>
@@ -86,11 +86,11 @@ export function StockPanel({ product }: { product: PanelProductDetail }) {
 }
 
 export function MediaPanel({ product }: { product: PanelProductDetail }) {
-  const [upload, uploadAction, uploading] = useActionState(
-    uploadProductImageAction,
+  const [upload, uploadAction, uploading] = useActionState(uploadProductImageAction, MIDIA_INICIAL);
+  const [remocao, removeAction, removendo] = useActionState(
+    removeProductImageAction,
     MIDIA_INICIAL,
   );
-  const [remocao, removeAction] = useActionState(removeProductImageAction, MIDIA_INICIAL);
 
   return (
     <div className="space-y-5">
@@ -103,8 +103,8 @@ export function MediaPanel({ product }: { product: PanelProductDetail }) {
             />
           </span>
           <p className="text-xs leading-5 text-[rgb(var(--muted))]">
-            Sem foto ainda. A loja mostra esta ilustração no lugar. Assim que a
-            primeira foto entrar, ela passa a ser a imagem principal.
+            Sem foto ainda. A loja mostra esta ilustração no lugar. Assim que a primeira foto
+            entrar, ela passa a ser a imagem principal.
           </p>
         </div>
       ) : (
@@ -134,7 +134,8 @@ export function MediaPanel({ product }: { product: PanelProductDetail }) {
                 <button
                   type="submit"
                   aria-label="Remover imagem"
-                  className="absolute top-2 right-2 flex size-9 items-center justify-center rounded-full bg-white/90 text-red-700 shadow-sm transition hover:bg-red-50"
+                  disabled={removendo}
+                  className="absolute top-2 right-2 flex size-9 items-center justify-center rounded-full bg-white/90 text-red-700 shadow-sm transition hover:bg-red-50 disabled:opacity-50"
                 >
                   <Trash2 aria-hidden="true" className="size-4" />
                 </button>
@@ -167,7 +168,7 @@ export function MediaPanel({ product }: { product: PanelProductDetail }) {
             <input
               name="altText"
               placeholder="Descreva a foto para quem não a enxerga"
-              className="mt-1.5 min-h-11 w-full rounded-xl border border-[rgb(var(--border-strong))] bg-white px-3.5 text-sm font-semibold focus:border-[rgb(var(--accent))] focus:outline-none"
+              className="mt-1.5 min-h-11 w-full rounded-xl border border-[rgb(var(--border-strong))] bg-white px-3.5 text-sm font-semibold focus:border-[rgb(var(--accent))]"
             />
           </label>
         </div>
@@ -188,8 +189,8 @@ export function MediaPanel({ product }: { product: PanelProductDetail }) {
         <Aviso state={upload} />
 
         <p className="text-[11px] leading-4 text-[rgb(var(--muted))]">
-          JPEG, PNG, WebP ou AVIF, até 5 MB. A primeira imagem da lista é a que
-          abre a ficha do produto.
+          JPEG, PNG, WebP ou AVIF, até 5 MB. A primeira imagem da lista é a que abre a ficha do
+          produto.
         </p>
       </form>
     </div>

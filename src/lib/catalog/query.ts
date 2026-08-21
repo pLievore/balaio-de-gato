@@ -111,6 +111,34 @@ export function buildCatalogHref(query: CatalogQuery, pathname = '/products'): s
   return search ? `${pathname}?${search}` : pathname;
 }
 
+/**
+ * Degraus redondos do filtro "preço até". Um controle deslizante seria mais
+ * bonito e muito pior de acertar no toque.
+ */
+const PRICE_STEPS: readonly number[] = [1000, 2000, 3500, 5000, 10000];
+
+/**
+ * Quais degraus de preço oferecer para a faixa atual do catálogo.
+ *
+ * O degrau ligado entra sempre, mesmo que esteja fora da faixa. Sem isso,
+ * marcar uma categoria mais barata que o teto escolhido faz o botão do próprio
+ * filtro sumir da tela — e a pessoa fica presa num filtro que não consegue
+ * mais desligar, olhando para uma lista vazia.
+ */
+export function catalogPriceSteps(
+  priceRange: { minInCents: number; maxInCents: number },
+  activeMaxInCents: number | null = null,
+): number[] {
+  const steps = PRICE_STEPS.filter(
+    (step) => step > priceRange.minInCents && step < priceRange.maxInCents,
+  );
+
+  if (activeMaxInCents !== null && !steps.includes(activeMaxInCents)) {
+    return [...steps, activeMaxInCents].sort((a, b) => a - b);
+  }
+  return steps;
+}
+
 export function isQueryActive(query: CatalogQuery): boolean {
   return (
     query.search !== '' ||

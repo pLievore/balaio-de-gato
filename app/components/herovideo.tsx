@@ -18,7 +18,9 @@ function connectionAllowsVideo(): boolean {
   const connection = getConnection();
   if (!connection) return true;
   if (connection.saveData) return false;
-  return !/(^|-)2g$/.test(connection.effectiveType ?? '');
+  // O arquivo passa de 2 MB: em 3G ele disputa banda com o que a pessoa veio
+  // ver. O pôster já cobre a tela sozinho, então o vídeo é o que cede.
+  return !/(^|-)(2g|3g)$/.test(connection.effectiveType ?? '');
 }
 
 const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)';
