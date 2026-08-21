@@ -60,9 +60,7 @@ const MAX_ORDER_LINES = 60;
 const UUID_V4_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 function developmentCatalogAllowed(): boolean {
-  return (
-    process.env.NODE_ENV !== 'production' || process.env.ALLOW_DEVELOPMENT_CATALOG === 'true'
-  );
+  return process.env.NODE_ENV !== 'production' || process.env.ALLOW_DEVELOPMENT_CATALOG === 'true';
 }
 
 const CHECKOUT_CONSENT = {
@@ -345,26 +343,27 @@ export async function saveOrder(
       .orderBy(desc(programCatalogs.publishedAt), desc(programCatalogs.id))
       .limit(1);
 
-    const [developmentCatalog] = officialCatalog || !developmentCatalogAllowed()
-      ? []
-      : await tx
-          .select({
-            id: programCatalogs.id,
-            year: programCatalogs.year,
-            sourceKind: programCatalogs.sourceKind,
-            version: programCatalogs.version,
-          })
-          .from(programCatalogs)
-          .where(
-            and(
-              eq(programCatalogs.year, MATERIAL_ESCOLAR_YEAR),
-              eq(programCatalogs.sourceKind, 'development_seed'),
-              eq(programCatalogs.version, DEVELOPMENT_CATALOG_VERSION),
-              eq(programCatalogs.status, 'draft'),
-            ),
-          )
-          .orderBy(desc(programCatalogs.updatedAt), desc(programCatalogs.id))
-          .limit(1);
+    const [developmentCatalog] =
+      officialCatalog || !developmentCatalogAllowed()
+        ? []
+        : await tx
+            .select({
+              id: programCatalogs.id,
+              year: programCatalogs.year,
+              sourceKind: programCatalogs.sourceKind,
+              version: programCatalogs.version,
+            })
+            .from(programCatalogs)
+            .where(
+              and(
+                eq(programCatalogs.year, MATERIAL_ESCOLAR_YEAR),
+                eq(programCatalogs.sourceKind, 'development_seed'),
+                eq(programCatalogs.version, DEVELOPMENT_CATALOG_VERSION),
+                eq(programCatalogs.status, 'draft'),
+              ),
+            )
+            .orderBy(desc(programCatalogs.updatedAt), desc(programCatalogs.id))
+            .limit(1);
 
     const catalog = officialCatalog ?? developmentCatalog;
     if (!catalog) {
@@ -888,7 +887,10 @@ export async function updateOrderStatus(
       const activeReservations = await loadActiveReservations();
 
       for (const reservation of activeReservations) {
-        if (reservation.reserved < reservation.quantity || reservation.onHand < reservation.quantity) {
+        if (
+          reservation.reserved < reservation.quantity ||
+          reservation.onHand < reservation.quantity
+        ) {
           throw new Error(
             `O estoque do pedido ${current.publicCode} está inconsistente e não pode ser baixado.`,
           );
@@ -1015,7 +1017,10 @@ export async function updateOrderStatus(
       resourceId: current.id,
       before: { status: current.status },
       after: { status },
-      metadata: { publicCode: current.publicCode, ...(options.actor ? { actor: options.actor } : {}) },
+      metadata: {
+        publicCode: current.publicCode,
+        ...(options.actor ? { actor: options.actor } : {}),
+      },
       idempotencyKey: `${eventIdempotencyKey}:audit`,
       correlationId,
     });
@@ -1123,4 +1128,158 @@ export async function getOrderStatusByCode(
     status: row.status,
     createdAt: row.createdAt.toISOString(),
   };
+}
+
+/**
+ * Devolve à prateleira o estoque de reservas vencidas.
+ *
+ * A reserva já nascia com `expiresAt` — vindo de `ORDER_RESERVATION_TTL_MINUTES`
+ * —, o esquema já previa o status `expired` e havia até um índice pronto para a
+ * varredura. Só faltava alguém ler. Sem isto, todo checkout abandonado tirava a
+ * peça da prateleira para sempre: a vitrine mostra `on_hand - reserved`, então
+ * o saldo minguava sozinho e nunca voltava.
+ *
+ * O pedido vai junto para `manual_review`, e isso não é enfeite. As reservas
+ * ativas são o que a confirmação de pagamento consome; um pedido que perdeu a
+ * reserva e continuasse em `awaiting_payment_link` viraria `paid` **sem baixar
+ * estoque nenhum**, porque o laço de consumo não acharia nada para consumir.
+ * Em `manual_review` a loja decide: reservar de novo, ou cancelar.
+ *
+ * A ordem de travamento — pedidos primeiro, depois reservas e estoque — é a
+ * mesma de `updateOrderStatus`. Invertê-la criaria deadlock entre a varredura
+ * e o painel.
+ */
+export async function releaseExpiredReservations(now: Date = new Date()): Promise<{
+  releasedReservations: number;
+  ordersMovedToReview: number;
+}> {
+  return db.transaction(async (tx) => {
+    const candidatos = await tx
+      .selectDistinct({ orderId: orderItems.orderId })
+      .from(inventoryReservations)
+      .innerJoin(orderItems, eq(orderItems.id, inventoryReservations.orderItemId))
+      .where(
+        and(eq(inventoryReservations.status, 'active'), lte(inventoryReservations.expiresAt, now)),
+      );
+
+    if (candidatos.length === 0) return { releasedReservations: 0, ordersMovedToReview: 0 };
+
+    const orderIds = candidatos.map((linha) => linha.orderId);
+
+    const pedidos = await tx
+      .select({ id: orders.id, publicCode: orders.publicCode, status: orders.status })
+      .from(orders)
+      .where(inArray(orders.id, orderIds))
+      .orderBy(asc(orders.id))
+      .for('update');
+
+    const expiradas = await tx
+      .select({
+        reservationId: inventoryReservations.id,
+        inventoryItemId: inventoryItems.id,
+        orderItemId: orderItems.id,
+        orderId: orderItems.orderId,
+        quantity: inventoryReservations.quantity,
+        reserved: inventoryItems.reserved,
+      })
+      .from(inventoryReservations)
+      .innerJoin(orderItems, eq(orderItems.id, inventoryReservations.orderItemId))
+      .innerJoin(inventoryItems, eq(inventoryItems.id, inventoryReservations.inventoryItemId))
+      .where(
+        and(eq(inventoryReservations.status, 'active'), lte(inventoryReservations.expiresAt, now)),
+      )
+      .orderBy(asc(inventoryItems.id), asc(inventoryReservations.id))
+      .for('update', { of: [inventoryItems, inventoryReservations] });
+
+    const correlationId = randomUUID();
+    const codigoPorPedido = new Map(pedidos.map((pedido) => [pedido.id, pedido.publicCode]));
+
+    for (const reserva of expiradas) {
+      if (reserva.reserved < reserva.quantity) {
+        throw new Error(
+          `A reserva ${reserva.reservationId} está inconsistente com o saldo reservado.`,
+        );
+      }
+
+      const [estoque] = await tx
+        .update(inventoryItems)
+        .set({
+          reserved: sql`${inventoryItems.reserved} - ${reserva.quantity}`,
+          version: sql`${inventoryItems.version} + 1`,
+          updatedAt: now,
+        })
+        .where(eq(inventoryItems.id, reserva.inventoryItemId))
+        .returning({ onHand: inventoryItems.onHand, reserved: inventoryItems.reserved });
+      if (!estoque) {
+        throw new Error(`Estoque da reserva ${reserva.reservationId} não pôde ser liberado.`);
+      }
+
+      await tx
+        .update(inventoryReservations)
+        .set({
+          status: 'expired',
+          releasedAt: now,
+          releaseReason: 'Reserva vencida sem confirmação de pagamento.',
+          updatedAt: now,
+        })
+        .where(eq(inventoryReservations.id, reserva.reservationId));
+
+      await tx.insert(inventoryMovements).values({
+        inventoryItemId: reserva.inventoryItemId,
+        reservationId: reserva.reservationId,
+        orderItemId: reserva.orderItemId,
+        type: 'release',
+        onHandDelta: 0,
+        reservedDelta: -reserva.quantity,
+        resultingOnHand: estoque.onHand,
+        resultingReserved: estoque.reserved,
+        reason: `Reserva vencida do pedido ${codigoPorPedido.get(reserva.orderId) ?? '—'}.`,
+        // A chave é a própria reserva: cada uma só pode vencer uma vez, então
+        // duas varreduras concorrentes não duplicam o movimento.
+        idempotencyKey: `reservation-expiry:${reserva.reservationId}`,
+        correlationId,
+      });
+    }
+
+    let ordersMovedToReview = 0;
+    for (const pedido of pedidos) {
+      if (pedido.status !== 'awaiting_payment_link' && pedido.status !== 'payment_link_sent') {
+        continue;
+      }
+
+      await tx
+        .update(orders)
+        .set({ status: 'manual_review', updatedAt: now })
+        .where(eq(orders.id, pedido.id));
+
+      await tx.insert(orderEvents).values({
+        orderId: pedido.id,
+        eventType: 'order.reservation_expired',
+        fromStatus: pedido.status,
+        toStatus: 'manual_review',
+        actorKind: 'system',
+        publicMessage: ORDER_STATUS_DESCRIPTION.manual_review,
+        visibleToCustomer: true,
+        idempotencyKey: `reservation-expiry:${pedido.id}:${now.toISOString()}`,
+        correlationId,
+        metadata: { reason: 'reservation_expired' },
+      });
+
+      await tx.insert(auditEvents).values({
+        actorKind: 'system',
+        action: 'order.reservation_expired',
+        resourceType: 'order',
+        resourceId: pedido.id,
+        before: { status: pedido.status },
+        after: { status: 'manual_review' },
+        metadata: { publicCode: pedido.publicCode },
+        idempotencyKey: `reservation-expiry:${pedido.id}:${now.toISOString()}:audit`,
+        correlationId,
+      });
+
+      ordersMovedToReview += 1;
+    }
+
+    return { releasedReservations: expiradas.length, ordersMovedToReview };
+  });
 }
