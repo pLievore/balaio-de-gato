@@ -42,9 +42,7 @@ import { type CatalogQuery, scoreProduct } from './query';
 const DEVELOPMENT_CATALOG_VERSION = 'development-seed';
 
 function developmentCatalogAllowed(): boolean {
-  return (
-    process.env.NODE_ENV !== 'production' || process.env.ALLOW_DEVELOPMENT_CATALOG === 'true'
-  );
+  return process.env.NODE_ENV !== 'production' || process.env.ALLOW_DEVELOPMENT_CATALOG === 'true';
 }
 
 const ILLUSTRATION_KEYS = new Set<IllustrationKey>([
@@ -242,25 +240,27 @@ async function loadCatalog(): Promise<Product[]> {
     const stages = stagesByVariant.get(row.variantId) ?? [];
     if (stages.length === 0) return [];
 
-    return [{
-      slug: row.slug,
-      sku: row.sku,
-      name: row.name,
-      brand: row.brand,
-      category: row.category,
-      illustration: illustrationKey(row.illustration, row.slug),
-      tagline: row.tagline,
-      description: row.description,
-      priceInCents: row.priceInCents,
-      ...(row.compareAtPriceInCents === null
-        ? {}
-        : { compareAtPriceInCents: row.compareAtPriceInCents }),
-      stages,
-      stock: Math.max(0, (row.onHand ?? 0) - (row.reserved ?? 0)),
-      maxPerOrder: row.maxPerOrder,
-      specs: productSpecifications(row.specifications, row.slug),
-      keywords: [...row.keywords],
-    }];
+    return [
+      {
+        slug: row.slug,
+        sku: row.sku,
+        name: row.name,
+        brand: row.brand,
+        category: row.category,
+        illustration: illustrationKey(row.illustration, row.slug),
+        tagline: row.tagline,
+        description: row.description,
+        priceInCents: row.priceInCents,
+        ...(row.compareAtPriceInCents === null
+          ? {}
+          : { compareAtPriceInCents: row.compareAtPriceInCents }),
+        stages,
+        stock: Math.max(0, (row.onHand ?? 0) - (row.reserved ?? 0)),
+        maxPerOrder: row.maxPerOrder,
+        specs: productSpecifications(row.specifications, row.slug),
+        keywords: [...row.keywords],
+      },
+    ];
   });
 }
 
@@ -504,7 +504,15 @@ export async function getCartProducts(): Promise<CartProduct[]> {
   return catalog.map(toCartProduct);
 }
 
-/** Etiqueta única do catálogo em cache; o painel a invalida ao gravar. */
+/**
+ * Etiqueta única do catálogo em cache.
+ *
+ * Quem grava algo que aparece aqui — o painel ao salvar produto, ajustar
+ * estoque ou importar planilha, o painel ao confirmar pagamento (que baixa
+ * `on_hand`) e o checkout ao reservar — precisa chamar
+ * `updateTag(CATALOG_CACHE_TAG)`. `revalidatePath` sozinho não
+ * alcança esta entrada.
+ */
 export const CATALOG_CACHE_TAG = 'catalog';
 
 /**

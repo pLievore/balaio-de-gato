@@ -3,7 +3,6 @@
 import { revalidatePath, updateTag } from 'next/cache';
 
 import { CATALOG_CACHE_TAG } from '../../../../src/lib/catalog/repository';
-
 import { hasValidPanelSession } from '../../../../src/lib/panel/session';
 import { applyImportRows } from '../../../../src/lib/panel/catalog-write';
 import { previewImport, type ImportIssue, type ImportRow } from '../../../../src/lib/panel/csv';
@@ -98,11 +97,12 @@ export async function applyImportAction(
 
   const result = await applyImportRows(rows);
 
-  // O catálogo enxuto do layout vem de cache com etiqueta; sem invalidar
-  // aqui, a loja continuaria servindo os preços anteriores por até um minuto.
+  // Uma planilha mexe em preço e estoque de muitos produtos de uma vez; é o
+  // caso em que o catálogo em cache mais destoa do banco.
   updateTag(CATALOG_CACHE_TAG);
   revalidatePath('/admin/products');
   revalidatePath('/products');
+  revalidatePath('/');
 
   return {
     status: 'applied',
