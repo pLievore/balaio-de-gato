@@ -121,7 +121,7 @@ function HeroVisual() {
         aria-hidden="true"
         className="absolute -inset-5 -z-10 rounded-[3rem] bg-gradient-to-br from-[rgb(var(--coral))]/18 via-[rgb(var(--sun))]/14 to-[rgb(var(--sage))]/20 blur-2xl"
       />
-      <div className="relative aspect-[16/10] overflow-hidden rounded-[2.25rem] border border-[rgb(var(--border))] bg-[rgb(var(--surface-muted))] shadow-[0_28px_80px_rgba(24,50,77,0.14)]">
+      <div className="relative aspect-[16/10] overflow-hidden rounded-[2.25rem] border border-[rgb(var(--border))] bg-[rgb(var(--surface-muted))] shadow-[0_28px_80px_rgba(64,48,48,0.14)]">
         <HeroVideo />
         <div
           aria-hidden="true"
@@ -270,7 +270,7 @@ function Stages() {
             <StaggerItem key={stage.slug} className="h-full">
               <Link
                 href={`/products?etapa=${stage.slug}`}
-                className="group flex h-full flex-col justify-between rounded-2xl border border-[rgb(var(--border))] bg-white p-4 transition hover:-translate-y-0.5 hover:border-[rgb(var(--accent))]/40 hover:shadow-[0_14px_36px_rgba(24,50,77,0.09)] sm:p-5"
+                className="group flex h-full flex-col justify-between rounded-2xl border border-[rgb(var(--border))] bg-white p-4 transition hover:-translate-y-0.5 hover:border-[rgb(var(--accent))]/40 hover:shadow-[0_14px_36px_rgba(64,48,48,0.09)] sm:p-5"
               >
                 <div>
                   <h3 className="font-display text-base leading-tight font-extrabold text-balance sm:text-lg">

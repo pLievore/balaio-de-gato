@@ -36,7 +36,7 @@ export function ProductCard({
       className={cn(
         'group relative flex h-full flex-col overflow-hidden rounded-3xl border border-[rgb(var(--border))] bg-white',
         'transition duration-300 motion-safe:hover:-translate-y-1',
-        'hover:border-[rgb(var(--accent))]/30 hover:shadow-[0_20px_50px_rgba(24,50,77,0.10)]',
+        'hover:border-[rgb(var(--accent))]/30 hover:shadow-[0_20px_50px_rgba(64,48,48,0.10)]',
         'focus-within:border-[rgb(var(--accent))]/40',
       )}
     >

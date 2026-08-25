@@ -43,7 +43,7 @@ export function AreaTrend({
   const area = `${line} L100,44 L0,44 Z`;
   const last = points[points.length - 1];
   const gradientId = `area-${tone}`;
-  const stroke = tone === 'dark' ? '#c9dbb2' : '#6f8352';
+  const stroke = tone === 'dark' ? '#ffd030' : '#a84b08';
   const grid = tone === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
   const labelClass = tone === 'dark' ? 'text-white/50' : 'text-[rgb(var(--muted))]';
   const labelEvery = Math.ceil(data.length / 6);
@@ -133,7 +133,7 @@ export function AreaTrend({
 export function Sparkline({
   values,
   height = 36,
-  color = '#6f8352',
+  color = '#a84b08',
 }: {
   values: number[];
   height?: number;
@@ -211,7 +211,7 @@ export function RevenueBarChart({
               x={index * barWidth + barWidth * 0.15}
               width={barWidth * 0.7}
               rx={0.6}
-              className={day.revenue > 0 ? 'fill-[#6f8352]' : 'fill-[#e2e5df]'}
+              className={day.revenue > 0 ? 'fill-[#a84b08]' : 'fill-[#e6d3bf]'}
             >
               <title>{`${formatShortDay(day.date)} — ${formatMoney(day.revenue, currency)} · ${day.orders} order${day.orders === 1 ? '' : 's'}`}</title>
             </motion.rect>
@@ -345,7 +345,7 @@ export function HBar({
                 initial={{ width: 0 }}
                 animate={{ width: `${(row.value / max) * 100}%` }}
                 transition={{ delay: index * 0.04, duration: 0.45, ease: 'easeOut' }}
-                className="h-full rounded bg-[#6f8352]/80"
+                className="h-full rounded bg-[#a84b08]/80"
               />
             </div>
             <span className="w-20 shrink-0 text-right text-xs font-semibold tabular-nums sm:text-sm">

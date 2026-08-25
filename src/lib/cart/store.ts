@@ -10,6 +10,7 @@ type CartState = {
   /** Etapa de ensino escolhida pelo responsável; define o crédito e o filtro. */
   stage: string | null;
   hydrated: boolean;
+  setHydrated: (hydrated: boolean) => void;
 
   /**
    * `limit` é o menor entre estoque e teto por pedido, resolvido por quem
@@ -29,6 +30,7 @@ export const useCartStore = create<CartState>()(
       lines: [],
       stage: null,
       hydrated: false,
+      setHydrated: (hydrated) => set({ hydrated }),
 
       addLine: (slug, quantity, limit) => {
         if (quantity < 1) return { ok: false, reason: 'Escolha ao menos uma unidade.' };
@@ -83,7 +85,9 @@ export const useCartStore = create<CartState>()(
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({ lines: state.lines, stage: state.stage }),
       onRehydrateStorage: () => (state) => {
-        if (state) state.hydrated = true;
+        // Publish the hydrated flag through Zustand so React subscribers are
+        // notified. Mutating the snapshot directly leaves the UI in skeletons.
+        state?.setHydrated(true);
       },
     },
   ),

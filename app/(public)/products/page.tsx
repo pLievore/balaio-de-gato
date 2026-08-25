@@ -9,14 +9,14 @@ import {
   CatalogSearch,
   SortSelect,
 } from '../../components/shop/catalog-filters';
+import { CartCatalogProvider } from '../../components/shop/cart-catalog';
 import { ProductCard } from '../../components/shop/product-card';
 import { StageBenefitBanner } from '../../components/shop/stage-benefit-banner';
 import { Container } from '../../components/ui/container';
 import { buttonStyles } from '../../components/ui/button';
-import { StaggerGrid, StaggerItem } from '../../components/motion';
 import { CATEGORIES } from '../../../src/lib/catalog/categories';
 import { parseCatalogQuery } from '../../../src/lib/catalog/query';
-import { listProducts } from '../../../src/lib/catalog/repository';
+import { getCachedCartProducts, listProducts } from '../../../src/lib/catalog/repository';
 import { getEducationStage } from '../../../src/lib/program/material-escolar';
 
 type SearchParams = Record<string, string | string[] | undefined>;
@@ -74,8 +74,11 @@ export default async function ProductsPage({
 }) {
   const params = (await searchParams) ?? {};
   const query = parseCatalogQuery(params);
-  const result = await listProducts(query);
   const stage = query.stage ? getEducationStage(query.stage) : undefined;
+  const [result, cartProducts] = await Promise.all([
+    listProducts(query),
+    stage ? getCachedCartProducts() : Promise.resolve([]),
+  ]);
 
   return (
     <main>
@@ -99,7 +102,11 @@ export default async function ProductsPage({
       </section>
 
       <Container size="wide" className="py-8 md:py-12">
-        {stage ? <StageBenefitBanner stage={stage} className="mb-8" /> : null}
+        {stage ? (
+          <CartCatalogProvider products={cartProducts}>
+            <StageBenefitBanner stage={stage} className="mb-8" />
+          </CartCatalogProvider>
+        ) : null}
 
         <div className="grid gap-10 lg:grid-cols-[260px_1fr] lg:gap-12">
           <CatalogFilterRail
@@ -137,13 +144,13 @@ export default async function ProductsPage({
             </div>
 
             {result.items.length > 0 ? (
-              <StaggerGrid className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              <ul className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                 {result.items.map((product) => (
-                  <StaggerItem key={product.slug} className="h-full">
+                  <li key={product.slug} className="h-full">
                     <ProductCard product={product} />
-                  </StaggerItem>
+                  </li>
                 ))}
-              </StaggerGrid>
+              </ul>
             ) : (
               <EmptyResult />
             )}

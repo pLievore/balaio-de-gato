@@ -41,10 +41,7 @@ export function firstName(fullName: string): string {
 
 function itemLinesText(order: Order): string {
   return order.items
-    .map(
-      (item) =>
-        `  ${item.quantity} × ${item.name} — ${formatBRL(item.lineTotalInCents)}`,
-    )
+    .map((item) => `  ${item.quantity} × ${item.name} — ${formatBRL(item.lineTotalInCents)}`)
     .join('\n');
 }
 
@@ -52,10 +49,10 @@ function itemLinesHtml(order: Order): string {
   return order.items
     .map(
       (item) =>
-        `<tr><td style="padding:8px 0;border-bottom:1px solid #e7e2d8">` +
+        `<tr><td style="padding:8px 0;border-bottom:1px solid #e6d3bf">` +
         `<strong>${escapeHtml(item.name)}</strong><br>` +
-        `<span style="color:#6b6459;font-size:13px">${item.quantity} × ${formatBRL(item.unitPriceInCents)}</span>` +
-        `</td><td style="padding:8px 0;border-bottom:1px solid #e7e2d8;text-align:right;white-space:nowrap">` +
+        `<span style="color:#70564c;font-size:13px">${item.quantity} × ${formatBRL(item.unitPriceInCents)}</span>` +
+        `</td><td style="padding:8px 0;border-bottom:1px solid #e6d3bf;text-align:right;white-space:nowrap">` +
         `${formatBRL(item.lineTotalInCents)}</td></tr>`,
     )
     .join('');
@@ -64,11 +61,11 @@ function itemLinesHtml(order: Order): string {
 function shell(title: string, body: string): string {
   return (
     `<div style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif;` +
-    `max-width:560px;margin:0 auto;padding:24px;color:#2a2721;line-height:1.6">` +
+    `max-width:560px;margin:0 auto;padding:24px;color:#403030;line-height:1.6">` +
     `<h1 style="font-size:22px;margin:0 0 16px">${escapeHtml(title)}</h1>` +
     body +
-    `<p style="margin-top:32px;padding-top:16px;border-top:1px solid #e7e2d8;` +
-    `font-size:12px;color:#6b6459">${escapeHtml(AVISO)}</p>` +
+    `<p style="margin-top:32px;padding-top:16px;border-top:1px solid #e6d3bf;` +
+    `font-size:12px;color:#70564c">${escapeHtml(AVISO)}</p>` +
     `</div>`
   );
 }
@@ -108,7 +105,7 @@ export function orderReceivedEmail(order: Order, trackingUrl: string): EmailCont
       `<table style="width:100%;border-collapse:collapse;margin:20px 0">${itemLinesHtml(order)}` +
       `<tr><td style="padding:12px 0"><strong>Total</strong></td>` +
       `<td style="padding:12px 0;text-align:right"><strong>${total}</strong></td></tr>` +
-      `<tr><td style="padding-bottom:8px;color:#6b6459;font-size:13px">Entrega</td>` +
+      `<tr><td style="padding-bottom:8px;color:#70564c;font-size:13px">Entrega</td>` +
       `<td style="padding-bottom:8px;text-align:right;font-size:13px">Grátis</td></tr></table>` +
       `<ol style="padding-left:20px">` +
       `<li>A loja confere os itens e a elegibilidade no programa.</li>` +
@@ -116,9 +113,9 @@ export function orderReceivedEmail(order: Order, trackingUrl: string): EmailCont
       `<li>Depois do pagamento confirmado, separamos e entregamos sem custo de frete.</li>` +
       `</ol>` +
       `<p style="margin:24px 0"><a href="${escapeHtml(trackingUrl)}" ` +
-      `style="display:inline-block;background:#2a2721;color:#fff;text-decoration:none;` +
+      `style="display:inline-block;background:#a84b08;color:#fff;text-decoration:none;` +
       `padding:12px 22px;border-radius:999px;font-weight:700">Acompanhar o pedido</a></p>` +
-      `<p style="font-size:13px;color:#6b6459">Este link é pessoal — guarde como guardaria uma senha.</p>`,
+      `<p style="font-size:13px;color:#70564c">Este link é pessoal — guarde como guardaria uma senha.</p>`,
   );
 
   return { subject: `Pedido ${order.code} recebido — Balaio de Gato`, text, html };
@@ -147,7 +144,7 @@ export function orderStatusEmail(order: Order, trackingUrl: string): EmailConten
     `<p>Olá, ${escapeHtml(nome)}.</p>` +
       `<p>${escapeHtml(descricao)}</p>` +
       `<p style="margin:24px 0"><a href="${escapeHtml(trackingUrl)}" ` +
-      `style="display:inline-block;background:#2a2721;color:#fff;text-decoration:none;` +
+      `style="display:inline-block;background:#a84b08;color:#fff;text-decoration:none;` +
       `padding:12px 22px;border-radius:999px;font-weight:700">Ver o pedido</a></p>`,
   );
 

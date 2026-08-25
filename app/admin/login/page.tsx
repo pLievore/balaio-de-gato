@@ -2,8 +2,8 @@
 
 import { Suspense, useActionState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import Image from 'next/image';
 
+import { BrandMark } from '../../components/brand-logo';
 import { loginAction } from './actions';
 
 function LoginForm() {
@@ -14,9 +14,7 @@ function LoginForm() {
   return (
     <main className="flex min-h-dvh items-center justify-center bg-[rgb(var(--bg))] px-5">
       <div className="w-full max-w-sm rounded-3xl border border-[rgb(var(--border))] bg-white p-8 text-center">
-        <span className="relative mx-auto block size-14 overflow-hidden rounded-2xl">
-          <Image src="/brand/balaio-mark.svg" alt="" fill sizes="56px" priority />
-        </span>
+        <BrandMark className="mx-auto size-14 rounded-2xl" priority sizes="120px" />
         <h1 className="font-display mt-5 text-3xl font-extrabold tracking-tight">
           Painel da <span className="text-[rgb(var(--accent))]">loja</span>
         </h1>
@@ -40,14 +38,14 @@ function LoginForm() {
             />
           </div>
           {state.error ? (
-            <p role="alert" className="text-xs font-semibold text-[rgb(var(--accent))]">
+            <p role="alert" className="text-xs font-semibold text-[rgb(var(--danger))]">
               {state.error}
             </p>
           ) : null}
           <button
             type="submit"
             disabled={pending}
-            className="min-h-11 w-full rounded-full bg-[rgb(var(--fg))] text-sm font-semibold text-white transition hover:bg-[rgb(var(--fg))]/90 disabled:opacity-60"
+            className="min-h-11 w-full rounded-full bg-[rgb(var(--accent))] text-sm font-semibold text-white transition hover:bg-[rgb(var(--accent-strong))] disabled:opacity-60"
           >
             {pending ? 'Entrando…' : 'Entrar'}
           </button>

@@ -160,7 +160,7 @@ export function DeltaChip({
       className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-bold ${
         dark
           ? up
-            ? 'bg-white/15 text-[#c9dbb2]'
+            ? 'bg-white/15 text-[rgb(var(--sun))]'
             : 'bg-white/15 text-red-300'
           : up
             ? 'bg-[rgb(var(--sage-soft))] text-[rgb(var(--sage-ink))]'
@@ -192,10 +192,10 @@ export function BiHero({
   children?: ReactNode;
 }) {
   return (
-    <section className="relative overflow-hidden rounded-3xl bg-[#171c17] p-6 text-white md:p-8">
+    <section className="relative overflow-hidden rounded-3xl bg-[rgb(var(--fg))] p-6 text-white md:p-8">
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute -top-24 -right-20 size-72 rounded-full bg-[#a9bd95]/15 blur-3xl"
+        className="pointer-events-none absolute -top-24 -right-20 size-72 rounded-full bg-[rgb(var(--sun))]/18 blur-3xl"
       />
       <div className="relative flex flex-wrap items-end justify-between gap-4">
         <div>

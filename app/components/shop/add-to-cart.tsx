@@ -99,7 +99,7 @@ export function AddToCartButton({
         aria-hidden="true"
         className={cn(
           'flex items-center gap-2 transition duration-200',
-          justAdded && 'motion-safe:-translate-y-6 motion-safe:opacity-0',
+          justAdded && 'opacity-0 motion-safe:-translate-y-6',
         )}
       >
         <ShoppingBasket className="size-4" />

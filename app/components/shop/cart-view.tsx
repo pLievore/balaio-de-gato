@@ -88,7 +88,7 @@ function CartLineItem({ item }: { item: CartItemView }) {
       transition={{ duration: reduced ? 0 : 0.25, ease: [0.16, 1, 0.3, 1] }}
       className={cn(
         'overflow-hidden rounded-2xl border bg-white',
-        hasIssues ? 'border-[rgb(var(--accent))]/35' : 'border-[rgb(var(--border))]',
+        hasIssues ? 'border-[rgb(var(--danger))]/35' : 'border-[rgb(var(--border))]',
       )}
     >
       <div className="flex gap-4 p-4">
@@ -153,11 +153,11 @@ function CartLineItem({ item }: { item: CartItemView }) {
       </div>
 
       {hasIssues ? (
-        <ul className="border-t border-[rgb(var(--accent))]/20 bg-[rgb(var(--accent-soft))] px-4 py-3">
+        <ul className="border-t border-[rgb(var(--danger))]/20 bg-[rgb(var(--danger-soft))] px-4 py-3">
           {item.issues.map((issue) => (
             <li
               key={issue.kind}
-              className="flex items-start gap-2 text-xs leading-5 font-bold text-[rgb(var(--accent))]"
+              className="flex items-start gap-2 text-xs leading-5 font-bold text-[rgb(var(--danger))]"
             >
               <TriangleAlert aria-hidden="true" className="mt-0.5 size-3.5 shrink-0" />
               {describeIssue(issue)}
@@ -219,7 +219,7 @@ function OrderSummary({ summary }: { summary: ReturnType<typeof useCartSummary> 
           >
             Revisar e enviar pedido
           </span>
-          <p className="mt-3 flex items-start gap-2 text-xs leading-5 font-bold text-[rgb(var(--accent))]">
+          <p className="mt-3 flex items-start gap-2 text-xs leading-5 font-bold text-[rgb(var(--danger))]">
             <TriangleAlert aria-hidden="true" className="mt-0.5 size-3.5 shrink-0" />
             Ajuste os itens marcados acima para seguir.
           </p>

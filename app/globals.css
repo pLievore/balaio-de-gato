@@ -1,30 +1,35 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 @theme inline {
-  --font-sans: var(--font-nunito-sans), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-sans:
+    var(--font-nunito-sans), system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --font-display: var(--font-bricolage-grotesque), var(--font-nunito-sans), system-ui, sans-serif;
 }
 
 :root {
   color-scheme: light;
 
-  /* Balaio de Gato — papel, tinta e materiais escolares. */
-  --bg: 248 246 239;
-  --fg: 24 50 77;
-  --muted: 84 95 105;
+  /* Paleta oficial — extraída da arte entregue pela Balaio de Gato. */
+  --bg: 255 250 244;
+  --fg: 64 48 48;
+  --muted: 112 86 76;
   --surface: 255 255 255;
-  --surface-muted: 242 240 232;
-  --border: 216 221 218;
-  --border-strong: 122 137 139;
-  --accent: 168 50 37;
-  --accent-soft: 252 235 230;
-  --sage: 42 157 143;
-  --sage-ink: 11 82 78;
-  --sage-soft: 226 246 242;
-  --coral: 232 93 74;
-  --sun: 242 177 52;
-  --sun-soft: 255 244 204;
-  --blue-soft: 229 239 249;
+  --surface-muted: 252 241 229;
+  --border: 230 211 191;
+  --border-strong: 142 109 85;
+  --accent: 168 75 8;
+  --accent-strong: 125 49 0;
+  --accent-vivid: 224 128 24;
+  --accent-soft: 255 232 204;
+  --sun: 255 208 48;
+  --sun-soft: 255 243 196;
+  --coral: 255 80 96;
+  --sage: 80 159 163;
+  --sage-ink: 32 94 97;
+  --sage-soft: 226 245 244;
+  --blue-soft: 234 247 246;
+  --danger: 177 35 52;
+  --danger-soft: 255 233 236;
 
   /* Premium feel */
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
@@ -38,6 +43,7 @@ body {
 
 html {
   scroll-behavior: smooth;
+  scroll-padding-top: 7rem;
   -webkit-text-size-adjust: 100%;
 }
 
@@ -45,7 +51,7 @@ body {
   color: rgb(var(--fg));
   background: rgb(var(--bg));
   font-family: var(--font-sans);
-  font-feature-settings: "ss01", "cv11";
+  font-feature-settings: 'ss01', 'cv11';
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -70,8 +76,8 @@ a:focus-visible {
 /* Paper-grid texture used as a quiet reference to notebooks. */
 .bg-grid {
   background-image:
-    linear-gradient(to right, rgba(0, 0, 0, 0.04) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(0, 0, 0, 0.04) 1px, transparent 1px);
+    linear-gradient(to right, rgba(64, 48, 48, 0.045) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(64, 48, 48, 0.045) 1px, transparent 1px);
   background-size: 64px 64px;
 }
 
@@ -104,15 +110,19 @@ a:focus-visible {
 
 /* Subtle shimmer for loading states */
 @keyframes premium-shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
 }
 .skeleton-shimmer {
   background: linear-gradient(
     90deg,
-    rgba(0, 0, 0, 0.04) 0%,
-    rgba(0, 0, 0, 0.08) 50%,
-    rgba(0, 0, 0, 0.04) 100%
+    rgba(64, 48, 48, 0.04) 0%,
+    rgba(64, 48, 48, 0.09) 50%,
+    rgba(64, 48, 48, 0.04) 100%
   );
   background-size: 200% 100%;
   animation: premium-shimmer 1.6s linear infinite;
@@ -122,26 +132,18 @@ a:focus-visible {
    set width, so the loop is seamless. Spacing lives on each card (not a flex
    gap) — a gap would leave the seam half a gap short. */
 @keyframes reviews-marquee {
-  from { transform: translate3d(0, 0, 0); }
-  to { transform: translate3d(-50%, 0, 0); }
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
 }
 .reviews-marquee {
   overflow: hidden;
   /* Cards dissolve into the page instead of being cut by the viewport edge. */
-  -webkit-mask-image: linear-gradient(
-    to right,
-    transparent,
-    #000 5%,
-    #000 95%,
-    transparent
-  );
-  mask-image: linear-gradient(
-    to right,
-    transparent,
-    #000 5%,
-    #000 95%,
-    transparent
-  );
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 5%, #000 95%, transparent);
+  mask-image: linear-gradient(to right, transparent, #000 5%, #000 95%, transparent);
 }
 .reviews-marquee-track {
   display: flex;
@@ -170,7 +172,9 @@ a:focus-visible {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  html { scroll-behavior: auto; }
+  html {
+    scroll-behavior: auto;
+  }
   *,
   *::before,
   *::after {

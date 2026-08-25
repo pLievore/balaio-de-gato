@@ -233,7 +233,7 @@ function StatusTrack({ status }: { status: OrderStatus }) {
 
   if (status === 'cancelled' || status === 'manual_review') {
     return (
-      <p className="mt-5 rounded-2xl bg-[rgb(var(--accent-soft))] p-4 text-sm font-bold text-[rgb(var(--accent))]">
+      <p className="mt-5 rounded-2xl bg-[rgb(var(--danger-soft))] p-4 text-sm font-bold text-[rgb(var(--danger))]">
         {ORDER_STATUS_LABEL[status]}
       </p>
     );
@@ -305,7 +305,7 @@ function TooManyLookups({ retryAfterSeconds }: { retryAfterSeconds: number }) {
         <div className="rounded-3xl border border-dashed border-[rgb(var(--border-strong))] bg-white px-6 py-14 text-center">
           <span
             aria-hidden="true"
-            className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-[rgb(var(--accent-soft))] text-[rgb(var(--accent))]"
+            className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-[rgb(var(--danger-soft))] text-[rgb(var(--danger))]"
           >
             <ShieldAlert className="size-7" />
           </span>

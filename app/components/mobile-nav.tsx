@@ -66,7 +66,7 @@ export function MobileNav({ links }: { links: NavigationLink[] }) {
                     className={
                       'flex min-h-12 items-center rounded-xl px-4 py-3 text-base font-bold transition ' +
                       (active
-                        ? 'bg-[rgb(var(--fg))] text-white'
+                        ? 'bg-[rgb(var(--accent))] text-white'
                         : 'text-[rgb(var(--fg))] hover:bg-[rgb(var(--surface-muted))]')
                     }
                   >

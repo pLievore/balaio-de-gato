@@ -15,26 +15,26 @@
 import type { IllustrationKey } from '../../src/lib/catalog/product';
 import { cn } from '../../src/lib/cn';
 
-const INK = '#18324D';
-const INK_SOFT = '#54646F';
+const INK = '#403030';
+const INK_SOFT = '#70564C';
 const PAPER = '#FFFFFF';
 
 /**
- * Cores de peça. Todas foram escolhidas para conviver com o coral e o sage da
- * marca sem competir com eles, e para manter contraste sobre o fundo claro.
+ * Cores de peça derivadas da arte oficial: laranja, amarelo, coral, turquesa
+ * e os tons complementares do material escolar ilustrado.
  */
 const PIECE_COLORS = [
-  { base: '#A83225', light: '#E8896F', dark: '#7C2318' }, // coral profundo
-  { base: '#2A9D8F', light: '#7FCFC4', dark: '#1B6B62' }, // sage
-  { base: '#2F6BA8', light: '#8FBBE0', dark: '#1E4874' }, // azul
-  { base: '#E8A020', light: '#F5CE7E', dark: '#A66F0F' }, // sol
-  { base: '#7A5AA8', light: '#B9A3D9', dark: '#523B73' }, // roxo
-  { base: '#C25B85', light: '#E8A9C1', dark: '#8C3C5D' }, // rosa
-  { base: '#4F8A3D', light: '#A2CC90', dark: '#356027' }, // verde folha
-  { base: '#D2603A', light: '#F0A488', dark: '#973F22' }, // laranja
+  { base: '#A84B08', light: '#E08018', dark: '#7D3100' }, // laranja oficial
+  { base: '#509FA3', light: '#9FD5D5', dark: '#205E61' }, // turquesa da marca
+  { base: '#FF5060', light: '#FFA1AA', dark: '#B12334' }, // coral da marca
+  { base: '#F0AA16', light: '#FFD970', dark: '#9B6500' }, // amarelo da marca
+  { base: '#7656A4', light: '#B9A4D8', dark: '#4E3870' }, // roxo dos detalhes
+  { base: '#D76591', light: '#F1AEC8', dark: '#91405F' }, // rosa dos detalhes
+  { base: '#579548', light: '#A9D29B', dark: '#356529' }, // verde dos detalhes
+  { base: '#E08018', light: '#F4B768', dark: '#A84B08' }, // laranja vivo
 ] as const;
 
-const BACKDROPS = ['#F4F1E8', '#EAF1F7', '#F2F7F4', '#FAF4E8'] as const;
+const BACKDROPS = ['#FCF1E5', '#EAF7F6', '#FFF3C4', '#FFF8F0'] as const;
 
 /** Hash estável e pequeno — só precisa espalhar, não precisa ser criptográfico. */
 function hashSlug(seed: string): number {

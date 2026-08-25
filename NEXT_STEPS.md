@@ -28,6 +28,19 @@ Ordem recomendada, alinhada a `../docs/09-plano-de-desenvolvimento.md`.
     login do painel e consulta de pedido), que falha aberto de propósito;
 14. verificação automática em pull request (`.github/workflows/ci.yml`) com
     typecheck, lint e a suíte inteira.
+15. identidade oficial com `public/brand/balaio-de-gato.jpg`, paleta derivada
+    de `#A84B08` e landing institucional em `/sobre`;
+16. esquema consolidado em 26 tabelas e três migrations;
+17. expiração preguiçosa e idempotente das reservas, com cobertura em
+    `npm run db:smoke-expiry`.
+18. revisão visual pública com nova composição de `/sobre`, faixa institucional,
+    botões alinhados, cenas editoriais de apoio e ficha de produto equilibrada
+    em tablet;
+19. movimento como melhoria progressiva: hero e catálogo não saem mais do SSR
+    com `opacity: 0`, com teste de regressão em `test:design`;
+20. hero reencodado sem áudio, poster em JPEG e controle manual de reprodução;
+21. hidratação do carrinho publicada por ação do Zustand, campos obrigatórios
+    com semântica nativa e gaveta mobile com foco preso e fundo inerte.
 
 ## Painel `/admin` — estado da migração
 
@@ -38,8 +51,8 @@ Migrado para o PostgreSQL do projeto, em pt-BR:
 - **Pedidos** (`/admin/orders`) — lista com abas por situação, busca por
   código/nome/e-mail e CPF mascarado; ficha com dados do responsável, endereço,
   itens e as transições permitidas;
-- **Produtos** (`/admin/products`) — catálogo e saldo disponível, somente
-  leitura.
+- **Produtos** (`/admin/products`) — catálogo, saldo disponível, cadastro,
+  edição, fotos, estoque, importação e exportação.
 
 O ciclo de vida do pedido agora vai até o fim: `ORDER_TRANSITIONS`
 (`lib/orders/order.ts`) declara as transições legais, e confirmar o pagamento
@@ -73,12 +86,6 @@ A tela de vendas segue removida.
    — com todo checkout morrendo em "material não disponível para a etapa". Não
    existe tela, script nem migration que aprove. Falta decidir quem aprova e
    onde, e então implementar;
-0b. **reservas de estoque nunca expiram.** `expiresAt` é gravado e nunca lido;
-   o status `'expired'` existe no esquema e nada o produz. Como a vitrine mostra
-   `on_hand - reserved`, todo checkout abandonado em `awaiting_payment_link`
-   tira a peça da prateleira para sempre, e `ORDER_RESERVATION_TTL_MINUTES` —
-   obrigatório em produção — não faz nada. Precisa de quem libere: rotina
-   agendada ou liberação preguiçosa na leitura;
 1. substituir o seed provisório pelo catálogo oficial revisado, com SKUs,
    preços, fotos, estoque e vínculos de elegibilidade aprovados;
 2. implementar publicação/versionamento operacional do catálogo e o montador
@@ -91,7 +98,8 @@ A tela de vendas segue removida.
    tela só promete e-mail quando ele está configurado; sem as variáveis o
    envio devolve `skipped`;
 5. substituir as ilustrações vetoriais pelas fotos reais dos produtos;
-6. expiração e liberação operacional das reservas de estoque antes do go-live.
+6. decidir se produção precisa de rotina agendada e observabilidade adicionais
+   para reservas; a liberação preguiçosa e idempotente já está implementada.
    O acesso público ao pedido por chave longa já está feito
    (`src/lib/orders/access-token.ts`): o código `BG-XXXXXX` sozinho mostra só a
    situação;
@@ -105,12 +113,12 @@ A tela de vendas segue removida.
    sensível do sistema;
 9. revisar textos jurídicos com o catálogo real em mãos;
 10. configurar backups, restauração, observabilidade e executar hardening,
-   testes E2E e acessibilidade do fluxo completo;
+    testes E2E e acessibilidade do fluxo completo;
 11. levar o `npm run build` para o CI. Hoje ele fica de fora porque a coleta de
-   dados de página consulta o PostgreSQL, então exigiria um Postgres de
-   serviço com migration e seed no workflow;
+    dados de página consulta o PostgreSQL, então exigiria um Postgres de
+    serviço com migration e seed no workflow;
 12. avaliar automação Personal Net somente após documentação vigente,
-   credenciais e homologação.
+    credenciais e homologação.
 
 ## Achados de revisão ainda abertos
 
@@ -149,14 +157,6 @@ sobraram por exigirem decisão, banco ou navegador.
 - **limite por pedido divergente**: o carrinho mostra `maxPerOrder` da
   variante; o pedido exige `min(maxPerOrder, programItemStages.maxQuantity)`.
   Se o programa apertar a quantidade, a família só descobre no envio;
-- o guarda de hidratação do carrinho não guarda: com `localStorage`, o
-  `persist` do zustand hidrata na avaliação do módulo, então `hydrated` já é
-  `true` na primeira renderização do cliente e o servidor discorda;
-- conteúdo acima da dobra sai do servidor com `opacity: 0` (`motion.tsx`):
-  home e catálogo só aparecem depois de hidratar. É o item mais caro de
-  performance e pede troca por animação em CSS;
-- reencodar `public/brand/hero.mp4`: 2,4 MB, 720p, com faixa de áudio que
-  nunca toca, para ocupar ~380 px no celular. O gate já barra 2G e 3G;
 - `loadCatalog()` não tem memoização por requisição: a ficha de produto o roda
   três vezes, e cada vez são ~3 idas ao Neon;
 - `emailSent` mente na repetição idempotente do checkout: devolve
@@ -177,12 +177,8 @@ sobraram por exigirem decisão, banco ou navegador.
 
 - a confirmação do pedido troca a tela sem mover o foco nem anunciar nada —
   o momento mais crítico da jornada, para quem usa leitor de tela;
-- `Field` não repassa `required` ao controle: o `*` é `aria-hidden`, então
-  quem não enxerga só descobre o obrigatório depois de falhar;
 - o resumo de erro diz "confira os campos destacados" — "destacado" é
   informação visual, e não há âncora para os campos;
-- a gaveta de filtros no celular não prende o `Tab` (o `ui/dialog.tsx` já tem
-  a implementação certa para reaproveitar);
 - controles desabilitados são `<span>` sem papel nem foco, então um produto
   esgotado é indistinguível na navegação por teclado;
 - mudanças no carrinho não são anunciadas: falta uma região `aria-live`;
@@ -193,15 +189,19 @@ sobraram por exigirem decisão, banco ou navegador.
 
 Os três de maior retorno: reenviar o checkout depois de um erro não pode
 criar um segundo pedido (E2E); produto só aparece na loja depois de aprovado
-no programa (integração, e é o item 0 acima); reserva vencida devolve o saldo
-à prateleira (integração, item 0b).
+no programa (integração, e é o item 0 acima); manter a regressão em que reserva
+vencida devolve o saldo à prateleira (`db:smoke-expiry`).
 
 ## Dependências externas abertas
 
 - documentação atual e confirmação do fluxo online pela Personal Net;
-- razão social, CNPJ, contato, domínio e política comercial da Balaio de Gato;
+- domínio, e-mail e política comercial da Balaio de Gato. Razão
+  social, CNPJ, endereços institucionais e telefones já têm evidências públicas
+  e validação de negócio registradas em 24/08/2026; horários foram fornecidos
+  diretamente pela empresa na mesma data;
 - catálogo, SKUs, fotos, preços e estoque reais (o catálogo atual é curado
   para desenvolvimento, com marcas e preços plausíveis, não contratados);
 - fornecedores de armazenamento, e-mail e hospedagem, além da política de
   backup/restauração do Neon;
-- vídeo final do hero e identidade visual aprovada.
+- vídeo final do hero e desdobramentos da identidade para novos formatos; o
+  logo e a paleta-base já são oficiais.

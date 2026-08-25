@@ -38,7 +38,7 @@ export function BenefitMeter({
       className={cn(
         'rounded-3xl border p-5 md:p-6',
         over
-          ? 'border-[rgb(var(--accent))]/30 bg-[rgb(var(--accent-soft))]'
+          ? 'border-[rgb(var(--danger))]/30 bg-[rgb(var(--danger-soft))]'
           : 'border-[rgb(var(--sage))]/25 bg-[rgb(var(--sage-soft))]',
         className,
       )}
@@ -49,7 +49,7 @@ export function BenefitMeter({
             aria-hidden="true"
             className={cn(
               'flex size-9 shrink-0 items-center justify-center rounded-2xl',
-              over ? 'bg-[rgb(var(--accent))] text-white' : 'bg-[rgb(var(--sage-ink))] text-white',
+              over ? 'bg-[rgb(var(--danger))] text-white' : 'bg-[rgb(var(--sage-ink))] text-white',
             )}
           >
             {over ? <AlertTriangle className="size-4.5" /> : <Wallet className="size-4.5" />}
@@ -58,7 +58,7 @@ export function BenefitMeter({
             <p
               className={cn(
                 'text-[11px] font-extrabold tracking-[0.14em] uppercase',
-                over ? 'text-[rgb(var(--accent))]' : 'text-[rgb(var(--sage-ink))]',
+                over ? 'text-[rgb(var(--danger))]' : 'text-[rgb(var(--sage-ink))]',
               )}
             >
               Crédito da etapa
@@ -87,7 +87,7 @@ export function BenefitMeter({
           <div
             className={cn(
               'h-full rounded-full transition-[width] duration-500 ease-[var(--ease-out-expo)]',
-              over ? 'bg-[rgb(var(--accent))]' : 'bg-[rgb(var(--sage-ink))]',
+              over ? 'bg-[rgb(var(--danger))]' : 'bg-[rgb(var(--sage-ink))]',
             )}
             style={{ width: `${Math.max(percent, subtotalInCents > 0 ? 3 : 0)}%` }}
           />
@@ -99,7 +99,7 @@ export function BenefitMeter({
             <span className="font-semibold text-[rgb(var(--muted))]">no carrinho</span>
           </span>
           {over ? (
-            <span className="font-extrabold text-[rgb(var(--accent))]">
+            <span className="font-extrabold text-[rgb(var(--danger))]">
               {formatBRL(overBudgetInCents)} acima do crédito
             </span>
           ) : (

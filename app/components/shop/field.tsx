@@ -27,6 +27,8 @@ export function Field({
   className?: string;
   children: (props: {
     id: string;
+    required: true | undefined;
+    'aria-required': true | undefined;
     'aria-invalid': boolean | undefined;
     'aria-describedby': string | undefined;
   }) => ReactNode;
@@ -58,6 +60,8 @@ export function Field({
       <div className="mt-1.5">
         {children({
           id,
+          required: required ? true : undefined,
+          'aria-required': required ? true : undefined,
           'aria-invalid': error ? true : undefined,
           'aria-describedby': describedBy || undefined,
         })}
@@ -66,7 +70,7 @@ export function Field({
       {error ? (
         <p
           id={errorId}
-          className="mt-1.5 text-[11px] leading-4 font-bold text-[rgb(var(--accent))]"
+          className="mt-1.5 text-[11px] leading-4 font-bold text-[rgb(var(--danger))]"
         >
           {error}
         </p>
@@ -81,7 +85,7 @@ export function inputStyles({ invalid }: { invalid?: boolean } = {}) {
     'transition placeholder:font-medium placeholder:text-[rgb(var(--muted))]',
     '',
     invalid
-      ? 'border-[rgb(var(--accent))] focus:border-[rgb(var(--accent))]'
+      ? 'border-[rgb(var(--danger))] focus:border-[rgb(var(--danger))]'
       : 'border-[rgb(var(--border-strong))] focus:border-[rgb(var(--accent))]',
   );
 }

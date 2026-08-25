@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ChevronRight } from 'lucide-react';
 
+import { getCachedCartProducts } from '../../../src/lib/catalog/repository';
+import { CartCatalogProvider } from '../../components/shop/cart-catalog';
 import { CheckoutForm } from '../../components/shop/checkout-form';
 import { TrackEvent } from '../../components/track-event';
 import { Container } from '../../components/ui/container';
@@ -13,7 +15,9 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default function CheckoutPage() {
+export default async function CheckoutPage() {
+  const cartProducts = await getCachedCartProducts();
+
   return (
     <main>
       <TrackEvent step="checkout_start" />
@@ -25,7 +29,9 @@ export default function CheckoutPage() {
                 Carrinho
               </Link>
             </li>
-            <ChevronRight aria-hidden="true" className="size-3.5 shrink-0" />
+            <li aria-hidden="true">
+              <ChevronRight className="size-3.5 shrink-0" />
+            </li>
             <li aria-current="page" className="text-[rgb(var(--fg))]">
               Enviar pedido
             </li>
@@ -44,7 +50,9 @@ export default function CheckoutPage() {
         </p>
 
         <div className="mt-10">
-          <CheckoutForm />
+          <CartCatalogProvider products={cartProducts}>
+            <CheckoutForm />
+          </CartCatalogProvider>
         </div>
       </Container>
     </main>

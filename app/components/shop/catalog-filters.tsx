@@ -14,6 +14,7 @@ import { Search, SlidersHorizontal, X } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useId, useOptimistic, useRef, useState, useTransition } from 'react';
+import { createPortal } from 'react-dom';
 
 import type { CategoryFacet } from '../../../src/lib/catalog/repository';
 import { CATEGORIES } from '../../../src/lib/catalog/categories';
@@ -351,21 +352,51 @@ export function CatalogFilterDrawer({ query, facets, priceRange, total }: Filter
   const triggerRef = useRef<HTMLButtonElement>(null);
   const activeCount = countActiveFilters(query);
 
-  // Trava o fundo enquanto a gaveta está aberta, senão o toque rola a página
-  // atrás em vez da lista de filtros.
+  // A gaveta vive num portal: assim o restante da página pode ficar realmente
+  // inerte para teclado e leitores de tela enquanto o diálogo está aberto.
   useEffect(() => {
     if (!open) return;
     const previous = document.body.style.overflow;
+    const overlay = panelRef.current?.closest('[data-catalog-filter-overlay]');
+    const background = Array.from(document.body.children).filter((element) => element !== overlay);
+    const previousInert = background.map((element) => element.hasAttribute('inert'));
+
     document.body.style.overflow = 'hidden';
+    background.forEach((element) => element.setAttribute('inert', ''));
+
     return () => {
       document.body.style.overflow = previous;
+      background.forEach((element, index) => {
+        if (!previousInert[index]) element.removeAttribute('inert');
+      });
     };
   }, [open]);
 
   useEffect(() => {
     if (!open) return;
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setOpen(false);
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        setOpen(false);
+        return;
+      }
+      if (event.key !== 'Tab') return;
+
+      const focusable = panelRef.current?.querySelectorAll<HTMLElement>(
+        'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      );
+      if (!focusable || focusable.length === 0) return;
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      const active = document.activeElement;
+      if (event.shiftKey && (active === first || active === panelRef.current)) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && active === last) {
+        event.preventDefault();
+        first.focus();
+      }
     };
     document.addEventListener('keydown', onKeyDown);
     return () => document.removeEventListener('keydown', onKeyDown);
@@ -403,63 +434,68 @@ export function CatalogFilterDrawer({ query, facets, priceRange, total }: Filter
         ) : null}
       </button>
 
-      <AnimatePresence>
-        {open ? (
-          <div className="fixed inset-0 z-[70] lg:hidden">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              onClick={() => setOpen(false)}
-              className="absolute inset-0 bg-[rgb(var(--fg))]/45 backdrop-blur-sm"
-            />
-            <motion.div
-              ref={panelRef}
-              role="dialog"
-              aria-modal="true"
-              aria-label="Filtros do catálogo"
-              tabIndex={-1}
-              initial={{ y: reduced ? 0 : '100%' }}
-              animate={{ y: 0 }}
-              exit={{ y: reduced ? 0 : '100%' }}
-              transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
-              className="absolute inset-x-0 bottom-0 flex max-h-[88dvh] flex-col rounded-t-3xl bg-[rgb(var(--bg))] shadow-2xl outline-none"
-            >
-              <div className="flex items-center justify-between gap-3 border-b border-[rgb(var(--border))] px-5 py-4">
-                <h2 className="font-display text-lg font-extrabold">Filtrar</h2>
-                <button
-                  type="button"
-                  onClick={() => setOpen(false)}
-                  aria-label="Fechar filtros"
-                  className="-m-2 rounded-full p-2 text-[rgb(var(--muted))] transition hover:bg-[rgb(var(--surface-muted))] hover:text-[rgb(var(--fg))]"
-                >
-                  <X aria-hidden="true" className="size-5" />
-                </button>
-              </div>
-
-              <div className="min-h-0 flex-1 overflow-y-auto px-5 py-6">
-                <FilterPanel query={query} facets={facets} priceRange={priceRange} />
-              </div>
-
-              <div className="flex items-center gap-3 border-t border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-5 py-4">
-                {isQueryActive(query) ? (
-                  <Link
-                    href="/products"
+      {typeof document === 'undefined'
+        ? null
+        : createPortal(
+            <AnimatePresence>
+              {open ? (
+                <div data-catalog-filter-overlay className="fixed inset-0 z-[70] lg:hidden">
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: reduced ? 0 : 0.2 }}
                     onClick={() => setOpen(false)}
-                    className={buttonStyles({ variant: 'secondary', size: 'md' })}
+                    className="absolute inset-0 bg-[rgb(var(--fg))]/45 backdrop-blur-sm"
+                  />
+                  <motion.div
+                    ref={panelRef}
+                    role="dialog"
+                    aria-modal="true"
+                    aria-label="Filtros do catálogo"
+                    tabIndex={-1}
+                    initial={{ y: reduced ? 0 : '100%' }}
+                    animate={{ y: 0 }}
+                    exit={{ y: reduced ? 0 : '100%' }}
+                    transition={{ duration: reduced ? 0 : 0.32, ease: [0.16, 1, 0.3, 1] }}
+                    className="absolute inset-x-0 bottom-0 flex max-h-[88dvh] flex-col rounded-t-3xl bg-[rgb(var(--bg))] shadow-2xl outline-none"
                   >
-                    Limpar
-                  </Link>
-                ) : null}
-                <Button size="md" className="flex-1" onClick={() => setOpen(false)}>
-                  Ver {total} {total === 1 ? 'material' : 'materiais'}
-                </Button>
-              </div>
-            </motion.div>
-          </div>
-        ) : null}
-      </AnimatePresence>
+                    <div className="flex items-center justify-between gap-3 border-b border-[rgb(var(--border))] px-5 py-4">
+                      <h2 className="font-display text-lg font-extrabold">Filtrar</h2>
+                      <button
+                        type="button"
+                        onClick={() => setOpen(false)}
+                        aria-label="Fechar filtros"
+                        className="-m-2 rounded-full p-2 text-[rgb(var(--muted))] transition hover:bg-[rgb(var(--surface-muted))] hover:text-[rgb(var(--fg))]"
+                      >
+                        <X aria-hidden="true" className="size-5" />
+                      </button>
+                    </div>
+
+                    <div className="min-h-0 flex-1 overflow-y-auto px-5 py-6">
+                      <FilterPanel query={query} facets={facets} priceRange={priceRange} />
+                    </div>
+
+                    <div className="flex items-center gap-3 border-t border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-5 py-4">
+                      {isQueryActive(query) ? (
+                        <Link
+                          href="/products"
+                          onClick={() => setOpen(false)}
+                          className={buttonStyles({ variant: 'secondary', size: 'md' })}
+                        >
+                          Limpar
+                        </Link>
+                      ) : null}
+                      <Button size="md" className="flex-1" onClick={() => setOpen(false)}>
+                        Ver {total} {total === 1 ? 'material' : 'materiais'}
+                      </Button>
+                    </div>
+                  </motion.div>
+                </div>
+              ) : null}
+            </AnimatePresence>,
+            document.body,
+          )}
     </>
   );
 }

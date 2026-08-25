@@ -183,9 +183,9 @@ export function CheckoutForm() {
             ref={errorRef}
             tabIndex={-1}
             role="alert"
-            className="rounded-2xl border border-[rgb(var(--accent))]/35 bg-[rgb(var(--accent-soft))] p-4 outline-none"
+            className="rounded-2xl border border-[rgb(var(--danger))]/35 bg-[rgb(var(--danger-soft))] p-4 outline-none"
           >
-            <p className="flex items-start gap-2 text-sm font-extrabold text-[rgb(var(--accent))]">
+            <p className="flex items-start gap-2 text-sm font-extrabold text-[rgb(var(--danger))]">
               <CircleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
               {state.status === 'cart-changed'
                 ? state.formError
@@ -538,7 +538,7 @@ function CheckoutAside({
           </span>
         </label>
         {error ? (
-          <p id="aceite-erro" className="mt-1.5 text-[11px] font-bold text-[rgb(var(--accent))]">
+          <p id="aceite-erro" className="mt-1.5 text-[11px] font-bold text-[rgb(var(--danger))]">
             {error}
           </p>
         ) : null}

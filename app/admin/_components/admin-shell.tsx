@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, type ReactNode } from 'react';
-import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -20,6 +19,8 @@ import {
   X,
   type LucideIcon,
 } from 'lucide-react';
+
+import { BrandMark } from '../../components/brand-logo';
 
 type NavItem = { href: string; label: string; icon: LucideIcon };
 type NavGroup = { title: string; items: NavItem[] };
@@ -81,9 +82,11 @@ export function AdminShell({
   const sidebarBody = (contexto: 'lateral' | 'gaveta') => (
     <>
       <Link href="/admin" className="flex items-center gap-3 px-5 py-6">
-        <span className="relative size-10 overflow-hidden rounded-xl ring-1 ring-white/15 ring-inset">
-          <Image src="/brand/balaio-mark.svg" alt="" fill sizes="40px" priority />
-        </span>
+        <BrandMark
+          className="size-10 rounded-xl ring-1 ring-white/15 ring-inset"
+          priority
+          sizes="88px"
+        />
         <div className="leading-tight">
           <p className="text-sm font-bold tracking-tight text-white">Balaio de Gato</p>
           <p className="text-[11px] text-white/50">Painel da loja</p>
@@ -113,13 +116,15 @@ export function AdminShell({
                     {active ? (
                       <motion.span
                         layoutId={`panel-nav-active-${contexto}`}
-                        className="absolute top-1.5 bottom-1.5 left-0 w-0.5 rounded-full bg-[#a9bd95]"
+                        className="absolute top-1.5 bottom-1.5 left-0 w-0.5 rounded-full bg-[rgb(var(--sun))]"
                       />
                     ) : null}
                     <item.icon
                       aria-hidden="true"
                       className={`size-[18px] shrink-0 transition ${
-                        active ? 'text-[#a9bd95]' : 'text-white/40 group-hover:text-white/80'
+                        active
+                          ? 'text-[rgb(var(--sun))]'
+                          : 'text-white/40 group-hover:text-white/80'
                       }`}
                     />
                     <span className="truncate">{item.label}</span>
@@ -154,7 +159,7 @@ export function AdminShell({
 
       <div className="border-t border-white/10 p-3">
         <div className="flex items-center gap-2.5 rounded-xl px-2 py-1.5">
-          <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-white/10 text-xs font-bold text-[#a9bd95] ring-1 ring-white/15 ring-inset">
+          <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-white/10 text-xs font-bold text-[rgb(var(--sun))] ring-1 ring-white/15 ring-inset">
             OP
           </span>
           <div className="min-w-0 flex-1 leading-tight">
@@ -178,7 +183,7 @@ export function AdminShell({
 
   return (
     <div className="flex min-h-dvh bg-[rgb(var(--bg))]">
-      <aside className="sticky top-0 hidden h-dvh w-64 shrink-0 flex-col bg-[#171c17] lg:flex">
+      <aside className="sticky top-0 hidden h-dvh w-64 shrink-0 flex-col bg-[rgb(var(--fg))] lg:flex">
         {sidebarBody('lateral')}
       </aside>
 
@@ -197,7 +202,7 @@ export function AdminShell({
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}
               transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-              className="fixed inset-y-0 left-0 z-50 flex w-72 flex-col bg-[#171c17] lg:hidden"
+              className="fixed inset-y-0 left-0 z-50 flex w-72 flex-col bg-[rgb(var(--fg))] lg:hidden"
             >
               <button
                 type="button"

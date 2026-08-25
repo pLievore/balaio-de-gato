@@ -5,6 +5,9 @@ const nextConfig: NextConfig = {
     // As fotos de produto vivem no Vercel Blob; sem isto o next/image recusa
     // a URL. O host tem o id da store como subdomínio, daí o curinga.
     remotePatterns: [{ protocol: 'https', hostname: '*.public.blob.vercel-storage.com' }],
+    // A assinatura oficial tem traços finos e texto incorporado. O nível 90
+    // evita artefatos visíveis sem desativar o redimensionamento responsivo.
+    qualities: [75, 90],
   },
   experimental: {
     serverActions: {
@@ -21,9 +24,9 @@ const nextConfig: NextConfig = {
       // Rotas da loja atual: /products/:slug, /cart, /checkout e /pedido/:codigo
       // são páginas de verdade e não podem aparecer aqui.
       { source: '/search', destination: '/products', permanent },
-      { source: '/about', destination: '/', permanent },
-      { source: '/contact', destination: '/', permanent },
-      { source: '/showroom', destination: '/', permanent },
+      { source: '/about', destination: '/sobre', permanent },
+      { source: '/contact', destination: '/sobre#contato', permanent },
+      { source: '/showroom', destination: '/sobre#lojas', permanent },
       { source: '/delivery', destination: '/programa#entrega', permanent },
       { source: '/pickup', destination: '/programa#entrega', permanent },
       { source: '/returns', destination: '/terms', permanent },

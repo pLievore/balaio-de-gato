@@ -16,7 +16,7 @@ export function StorefrontRouteError({
   return (
     <main>
       <Container size="narrow" className="py-20 text-center md:py-28">
-        <p className="text-xs font-extrabold tracking-[0.2em] text-[rgb(var(--accent))] uppercase">
+        <p className="text-xs font-extrabold tracking-[0.2em] text-[rgb(var(--danger))] uppercase">
           Indisponível no momento
         </p>
         <h1 className="font-display mt-4 text-4xl leading-tight font-extrabold md:text-5xl">

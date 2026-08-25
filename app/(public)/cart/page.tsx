@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
 
+import { getCachedCartProducts } from '../../../src/lib/catalog/repository';
+import { CartCatalogProvider } from '../../components/shop/cart-catalog';
 import { CartView } from '../../components/shop/cart-view';
 import { Container } from '../../components/ui/container';
 
@@ -10,7 +12,9 @@ export const metadata: Metadata = {
   robots: { index: false, follow: true },
 };
 
-export default function CartPage() {
+export default async function CartPage() {
+  const cartProducts = await getCachedCartProducts();
+
   return (
     <main>
       <Container size="wide" className="py-10 md:py-14">
@@ -25,7 +29,9 @@ export default function CartPage() {
         </p>
 
         <div className="mt-10">
-          <CartView />
+          <CartCatalogProvider products={cartProducts}>
+            <CartView />
+          </CartCatalogProvider>
         </div>
       </Container>
     </main>

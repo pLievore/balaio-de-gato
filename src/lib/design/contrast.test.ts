@@ -46,11 +46,13 @@ const textPairs: Array<[string, Rgb, Rgb]> = [
   ['muted on bg (secondary text)', token('muted'), token('bg')],
   ['muted on surface', token('muted'), token('surface')],
   ['white on fg (primary button)', white, token('fg')],
+  ['white on accent (orange primary button)', white, token('accent')],
   ['white on sage-ink (sage button, announcement bar)', white, token('sage-ink')],
   ['sage-ink on sage-soft (footer card)', token('sage-ink'), token('sage-soft')],
   ['sage-ink on bg', token('sage-ink'), token('bg')],
   ['accent on surface (accent text/links)', token('accent'), token('surface')],
   ['accent on accent-soft (promo badge)', token('accent'), token('accent-soft')],
+  ['danger on danger-soft (validation feedback)', token('danger'), token('danger-soft')],
 ];
 
 const nonTextPairs: Array<[string, Rgb, Rgb]> = [

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import Image from 'next/image';
+import { Pause, Play } from 'lucide-react';
 
 type NetworkInformation = {
   saveData?: boolean;
@@ -56,7 +57,7 @@ export default function HeroVideo() {
   return (
     <div className="relative h-full w-full">
       <Image
-        src="/brand/hero-poster-balaio.png"
+        src="/brand/hero-poster-balaio.jpg"
         alt=""
         fill
         priority
@@ -71,6 +72,7 @@ export default function HeroVideo() {
 function PlaybackVideo() {
   const ref = useRef<HTMLVideoElement | null>(null);
   const [ready, setReady] = useState(false);
+  const [manualPaused, setManualPaused] = useState(false);
 
   useEffect(() => {
     const video = ref.current;
@@ -78,7 +80,7 @@ function PlaybackVideo() {
     let inView = true;
 
     const syncPlayback = async () => {
-      if (!inView || document.visibilityState !== 'visible') {
+      if (manualPaused || !inView || document.visibilityState !== 'visible') {
         video.pause();
         return;
       }
@@ -113,26 +115,43 @@ function PlaybackVideo() {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       video.pause();
     };
-  }, []);
+  }, [manualPaused]);
 
   return (
-    <video
-      ref={ref}
-      className={`absolute inset-0 h-full w-full scale-[1.16] object-cover transition-opacity duration-500 ${ready ? 'opacity-100' : 'opacity-0'}`}
-      autoPlay
-      muted
-      playsInline
-      loop
-      preload="metadata"
-      controls={false}
-      disablePictureInPicture
-      disableRemotePlayback
-      aria-hidden="true"
-      tabIndex={-1}
-      onLoadedData={() => setReady(true)}
-      onPlaying={() => setReady(true)}
-    >
-      <source src="/brand/hero.mp4" type="video/mp4" />
-    </video>
+    <>
+      <video
+        ref={ref}
+        className={`absolute inset-0 h-full w-full scale-[1.16] object-cover transition-opacity duration-500 ${ready ? 'opacity-100' : 'opacity-0'}`}
+        autoPlay
+        muted
+        playsInline
+        loop
+        preload="metadata"
+        controls={false}
+        disablePictureInPicture
+        disableRemotePlayback
+        aria-hidden="true"
+        tabIndex={-1}
+        onLoadedData={() => setReady(true)}
+        onPlaying={() => setReady(true)}
+      >
+        <source src="/brand/hero-optimized.mp4" type="video/mp4" />
+      </video>
+
+      {ready ? (
+        <button
+          type="button"
+          onClick={() => setManualPaused((paused) => !paused)}
+          className="absolute right-4 bottom-4 z-20 flex size-10 items-center justify-center rounded-full border border-white/25 bg-[rgb(var(--fg))]/82 text-white shadow-lg backdrop-blur transition hover:bg-[rgb(var(--fg))] sm:right-5 sm:bottom-5"
+          aria-label={manualPaused ? 'Reproduzir animação' : 'Pausar animação'}
+        >
+          {manualPaused ? (
+            <Play aria-hidden="true" className="size-4" fill="currentColor" />
+          ) : (
+            <Pause aria-hidden="true" className="size-4" fill="currentColor" />
+          )}
+        </button>
+      ) : null}
+    </>
   );
 }

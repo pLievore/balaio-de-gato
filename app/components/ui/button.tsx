@@ -20,7 +20,8 @@ export function buttonStyles({
     'inline-flex items-center justify-center gap-2 rounded-full font-semibold transition',
     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--accent))] focus-visible:ring-offset-2',
     'disabled:pointer-events-none disabled:opacity-50 motion-safe:hover:-translate-y-px',
-    variant === 'primary' && 'bg-[rgb(var(--fg))] text-white hover:bg-[rgb(var(--fg))]/90',
+    variant === 'primary' &&
+      'bg-[rgb(var(--accent))] text-white hover:bg-[rgb(var(--accent-strong))]',
     variant === 'secondary' &&
       'border border-[rgb(var(--border-strong))] bg-white text-[rgb(var(--fg))] hover:bg-neutral-50',
     variant === 'sage' && 'bg-[rgb(var(--sage-ink))] text-white hover:bg-[rgb(var(--sage-ink))]/90',

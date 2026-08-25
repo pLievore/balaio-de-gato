@@ -2,7 +2,10 @@
 
 /**
  * Reusable Framer Motion primitives.
- * All respect prefers-reduced-motion automatically via Framer's useReducedMotion.
+ *
+ * Content remains visible in the server-rendered HTML. Motion is an enhancement:
+ * a slow hydration, blocked script or screenshot crawler must never receive an
+ * empty hero or catalog. All movement also respects prefers-reduced-motion.
  */
 
 import { useReducedMotion } from 'framer-motion';
@@ -39,7 +42,7 @@ export function FadeIn({
   const Tag = motion[as];
   return (
     <Tag
-      initial={{ opacity: 0, y: reduced ? 0 : distance }}
+      initial={{ opacity: 1, y: reduced ? 0 : distance }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: '-40px' }}
       transition={{ duration, ease: ease.out, delay }}
@@ -55,14 +58,12 @@ export function FadeIn({
 export function FadeMount({
   children,
   delay = 0,
-  distance = 16,
   duration = 0.45,
   className,
 }: Omit<FadeInProps, 'as'>) {
-  const reduced = useReducedMotion();
   return (
     <motion.div
-      initial={{ opacity: 0, y: reduced ? 0 : distance }}
+      initial={false}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration, ease: ease.out, delay }}
       className={className}
@@ -84,12 +85,12 @@ const staggerContainer: Variants = {
 };
 
 const staggerItem: Variants = {
-  hidden: { opacity: 0, y: 24 },
+  hidden: { opacity: 1, y: 24 },
   show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: ease.out } },
 };
 
 const staggerItemFast: Variants = {
-  hidden: { opacity: 0, y: 12 },
+  hidden: { opacity: 1, y: 12 },
   show: { opacity: 1, y: 0, transition: { duration: 0.35, ease: ease.out } },
 };
 

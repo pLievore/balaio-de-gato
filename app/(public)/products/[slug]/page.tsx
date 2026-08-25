@@ -4,12 +4,13 @@ import { notFound } from 'next/navigation';
 import { ChevronRight, GraduationCap, ShieldCheck } from 'lucide-react';
 
 import { ProductIllustration } from '../../../components/product-illustration';
+import { CartCatalogProvider } from '../../../components/shop/cart-catalog';
 import { ProductCard } from '../../../components/shop/product-card';
 import { ProductPurchase } from '../../../components/shop/product-purchase';
 import { TrackEvent } from '../../../components/track-event';
 import { Container } from '../../../components/ui/container';
 import { CATEGORY_TONE_CLASSES, getCategory } from '../../../../src/lib/catalog/categories';
-import { getAvailability } from '../../../../src/lib/catalog/product';
+import { getAvailability, toCartProduct } from '../../../../src/lib/catalog/product';
 import {
   getAllProductSlugs,
   getProductBySlug,
@@ -94,7 +95,9 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
                 Início
               </Link>
             </li>
-            <ChevronRight aria-hidden="true" className="size-3.5 shrink-0" />
+            <li aria-hidden="true">
+              <ChevronRight className="size-3.5 shrink-0" />
+            </li>
             <li>
               <Link
                 href="/products"
@@ -105,7 +108,9 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
             </li>
             {category ? (
               <>
-                <ChevronRight aria-hidden="true" className="size-3.5 shrink-0" />
+                <li aria-hidden="true">
+                  <ChevronRight className="size-3.5 shrink-0" />
+                </li>
                 <li>
                   <Link
                     href={`/products?categoria=${category.slug}`}
@@ -116,7 +121,9 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
                 </li>
               </>
             ) : null}
-            <ChevronRight aria-hidden="true" className="size-3.5 shrink-0" />
+            <li aria-hidden="true">
+              <ChevronRight className="size-3.5 shrink-0" />
+            </li>
             <li aria-current="page" className="text-[rgb(var(--fg))]">
               {product.name}
             </li>
@@ -125,9 +132,9 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       </Container>
 
       <Container size="wide" className="pb-14 md:pb-20">
-        <div className="grid gap-8 lg:grid-cols-[1.05fr_0.95fr] lg:gap-14">
+        <div className="grid gap-8 md:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] md:gap-8 xl:grid-cols-[1.05fr_0.95fr] xl:gap-14">
           <div>
-            <div className="relative overflow-hidden rounded-[2rem] border border-[rgb(var(--border))] shadow-[0_20px_60px_rgba(24,50,77,0.08)]">
+            <div className="relative overflow-hidden rounded-[2rem] border border-[rgb(var(--border))] shadow-[0_20px_60px_rgba(64,48,48,0.08)]">
               <div className="aspect-square">
                 <ProductIllustration illustration={product.illustration} seed={product.slug} />
               </div>
@@ -158,7 +165,9 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
             <p className="mt-3 text-base leading-7 text-[rgb(var(--muted))]">{product.tagline}</p>
 
             <div className="mt-7">
-              <ProductPurchase product={product} />
+              <CartCatalogProvider products={[toCartProduct(product)]}>
+                <ProductPurchase product={product} />
+              </CartCatalogProvider>
             </div>
 
             <div className="mt-8">

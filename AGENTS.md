@@ -5,19 +5,35 @@ Este repositório está em transição da estrutura entregue para a 801 Outlet p
 Antes de alterar arquitetura, domínio, pagamento, conteúdo público ou painel:
 
 1. leia `../docs/README.md` e os documentos `01` a `10`;
-2. consulte o inventário de fase correspondente em `../docs/11` a `20`;
+2. consulte o inventário de fase correspondente em `../docs/11` a `21`;
 3. trate qualquer regra antiga da 801 Outlet como histórico, nunca como requisito vigente.
 
 ## Regras vigentes
 
 - Marca: **Balaio de Gato — Papelaria e Material Escolar**.
+- Logo oficial: `public/brand/balaio-de-gato.jpg`. Não o substitua por desenho,
+  wordmark improvisado ou arquivo provisório.
+- Preserve o JPG oficial: resolução, densidade e qualidade devem ser resolvidas
+  na configuração do `next/image`, não regravando a imagem-fonte.
+- Paleta oficial: tokens de `app/globals.css`, derivados do laranja `#A84B08`.
 - Mercado: Brasil, conteúdo `pt-BR` e valores em BRL.
 - Empresa, site, catálogo lógico e operação são únicos. Não criar filial, seletor de unidade ou roteamento de estoque.
+- Vila Isa, Jardim da Pedreira e Jequirituba são endereços institucionais da
+  mesma operação. Não inferir retirada, estoques separados ou filiais; não
+  afirmar bairro para Jequirituba. Dados e fontes:
+  `../docs/21-inventario-identidade-landing-page.md`.
+- Horários fornecidos pela empresa: Sabará e Alvarenga seg–sex 08h–18h e sáb
+  09h–16h; Jequirituba seg–sáb 08h–19h. Não atribuir esses horários às fontes
+  públicas do inventário.
 - O programa é municipal: Programa Material Escolar da Secretaria Municipal de Educação da Prefeitura de São Paulo.
 - Shopify, Square, Supabase e a infraestrutura comercial da 801 Outlet foram removidos do repositório. Não reintroduza nenhum deles.
 - O Neon PostgreSQL é a autoridade implementada para catálogo, estoque,
   pedidos e auditoria. O carrinho ainda é local ao navegador.
 - O painel novo pertence a este app, sob `/admin`; `C:\dev\Renei-ecommerce\801-outlet-admin` é apenas legado.
+- `/admin` já está migrado para o PostgreSQL deste app. O esquema vigente tem
+  26 tabelas e três migrations.
+- Preserve a expiração preguiçosa e idempotente das reservas. O fluxo que
+  aprova `isApproved` ainda não existe e continua bloqueador de lançamento.
 - Até existir documentação atual e homologável da Personal Net, o DUEPAY usa pagamento por link assistido e auditado.
 - Nunca coletar código do cartão virtual ou senha DUEPAY no site ou painel.
 - Compras do benefício contêm somente itens autorizados, com documento fiscal exclusivo no CPF do responsável.
@@ -66,12 +82,14 @@ npm run build
 npm run db:check
 ```
 
-`npm test` roda tudo. Contra o banco, há ainda `npm run db:check`, `npm run db:smoke-order` e `npm run db:smoke-fulfillment` — este último cobre a baixa de estoque no pagamento.
+`npm test` roda tudo. Contra o banco, há ainda `npm run db:check`,
+`npm run db:smoke-order`, `npm run db:smoke-expiry` e
+`npm run db:smoke-fulfillment` — os dois últimos cobrem, respectivamente, a
+liberação de reservas vencidas e a baixa de estoque no pagamento.
 
-`npm run db:smoke-order` cria e limpa dados próprios; use somente em banco de
-desenvolvimento. O painel `/admin` atual continua legado e não deve ser
-considerado conectado ao novo esquema só porque as tabelas administrativas já
-existem.
+Os smokes de banco criam e limpam dados próprios; use-os somente em banco de
+desenvolvimento. O painel `/admin` atual é parte deste app e usa o mesmo
+PostgreSQL; o diretório `801-outlet-admin` é que permanece apenas histórico.
 
 <!-- BEGIN:nextjs-agent-rules -->
 

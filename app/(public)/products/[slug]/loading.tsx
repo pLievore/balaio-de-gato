@@ -9,7 +9,7 @@ export default function ProductLoading() {
       </Container>
 
       <Container size="wide" className="pb-14 md:pb-20">
-        <div className="grid gap-8 lg:grid-cols-[1.05fr_0.95fr] lg:gap-14">
+        <div className="grid gap-8 md:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] md:gap-8 xl:grid-cols-[1.05fr_0.95fr] xl:gap-14">
           <div>
             <SkeletonBlock className="aspect-square w-full rounded-[2rem]" />
             <SkeletonBlock className="mx-auto mt-4 h-3 w-64" />

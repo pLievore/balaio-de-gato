@@ -38,7 +38,7 @@ function BreakdownList({ entries, emptyText }: { entries: BreakdownEntry[]; empt
           </div>
           <div className="mt-1 h-2 overflow-hidden rounded-full bg-[rgb(var(--surface-muted))]">
             <div
-              className="h-full rounded-full bg-[#6f8352]/80"
+              className="h-full rounded-full bg-[#a84b08]/80"
               style={{ width: `${Math.max((entry.count / max) * 100, 3)}%` }}
             />
           </div>
@@ -114,7 +114,7 @@ export default async function FunnelPage({
         value={String(totals.session)}
         side={
           <>
-            <span className="inline-flex items-center rounded-full bg-white/15 px-2.5 py-1 text-[11px] font-bold text-[#c9dbb2]">
+            <span className="inline-flex items-center rounded-full bg-white/15 px-2.5 py-1 text-[11px] font-bold text-[rgb(var(--sun))]">
               {formatPercent(overallRate)} visita → pedido
             </span>
             <p className="text-xs text-white/50">
@@ -189,7 +189,7 @@ export default async function FunnelPage({
                   </div>
                   <div className="mt-1.5 h-8 overflow-hidden rounded-lg bg-[rgb(var(--surface-muted))]">
                     <div
-                      className="h-full rounded-lg bg-[#6f8352]/80"
+                      className="h-full rounded-lg bg-[#a84b08]/80"
                       style={{ width: `${width}%` }}
                     />
                   </div>

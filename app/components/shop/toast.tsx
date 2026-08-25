@@ -93,7 +93,7 @@ function ToastCard({
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: reduced ? 0 : 8, scale: reduced ? 1 : 0.97 }}
       transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
-      className="pointer-events-auto flex w-full max-w-sm items-start gap-3 rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] p-4 shadow-[0_18px_45px_rgba(24,50,77,0.16)]"
+      className="pointer-events-auto flex w-full max-w-sm items-start gap-3 rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] p-4 shadow-[0_18px_45px_rgba(64,48,48,0.16)]"
     >
       <span
         aria-hidden="true"

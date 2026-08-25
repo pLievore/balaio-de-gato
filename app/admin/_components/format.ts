@@ -21,22 +21,22 @@ export function financialStatusLabel(status: string): string {
 
 /** Consistent palette for chart segments. */
 export const CHART_PALETTE = [
-  '#6f8352', // sage ink
-  '#b45309', // amber
-  '#0e7490', // cyan
-  '#be123c', // rose
-  '#7c3aed', // violet
-  '#475569', // slate
+  '#a84b08', // laranja oficial
+  '#509fa3', // turquesa da marca
+  '#ff5060', // coral da marca
+  '#f0aa16', // amarelo da marca
+  '#7656a4', // roxo dos detalhes
+  '#70564c', // marrom secundário
 ];
 
 export const STATUS_COLORS: Record<string, string> = {
-  PAID: '#6f8352',
-  PENDING: '#b45309',
-  AUTHORIZED: '#0e7490',
-  PARTIALLY_PAID: '#a16207',
-  PARTIALLY_REFUNDED: '#64748b',
-  REFUNDED: '#475569',
-  VOIDED: '#be123c',
-  EXPIRED: '#94a3b8',
-  UNKNOWN: '#94a3b8',
+  PAID: '#205e61',
+  PENDING: '#a84b08',
+  AUTHORIZED: '#509fa3',
+  PARTIALLY_PAID: '#c37700',
+  PARTIALLY_REFUNDED: '#8e6d55',
+  REFUNDED: '#70564c',
+  VOIDED: '#b12334',
+  EXPIRED: '#8e6d55',
+  UNKNOWN: '#8e6d55',
 };

@@ -30,7 +30,7 @@ export function OrderLookupForm({ codigoInicial = '' }: { codigoInicial?: string
       {erro ? (
         <p
           role="alert"
-          className="flex items-start gap-2 rounded-2xl border border-[rgb(var(--accent))]/35 bg-[rgb(var(--accent-soft))] p-4 text-sm font-bold text-[rgb(var(--accent))]"
+          className="flex items-start gap-2 rounded-2xl border border-[rgb(var(--danger))]/35 bg-[rgb(var(--danger-soft))] p-4 text-sm font-bold text-[rgb(var(--danger))]"
         >
           <CircleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
           {erro}
